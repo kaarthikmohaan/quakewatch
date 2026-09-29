@@ -12,13 +12,14 @@ from quakewatch.settings import EVENT_HORIZON_YEARS, SITES
 
 
 class HistoryPlanTests(unittest.TestCase):
-    def test_three_sites_get_five_contiguous_windows_each(self) -> None:
+    def test_three_sites_get_sixty_contiguous_windows_each(self) -> None:
         cutoff = datetime(2026, 9, 29, tzinfo=UTC)
         windows = history_windows(cutoff)
-        self.assertEqual(len(windows), len(SITES) * EVENT_HORIZON_YEARS)
+        self.assertEqual(len(windows), len(SITES) * EVENT_HORIZON_YEARS * 12)
         for site_key in SITES:
             site_windows = [(start, end) for site, start, end in windows if site == site_key]
             self.assertEqual(site_windows[0][0], datetime(2021, 9, 29, tzinfo=UTC))
+            self.assertEqual(site_windows[0][1], datetime(2021, 10, 29, tzinfo=UTC))
             self.assertEqual(site_windows[-1][1], cutoff)
             self.assertTrue(all(start < end for start, end in site_windows))
             self.assertTrue(all(left[1] == right[0] for left, right in zip(site_windows, site_windows[1:])))
@@ -37,11 +38,12 @@ class HistoryPlanTests(unittest.TestCase):
     def test_selects_one_window_and_rejects_out_of_range(self) -> None:
         cutoff = datetime(2026, 9, 29, tzinfo=UTC)
         self.assertEqual(selected_history_window(cutoff, 1)[0], "seattle")
-        self.assertEqual(selected_history_window(cutoff, 15)[0], "anchorage")
-        with self.assertRaisesRegex(ValueError, "between 1 and 15"):
+        self.assertEqual(selected_history_window(cutoff, 61)[0], "san-francisco")
+        self.assertEqual(selected_history_window(cutoff, 180)[0], "anchorage")
+        with self.assertRaisesRegex(ValueError, "between 1 and 180"):
             selected_history_window(cutoff, 0)
-        with self.assertRaisesRegex(ValueError, "between 1 and 15"):
-            selected_history_window(cutoff, 16)
+        with self.assertRaisesRegex(ValueError, "between 1 and 180"):
+            selected_history_window(cutoff, 181)
 
     def test_preview_does_not_extract(self) -> None:
         with patch("sys.argv", ["history_plan", "--cutoff", "2026-09-29", "--window", "1"]):
@@ -59,7 +61,7 @@ class HistoryPlanTests(unittest.TestCase):
                     main()
         extract.assert_called_once_with(
             "seattle", datetime(2021, 9, 29, tzinfo=UTC),
-            datetime(2022, 9, 29, tzinfo=UTC), Path("data/raw")
+            datetime(2021, 10, 29, tzinfo=UTC), Path("data/raw")
         )
 
     def test_execute_without_window_is_rejected(self) -> None:
