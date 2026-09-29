@@ -26,3 +26,7 @@ On 2026-09-29, the Python loader ran for attempt `20260929T075452Z-26375840ea`. 
 - FDSN update-sweep coverage gaps
 - Warehouse credit usage
 - User task completion time or usefulness
+
+## First history-window attempt
+
+On 2026-09-29, the planned Seattle window from 2021-09-29 through 2022-09-29 failed during the USGS count request with a read timeout. Attempt `20260929T160547Z-b60d35bf44` has status `failed`, one structured unresolved coverage gap for the full requested window, and no `events.jsonl`. It was not staged or loaded into Snowflake. This window remains uncovered; a smaller bounded request is the next diagnostic step.
