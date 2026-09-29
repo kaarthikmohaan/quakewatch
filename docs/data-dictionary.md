@@ -14,7 +14,7 @@ The extractor writes one JSON object per line to `events.jsonl`. Each line conta
 | `metadata.payload_hash` | SHA-256 of canonicalized source-feature JSON |
 | `metadata.parser_version` | Version of the local raw-record envelope; currently `1` |
 
-`manifest.json` records the requested site and time range, query parameters, per-window counts before and after retrieval, returned and written row counts, and final status. Local raw output is ignored by Git. The 15-row day and 167-row month around Seattle have been loaded into the Snowflake RAW table; the local files remain as capture evidence.
+`manifest.json` records the requested site and time range, query parameters, per-window counts before and after retrieval, returned and written row counts, and final status. Local raw output is ignored by Git. The 15-row day and 167-row and 185-row months around Seattle have been loaded into the Snowflake RAW table; the local files remain as capture evidence.
 
 ## Planned warehouse grains
 
@@ -22,7 +22,7 @@ See [design.md](design.md) for the full model. The planned raw grain is one sour
 
 ## Phase 1 raw tables
 
-The [raw-table SQL](../sql/phase1_raw_tables.sql) created two tables in `QUAKEWATCH.RAW` on 2026-09-29. `DESCRIBE TABLE` verified their columns and types. Two Seattle source attempts, with 15 and 167 rows, have since been loaded:
+The [raw-table SQL](../sql/phase1_raw_tables.sql) created two tables in `QUAKEWATCH.RAW` on 2026-09-29. `DESCRIBE TABLE` verified their columns and types. Three Seattle source attempts, with 15, 167, and 185 rows, have since been loaded:
 
 | Table | Grain and important fields |
 |---|---|

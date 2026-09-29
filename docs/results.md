@@ -35,4 +35,6 @@ A smaller Seattle request from 2021-09-29 through 2021-10-29 succeeded as attemp
 
 The local history planner was subsequently changed to 60 month-sized windows per site, retaining the same five-year cutoff and public sites. Its first Seattle window matches this successful capture. The remaining windows still need extraction and count reconciliation; the failed year-long attempt remains in the audit history.
 
-Seattle monthly window 2, 2021-10-29 through 2021-11-29, completed as attempt `20260929T162551Z-742a6474a5`: USGS count before 185, returned features 185, count after 185, and 185 local JSONL lines. The manifest reports one reconciled window and no coverage gaps. These rows have not been staged or loaded into Snowflake.
+Seattle monthly window 2, 2021-10-29 through 2021-11-29, completed as attempt `20260929T162551Z-742a6474a5`: USGS count before 185, returned features 185, count after 185, and 185 local JSONL lines. The manifest reports one reconciled window and no coverage gaps. The loader later reported `Loaded and reconciled RAW rows: 185` for this attempt. An independent receipt query has not yet been run.
+
+A separate local capture, `20260929T162532Z-5cac86e7be`, has the same logical batch ID and also reconciled 185 source rows; it was not loaded. A second invocation of the loader for the already-loaded `742a6474a5` attempt stopped at its immutable-receipt guard before PUT or COPY. These observations do not establish full repeat-run idempotency of the downstream warehouse models.
