@@ -8,6 +8,7 @@ from pathlib import Path
 from quakewatch.raw_load import (
     LoadReconciliationError,
     plan_raw_load,
+    project_connection_params,
     reconcile_loaded_rows,
     validate_local_batch,
 )
@@ -81,3 +82,27 @@ class RawLoadTests(unittest.TestCase):
         self.write_batch()
         with self.assertRaisesRegex(LoadReconciliationError, "unsafe attempt ID"):
             plan_raw_load(self.root / "manifest.json")
+
+    def test_connection_uses_only_project_key_profile(self) -> None:
+        config = self.root / "config.toml"
+        config.write_text(
+            '[connections.quakewatch_admin]\nrole="ACCOUNTADMIN"\npassword="unused"\n'
+            '[connections.quakewatch_project]\naccount="example"\nuser="example_user"\n'
+            'role="QUAKEWATCH_ROLE"\nauthenticator="SNOWFLAKE_JWT"\n'
+            'private_key_file="/example/key.p8"\n',
+            encoding="utf-8",
+        )
+        params = project_connection_params(config, "local-passphrase")
+        self.assertEqual(params["role"], "QUAKEWATCH_ROLE")
+        self.assertEqual(params["authenticator"], "SNOWFLAKE_JWT")
+        self.assertEqual(params["private_key_file_pwd"], "local-passphrase")
+        self.assertNotIn("password", params)
+
+    def test_admin_role_in_project_profile_is_rejected(self) -> None:
+        config = self.root / "config.toml"
+        config.write_text(
+            '[connections.quakewatch_project]\nrole="ACCOUNTADMIN"\n'
+            'authenticator="SNOWFLAKE_JWT"\n', encoding="utf-8"
+        )
+        with self.assertRaisesRegex(LoadReconciliationError, "QUAKEWATCH_ROLE"):
+            project_connection_params(config, "local-passphrase")

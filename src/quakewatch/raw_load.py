@@ -3,12 +3,49 @@
 import json
 import re
 import argparse
+import getpass
+import tomllib
 from pathlib import Path
 from typing import Any
 
 
 class LoadReconciliationError(ValueError):
     """A batch cannot be marked loaded because its counts or source disagree."""
+
+
+def project_connection_params(config_path: Path, passphrase: str) -> dict[str, str]:
+    """Read only the dedicated key-pair profile; never use an admin profile."""
+    config = tomllib.loads(config_path.read_text(encoding="utf-8"))
+    profile = config["connections"]["quakewatch_project"]
+    if profile.get("role") != "QUAKEWATCH_ROLE":
+        raise LoadReconciliationError("project profile must use QUAKEWATCH_ROLE")
+    if profile.get("authenticator", "").upper() != "SNOWFLAKE_JWT":
+        raise LoadReconciliationError("project profile must use key-pair authentication")
+    if not passphrase:
+        raise LoadReconciliationError("encrypted key passphrase is required")
+    fields = ("account", "user", "private_key_file")
+    if any(not profile.get(field) for field in fields):
+        raise LoadReconciliationError("project profile is missing account, user, or key file")
+    return {
+        "account": profile["account"],
+        "user": profile["user"],
+        "role": "QUAKEWATCH_ROLE",
+        "authenticator": "SNOWFLAKE_JWT",
+        "private_key_file": profile["private_key_file"],
+        "private_key_file_pwd": passphrase,
+        "warehouse": "QUAKEWATCH_WH",
+        "database": "QUAKEWATCH",
+        "schema": "RAW",
+    }
+
+
+def connect_project():
+    """Connect on an explicitly approved live run; prompt locally for the key."""
+    import snowflake.connector
+
+    config_path = Path.home() / ".snowflake" / "config.toml"
+    passphrase = getpass.getpass("QuakeWatch key passphrase: ")
+    return snowflake.connector.connect(**project_connection_params(config_path, passphrase))
 
 
 def validate_local_batch(manifest_path: Path) -> tuple[dict[str, Any], int]:
