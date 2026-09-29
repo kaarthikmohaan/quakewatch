@@ -4,9 +4,11 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 from quakewatch.raw_load import (
     LoadReconciliationError,
+    execute_raw_load,
     plan_raw_load,
     project_connection_params,
     reconcile_loaded_rows,
@@ -24,6 +26,11 @@ class RawLoadTests(unittest.TestCase):
             "logical_batch_id": "logical", "attempt_id": "attempt",
             "fetched_at": "2026-09-29T00:00:00Z",
             "source_rows_returned": 1, "raw_rows_written": 1,
+            "requested_starttime": "2026-09-28T00:00:00Z",
+            "requested_endtime": "2026-09-29T00:00:00Z",
+            "query_parameters": {"format": "geojson"},
+            "window_audit": [{"window_id": "w0001", "status": "reconciled"}],
+            "site": {"name": "Seattle"},
         }
         self.record = {
             "source_feature": {"id": "example"},
@@ -106,3 +113,95 @@ class RawLoadTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(LoadReconciliationError, "QUAKEWATCH_ROLE"):
             project_connection_params(config, "local-passphrase")
+
+    def test_successful_copy_appends_complete_receipt(self) -> None:
+        cursor = FakeCursor()
+        loaded = execute_raw_load(plan_raw_load(self.root / "manifest.json"), FakeConnection(cursor))
+        self.assertEqual(loaded, 1)
+        self.assertEqual(len(cursor.receipts), 1)
+        self.assertEqual(cursor.receipts[0][10], "complete")
+        self.assertEqual(cursor.receipts[0][13], 1)
+        self.assertTrue(cursor.closed)
+
+    def test_copy_failure_appends_failed_receipt(self) -> None:
+        cursor = FakeCursor(copy_status="LOAD_FAILED")
+        with self.assertRaisesRegex(LoadReconciliationError, "COPY did not load"):
+            execute_raw_load(plan_raw_load(self.root / "manifest.json"), FakeConnection(cursor))
+        self.assertEqual(len(cursor.receipts), 1)
+        self.assertEqual(cursor.receipts[0][10], "failed")
+        self.assertEqual(cursor.receipts[0][16], "LoadReconciliationError")
+
+    def test_existing_attempt_receipt_blocks_mutation(self) -> None:
+        cursor = FakeCursor(existing_receipts=1)
+        with self.assertRaisesRegex(LoadReconciliationError, "immutable receipt"):
+            execute_raw_load(plan_raw_load(self.root / "manifest.json"), FakeConnection(cursor))
+        self.assertEqual(len(cursor.commands), 1)
+
+    def test_raw_count_mismatch_appends_failed_receipt(self) -> None:
+        cursor = FakeCursor(raw_count_after=0)
+        with self.assertRaisesRegex(LoadReconciliationError, "raw=0"):
+            execute_raw_load(plan_raw_load(self.root / "manifest.json"), FakeConnection(cursor))
+        self.assertEqual(cursor.receipts[0][10], "failed")
+        self.assertEqual(cursor.receipts[0][13], 1)
+
+    def test_existing_raw_rows_block_mutation(self) -> None:
+        cursor = FakeCursor(raw_count_before=1)
+        with self.assertRaisesRegex(LoadReconciliationError, "already has RAW rows"):
+            execute_raw_load(plan_raw_load(self.root / "manifest.json"), FakeConnection(cursor))
+        self.assertEqual(len(cursor.commands), 2)
+
+
+class FakeConnection:
+    def __init__(self, cursor: "FakeCursor") -> None:
+        self._cursor = cursor
+
+    def cursor(self) -> "FakeCursor":
+        return self._cursor
+
+
+class FakeCursor:
+    def __init__(self, copy_status: str = "LOADED", existing_receipts: int = 0,
+                 raw_count_before: int = 0, raw_count_after: int = 1) -> None:
+        self.copy_status = copy_status
+        self.existing_receipts = existing_receipts
+        self.raw_count_before = raw_count_before
+        self.raw_count_after = raw_count_after
+        self.commands: list[str] = []
+        self.receipts: list[tuple] = []
+        self.raw_count_calls = 0
+        self.description = []
+        self.rows: list[tuple] = []
+        self.closed = False
+
+    def execute(self, sql: str, params: tuple | None = None) -> "FakeCursor":
+        self.commands.append(sql)
+        if "FROM QUAKEWATCH.RAW.BATCH_ATTEMPT WHERE" in sql:
+            self.rows = [(self.existing_receipts,)]
+        elif "FROM QUAKEWATCH.RAW.RAW_EVENT_RECORDS WHERE" in sql:
+            self.raw_count_calls += 1
+            self.rows = [(
+                self.raw_count_before if self.raw_count_calls == 1 else self.raw_count_after,
+            )]
+        elif sql.startswith("PUT "):
+            self.description = [SimpleNamespace(name="status")]
+            self.rows = [("UPLOADED",)]
+        elif "COPY INTO QUAKEWATCH.RAW.RAW_EVENT_RECORDS" in sql:
+            self.description = [SimpleNamespace(name="status"), SimpleNamespace(name="rows_loaded")]
+            self.rows = [(self.copy_status, 1 if self.copy_status == "LOADED" else 0)]
+        elif "INSERT INTO QUAKEWATCH.RAW.BATCH_ATTEMPT" in sql:
+            assert params is not None
+            self.receipts.append(params)
+            self.rows = []
+        else:
+            raise AssertionError(f"Unexpected SQL: {sql}")
+        return self
+
+    def fetchone(self) -> tuple:
+        return self.rows.pop(0)
+
+    def fetchall(self) -> list[tuple]:
+        rows, self.rows = self.rows, []
+        return rows
+
+    def close(self) -> None:
+        self.closed = True

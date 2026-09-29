@@ -1,10 +1,7 @@
 -- Phase 1 RAW mapping. Upload events.jsonl under a unique attempt directory first.
--- Render attempt_id with Snowflake CLI -D; do not run until compute is approved.
+-- Render attempt_id with Snowflake CLI -D or the Python loader.
 -- COPY keeps Snowflake's file-load history, so repeating this file without FORCE
 -- should not append a second copy of the same rows.
-USE ROLE QUAKEWATCH_ROLE;
-USE WAREHOUSE QUAKEWATCH_WH;
-
 COPY INTO QUAKEWATCH.RAW.RAW_EVENT_RECORDS (
     LOGICAL_BATCH_ID, ATTEMPT_ID, WINDOW_ID, PAYLOAD, FETCHED_AT,
     PAYLOAD_HASH, PARSER_VERSION, STAGE_FILE_NAME, STAGE_FILE_ROW_NUMBER
