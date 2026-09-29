@@ -64,6 +64,31 @@ def captured_history_windows(cutoff: datetime, output: Path) -> dict[int, Path]:
     return captured
 
 
+def resume_capture(cutoff: datetime, output: Path, max_windows: int, execute: bool) -> list[int]:
+    """Process a bounded consecutive run, stopping at the first source gap."""
+    if not 1 <= max_windows <= 10:
+        raise ValueError("max-windows must be between 1 and 10")
+    windows = history_windows(cutoff)
+    captured = captured_history_windows(cutoff, output)
+    pending = [number for number in range(1, len(windows) + 1) if number not in captured]
+    selected = pending[:max_windows]
+    for number in selected:
+        site, start, end = windows[number - 1]
+        print(number, site, iso_utc(start), iso_utc(end))
+        if not execute:
+            continue
+        manifest_path = run_batch(site, start, end, output)
+        print(f"Captured manifest: {manifest_path}")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if manifest.get("status") != "complete" or manifest.get("coverage_gaps"):
+            raise RuntimeError(f"Window {number} did not reconcile; inspect {manifest_path}")
+    if not execute:
+        print(f"Preview only: {len(selected)} windows; no USGS or Snowflake calls made.")
+    else:
+        print(f"Captured {len(selected)} windows locally; no Snowflake calls made.")
+    return selected
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Preview or extract one five-year history window")
     parser.add_argument("--cutoff", required=True, type=parse_utc)
@@ -71,8 +96,20 @@ def main() -> None:
     parser.add_argument("--execute", action="store_true", help="Fetch only the selected window from USGS")
     parser.add_argument("--output", type=Path, default=Path("data/raw"))
     parser.add_argument("--resume-preview", action="store_true", help="Show next uncaptured local window")
+    parser.add_argument("--resume", action="store_true", help="Process consecutive uncaptured windows")
+    parser.add_argument("--max-windows", type=int, help="Resume limit, 1 to 10")
     args = parser.parse_args()
     windows = history_windows(args.cutoff)
+    if args.resume:
+        if args.window is not None or args.resume_preview or args.max_windows is None:
+            parser.error("--resume requires --max-windows and cannot use --window or --resume-preview")
+        try:
+            resume_capture(args.cutoff, args.output, args.max_windows, args.execute)
+        except ValueError as exc:
+            parser.error(str(exc))
+        return
+    if args.max_windows is not None:
+        parser.error("--max-windows requires --resume")
     if args.resume_preview:
         if args.window is not None or args.execute:
             parser.error("--resume-preview cannot be combined with --window or --execute")

@@ -9,11 +9,36 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from quakewatch.history_plan import captured_history_windows, history_windows, main, selected_history_window
+from quakewatch.history_plan import (captured_history_windows, history_windows, main,
+                                     resume_capture, selected_history_window)
 from quakewatch.settings import EVENT_HORIZON_YEARS, SITES
 
 
 class HistoryPlanTests(unittest.TestCase):
+    def test_resume_preview_is_bounded_and_makes_no_requests(self) -> None:
+        cutoff = datetime(2026, 9, 29, tzinfo=UTC)
+        with TemporaryDirectory() as folder:
+            with patch("quakewatch.history_plan.run_batch") as extract:
+                with redirect_stdout(io.StringIO()) as output:
+                    selected = resume_capture(cutoff, Path(folder), 2, False)
+            self.assertEqual(selected, [1, 2])
+            extract.assert_not_called()
+            self.assertIn("no USGS or Snowflake calls made", output.getvalue())
+            with self.assertRaisesRegex(ValueError, "between 1 and 10"):
+                resume_capture(cutoff, Path(folder), 11, False)
+
+    def test_resume_stops_on_failed_manifest(self) -> None:
+        cutoff = datetime(2026, 9, 29, tzinfo=UTC)
+        with TemporaryDirectory() as folder:
+            path = Path(folder) / "manifest.json"
+            path.write_text(json.dumps({"status": "failed", "coverage_gaps": [{"window_id": "w0001"}]}),
+                            encoding="utf-8")
+            with patch("quakewatch.history_plan.run_batch", return_value=path) as extract:
+                with redirect_stdout(io.StringIO()):
+                    with self.assertRaisesRegex(RuntimeError, "Window 1 did not reconcile"):
+                        resume_capture(cutoff, Path(folder), 3, True)
+            extract.assert_called_once()
+
     def test_resume_preview_skips_only_complete_local_captures(self) -> None:
         cutoff = datetime(2026, 9, 29, tzinfo=UTC)
         with TemporaryDirectory() as folder:
