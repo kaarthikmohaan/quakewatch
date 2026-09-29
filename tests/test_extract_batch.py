@@ -11,6 +11,7 @@ import httpx
 
 from quakewatch.extract_batch import ExtractionError, fetch_window, get_features, run_batch, source_params
 from quakewatch.settings import SITES
+from quakewatch.settings import MAX_TARGET_RESULTS_PER_WINDOW
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -20,7 +21,11 @@ class GetFeaturesTests(unittest.TestCase):
     def test_unknown_source_property_is_preserved(self) -> None:
         feature = json.loads((FIXTURES / "additive_field_event.json").read_text(encoding="utf-8"))
         body = json.dumps({"type": "FeatureCollection", "features": [feature]})
-        transport = httpx.MockTransport(lambda request: httpx.Response(200, text=body))
+        def respond(request: httpx.Request) -> httpx.Response:
+            self.assertEqual(int(request.url.params["limit"]), MAX_TARGET_RESULTS_PER_WINDOW)
+            return httpx.Response(200, text=body)
+
+        transport = httpx.MockTransport(respond)
 
         with httpx.Client(transport=transport) as client:
             features = get_features(client, {})
@@ -101,9 +106,31 @@ class FetchWindowTests(unittest.TestCase):
 
         self.assertEqual(rows, [])
         self.assertEqual([audit["status"] for audit in audits], ["split", "reconciled", "reconciled"])
-        self.assertIn("reached the service limit", audits[0]["reason"])
+        self.assertIn("reached safe target 10000", audits[0]["reason"])
         self.assertEqual(len(query_windows), 2)
         self.assertNotIn(parent_window, query_windows)
+
+    def test_target_count_splits_before_service_limit(self) -> None:
+        start = datetime(2026, 9, 28, tzinfo=timezone.utc)
+        end = start + timedelta(seconds=2)
+        parent = source_params(SITES["seattle"], start, end)
+        parent_bounds = (parent["starttime"], parent["endtime"])
+        queried: list[tuple[str, str]] = []
+
+        def respond(request: httpx.Request) -> httpx.Response:
+            bounds = (request.url.params["starttime"], request.url.params["endtime"])
+            if request.url.path.endswith("/count"):
+                count = MAX_TARGET_RESULTS_PER_WINDOW if bounds == parent_bounds else 0
+                return httpx.Response(200, json={"count": count})
+            queried.append(bounds)
+            return httpx.Response(200, json={"type": "FeatureCollection", "features": []})
+
+        with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+            rows, audits = fetch_window(client, SITES["seattle"], start, end, "target")
+
+        self.assertEqual(rows, [])
+        self.assertEqual([audit["status"] for audit in audits], ["split", "reconciled", "reconciled"])
+        self.assertNotIn(parent_bounds, queried)
 
     def test_unresolved_count_mismatch_fails(self) -> None:
         case = json.loads((FIXTURES / "count_mismatch_case.json").read_text(encoding="utf-8"))

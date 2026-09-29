@@ -18,6 +18,7 @@ import httpx
 
 from quakewatch.settings import (
     MAX_RESULTS_PER_WINDOW,
+    MAX_TARGET_RESULTS_PER_WINDOW,
     PARSER_VERSION,
     REQUEST_TIMEOUT_SECONDS,
     SITES,
@@ -115,7 +116,7 @@ def get_count(client: httpx.Client, params: dict[str, Any]) -> int:
 
 
 def get_features(client: httpx.Client, params: dict[str, Any]) -> list[dict[str, Any]]:
-    query_params = {**params, "limit": MAX_RESULTS_PER_WINDOW}
+    query_params = {**params, "limit": MAX_TARGET_RESULTS_PER_WINDOW}
     response = request_with_retry(client, USGS_QUERY_URL, query_params)
     if response.status_code == 204:
         return []
@@ -168,8 +169,11 @@ def fetch_window(
             count_before = get_count(client, params)
         except (httpx.HTTPError, ExtractionError) as exc:
             raise ExtractionError(f"{window_id}: {exc}", [unresolved(str(exc))]) from exc
-        if count_before >= MAX_RESULTS_PER_WINDOW:
-            last_issue = f"count {count_before} reached the service limit"
+        if count_before >= MAX_TARGET_RESULTS_PER_WINDOW:
+            last_issue = (
+                f"count {count_before} reached safe target {MAX_TARGET_RESULTS_PER_WINDOW} "
+                f"below service limit {MAX_RESULTS_PER_WINDOW}"
+            )
             break
 
         try:
