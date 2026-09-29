@@ -1,0 +1,49 @@
+-- Phase 1 raw landing tables. Draft only until approved and verified in Snowflake.
+-- Run with QUAKEWATCH_ROLE. IF NOT EXISTS will not repair an existing schema;
+-- inspect DESCRIBE TABLE output after execution.
+
+USE ROLE QUAKEWATCH_ROLE;
+
+-- Grain: one row per extract/load attempt, including failed attempts.
+-- The Python batch runner appends a final receipt; it never replaces a failure.
+CREATE TABLE IF NOT EXISTS QUAKEWATCH.RAW.BATCH_ATTEMPT (
+    ATTEMPT_ID VARCHAR NOT NULL,
+    LOGICAL_BATCH_ID VARCHAR NOT NULL,
+    BATCH_KIND VARCHAR NOT NULL,
+    SITE_KEY VARCHAR,
+    REQUESTED_STARTTIME TIMESTAMP_TZ NOT NULL,
+    REQUESTED_ENDTIME TIMESTAMP_TZ NOT NULL,
+    QUERY_PARAMETERS VARIANT NOT NULL,
+    WINDOW_AUDIT VARIANT NOT NULL,
+    COVERAGE_GAPS VARIANT,
+    FETCHED_AT TIMESTAMP_TZ,
+    EXTRACT_STATUS VARCHAR NOT NULL,
+    LOAD_STATUS VARCHAR NOT NULL,
+    SOURCE_ROWS_RETURNED NUMBER(38, 0) NOT NULL,
+    RAW_ROWS_WRITTEN NUMBER(38, 0) NOT NULL,
+    LOADED_ROWS NUMBER(38, 0) NOT NULL,
+    STAGED_FILES VARIANT,
+    COPY_RESULTS VARIANT,
+    ERROR_TYPE VARCHAR,
+    ERROR_MESSAGE VARCHAR,
+    MANIFEST VARIANT NOT NULL,
+    RECORDED_AT TIMESTAMP_TZ DEFAULT CURRENT_TIMESTAMP()
+)
+COMMENT = 'One append-only receipt per QuakeWatch extract/load attempt';
+
+-- Grain: one source feature returned in one query window of one attempt.
+-- STAGE_FILE_NAME + STAGE_FILE_ROW_NUMBER is the stable file-row source key.
+-- No uniqueness claim is delegated to Snowflake standard-table key constraints.
+CREATE TABLE IF NOT EXISTS QUAKEWATCH.RAW.RAW_EVENT_RECORDS (
+    LOGICAL_BATCH_ID VARCHAR NOT NULL,
+    ATTEMPT_ID VARCHAR NOT NULL,
+    WINDOW_ID VARCHAR NOT NULL,
+    PAYLOAD VARIANT NOT NULL,
+    FETCHED_AT TIMESTAMP_TZ NOT NULL,
+    PAYLOAD_HASH VARCHAR(64) NOT NULL,
+    PARSER_VERSION VARCHAR NOT NULL,
+    STAGE_FILE_NAME VARCHAR NOT NULL,
+    STAGE_FILE_ROW_NUMBER NUMBER(38, 0) NOT NULL,
+    LOADED_AT TIMESTAMP_TZ DEFAULT CURRENT_TIMESTAMP()
+)
+COMMENT = 'Full USGS GeoJSON feature and capture metadata per staged file row';
