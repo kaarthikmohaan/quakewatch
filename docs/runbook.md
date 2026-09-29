@@ -8,6 +8,8 @@
 
 The non-editable install is used because the editable-package path was not loading correctly in this local environment. After changing package code, run `uv sync --locked --no-editable --reinstall-package quakewatch` to rebuild the installed wheel; a plain `uv sync` can report everything checked while leaving an older wheel installed.
 
+Phase 1 also locks the Snowflake Python Connector for the planned batch loader. Installing it locally does not connect to Snowflake or start warehouse compute. The loader will read the existing project key-pair profile outside Git and ask for the encrypted key passphrase locally; do not put that passphrase in a command, config file, or chat.
+
 ## Fetch a bounded batch
 
 ```sh
