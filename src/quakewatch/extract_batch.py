@@ -34,6 +34,10 @@ MAX_WINDOW_RECONCILIATION_ATTEMPTS = 3
 class ExtractionError(RuntimeError):
     """Raised when a requested source window cannot be safely captured."""
 
+    def __init__(self, message: str, window_audit: list[dict[str, Any]] | None = None) -> None:
+        super().__init__(message)
+        self.window_audit = window_audit or []
+
 
 def parse_utc(value: str) -> datetime:
     """Parse an ISO date/time. A date without a timezone is treated as UTC."""
@@ -150,14 +154,29 @@ def fetch_window(
     params = source_params(site, start, end)
     last_issue = "source count changed during fetch"
 
+    def unresolved(reason: str) -> dict[str, Any]:
+        return {
+            "window_id": window_id,
+            "starttime": iso_utc(start),
+            "endtime": iso_utc(end),
+            "status": "unresolved",
+            "reason": reason,
+        }
+
     for attempt in range(1, MAX_WINDOW_RECONCILIATION_ATTEMPTS + 1):
-        count_before = get_count(client, params)
+        try:
+            count_before = get_count(client, params)
+        except (httpx.HTTPError, ExtractionError) as exc:
+            raise ExtractionError(f"{window_id}: {exc}", [unresolved(str(exc))]) from exc
         if count_before >= MAX_RESULTS_PER_WINDOW:
             last_issue = f"count {count_before} reached the service limit"
             break
 
-        features = get_features(client, params)
-        count_after = get_count(client, params)
+        try:
+            features = get_features(client, params)
+            count_after = get_count(client, params)
+        except (httpx.HTTPError, ExtractionError) as exc:
+            raise ExtractionError(f"{window_id}: {exc}", [unresolved(str(exc))]) from exc
         if len(features) == count_before == count_after:
             audit = {
                 "window_id": window_id,
@@ -177,7 +196,8 @@ def fetch_window(
     try:
         left, right = split_window(start, end)
     except ExtractionError as exc:
-        raise ExtractionError(f"{window_id}: {last_issue}; {exc}") from exc
+        reason = f"{last_issue}; {exc}"
+        raise ExtractionError(f"{window_id}: {reason}", [unresolved(reason)]) from exc
 
     rows: list[tuple[dict[str, Any], str]] = []
     audits: list[dict[str, Any]] = [
@@ -190,13 +210,13 @@ def fetch_window(
         }
     ]
     for suffix, (child_start, child_end) in zip(("a", "b"), (left, right), strict=True):
-        child_rows, child_audits = fetch_window(
-            client,
-            site,
-            child_start,
-            child_end,
-            f"{window_id}.{suffix}",
-        )
+        try:
+            child_rows, child_audits = fetch_window(
+                client, site, child_start, child_end, f"{window_id}.{suffix}"
+            )
+        except ExtractionError as exc:
+            exc.window_audit = [*audits, *exc.window_audit]
+            raise
         rows.extend(child_rows)
         audits.extend(child_audits)
     return rows, audits
@@ -229,6 +249,7 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path) 
         "query_parameters": source_params(site, start, end),
         "fetched_at": fetched_at,
         "window_audit": [],
+        "coverage_gaps": [],
         "source_rows_returned": 0,
         "raw_rows_written": 0,
         "events_file": events_path.name,
@@ -279,6 +300,11 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path) 
         save_manifest()
     except Exception as exc:
         manifest.update({"status": "failed", "error_type": type(exc).__name__, "error": str(exc)})
+        if isinstance(exc, ExtractionError):
+            manifest["window_audit"] = exc.window_audit
+            manifest["coverage_gaps"] = [
+                audit for audit in exc.window_audit if audit["status"] == "unresolved"
+            ]
         save_manifest()
         raise
     return manifest_path

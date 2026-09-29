@@ -69,6 +69,14 @@ class FetchWindowTests(unittest.TestCase):
             self.assertIn("w0001", manifest["error"])
             self.assertIn("counts disagree", manifest["error"])
             self.assertNotEqual(manifest["requested_starttime"], manifest["requested_endtime"])
+            self.assertEqual(len(manifest["coverage_gaps"]), 1)
+            gap = manifest["coverage_gaps"][0]
+            self.assertTrue(gap["window_id"].startswith("w0001."))
+            self.assertEqual(gap["status"], "unresolved")
+            self.assertIn("counts disagree", gap["reason"])
+            self.assertEqual(manifest["window_audit"][0]["status"], "split")
+            self.assertEqual(manifest["window_audit"][-1], gap)
+            self.assertFalse(list(Path(directory).glob("*/events.jsonl")))
 
     def test_over_limit_parent_is_split_before_feature_request(self) -> None:
         case = json.loads((FIXTURES / "over_limit_case.json").read_text(encoding="utf-8"))

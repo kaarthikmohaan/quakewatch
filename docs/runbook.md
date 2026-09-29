@@ -21,7 +21,7 @@ Supported public demo sites are `seattle`, `san-francisco`, and `anchorage`. Tim
 
 ## Inspect a run
 
-Read `manifest.json` first. A successful manifest has status `complete`; each leaf query window should show matching `count_before`, `returned_rows`, and `count_after`. A failed run writes a failed manifest for investigation and retry. At present, a failure inside `fetch_window` leaves `window_audit` empty; use its error text and requested range to identify the gap until structured unresolved-window auditing is implemented in Phase 1. The source is not a durable event log, and a successful response does not prove gap-free catalog coverage.
+Read `manifest.json` first. A successful manifest has status `complete`; each leaf query window should show matching `count_before`, `returned_rows`, and `count_after`. A failed source window appears in `coverage_gaps` with its ID, bounds, and reason; `window_audit` also retains parent split and earlier sibling results. A failed run writes no event file and needs investigation and retry. The source is not a durable event log, and a successful response does not prove gap-free catalog coverage.
 
 ## Snowflake access
 
