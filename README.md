@@ -39,6 +39,7 @@ The source returns bounded query results. QuakeWatch is a batch pipeline, not a 
 - [Design and project plan](docs/design.md)
 - [Data dictionary](docs/data-dictionary.md)
 - [Runbook](docs/runbook.md)
+- [Phase 0 environment check](docs/environment.md)
 - [Observed results](docs/results.md)
 
 ## Source and responsible use
