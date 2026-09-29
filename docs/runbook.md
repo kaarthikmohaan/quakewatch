@@ -41,4 +41,6 @@ To inspect the first upload plan without connecting to Snowflake, run `PYTHONPAT
 
 The Python Connector boundary reads only `quakewatch_project` from the local Snowflake CLI config, verifies its key-pair authenticator and `QUAKEWATCH_ROLE`, and prompts for the encrypted key passphrase in the terminal when a live run is explicitly started. It never reads the admin profile or takes the passphrase from a command-line argument.
 
+For read-only row checks, use this Python Connector boundary too. The installed Snowflake CLI `snow sql -c quakewatch_project` does not prompt for the encrypted key passphrase and fails unless that passphrase is supplied through CLI configuration or environment; do not place it in chat or shell history. The connector prompts privately in the terminal. The first independent check found one complete receipt and 15 RAW rows for the Seattle attempt.
+
 The loader has an explicit `--execute` path. It checks for an existing attempt receipt or RAW rows, uploads one new file, runs the COPY mapping, compares COPY and attempt-filtered RAW counts with the local manifest, then appends a `BATCH_ATTEMPT` receipt. A COPY or count failure appends a failed receipt if the connection still permits it; a retry needs a new extraction attempt ID. The command without `--execute` remains read-only. Ask for warehouse-cost approval before each live run.
