@@ -11,9 +11,13 @@
 | Count after fetch | 15 |
 | Raw JSON Lines written | 15 |
 | Window result | Reconciled |
-| Snowflake rows loaded | Not yet implemented |
+| Snowflake RAW rows loaded | 15, reported by the first loader run |
 
 This is one source-capture observation, not a completeness guarantee or a performance claim. The local manifest and source rows are under ignored `data/raw/` and are not published to GitHub.
+
+## First RAW load
+
+On 2026-09-29, the Python loader ran for attempt `20260929T075452Z-26375840ea`. Its manifest and local JSONL each contained 15 rows. The visible terminal reported `Loaded and reconciled RAW rows: 15` after the COPY result and attempt-filtered RAW count both matched 15 and the append-only batch receipt insert returned without an error. This is evidence from the loader output; an independent SQL read of the receipt has not yet been performed. Warehouse credits and stage storage charges have not been measured.
 
 ## Not measured yet
 
