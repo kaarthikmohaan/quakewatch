@@ -21,6 +21,8 @@ uv run quakewatch-extract \
 
 Supported public demo sites are `seattle`, `san-francisco`, and `anchorage`. Times without an explicit zone are interpreted as UTC. Output goes to `data/raw/<attempt-id>/` unless `--output` is provided. Keep private coordinates and credentials out of the repository.
 
+Before the five-year initial history, preview its fixed origin-time requests with `PYTHONPATH=src .venv/bin/python -m quakewatch.history_plan --cutoff 2026-09-29T00:00:00Z`. It prints five contiguous one-year windows for each public site (15 total) without contacting USGS or Snowflake. The extractor still checks each request's USGS count and splits a window when needed. The previously loaded one-day Seattle sample overlaps the final history window; later revision processing must deduplicate source observations across attempts.
+
 ## Inspect a run
 
 Read `manifest.json` first. A successful manifest has status `complete`; each leaf query window should show matching `count_before`, `returned_rows`, and `count_after`. A failed source window appears in `coverage_gaps` with its ID, bounds, and reason; `window_audit` also retains parent split and earlier sibling results. A failed run writes no event file and needs investigation and retry. The source is not a durable event log, and a successful response does not prove gap-free catalog coverage.
