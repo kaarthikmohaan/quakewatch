@@ -2,6 +2,7 @@
 
 import argparse
 import calendar
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -39,14 +40,53 @@ def selected_history_window(cutoff: datetime, number: int) -> tuple[str, datetim
     return windows[number - 1]
 
 
+def captured_history_windows(cutoff: datetime, output: Path) -> dict[int, Path]:
+    """Find complete local captures; these are not proof of Snowflake loading."""
+    expected = {
+        (site, iso_utc(start), iso_utc(end)): number
+        for number, (site, start, end) in enumerate(history_windows(cutoff), start=1)
+    }
+    captured: dict[int, Path] = {}
+    for path in sorted(output.glob("*/manifest.json")):
+        try:
+            manifest = json.loads(path.read_text(encoding="utf-8"))
+            if manifest.get("status") != "complete" or manifest.get("coverage_gaps"):
+                continue
+            site_name = manifest["site"]["name"]
+            site = next(key for key, config in SITES.items() if config.name == site_name)
+            key = (site, iso_utc(parse_utc(manifest["requested_starttime"])),
+                   iso_utc(parse_utc(manifest["requested_endtime"])))
+            number = expected.get(key)
+            if number and (path.parent / manifest["events_file"]).is_file():
+                captured[number] = path
+        except (KeyError, ValueError, TypeError, StopIteration):
+            continue
+    return captured
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Preview or extract one five-year history window")
     parser.add_argument("--cutoff", required=True, type=parse_utc)
     parser.add_argument("--window", type=int, help="1-based window number; required to execute")
     parser.add_argument("--execute", action="store_true", help="Fetch only the selected window from USGS")
     parser.add_argument("--output", type=Path, default=Path("data/raw"))
+    parser.add_argument("--resume-preview", action="store_true", help="Show next uncaptured local window")
     args = parser.parse_args()
     windows = history_windows(args.cutoff)
+    if args.resume_preview:
+        if args.window is not None or args.execute:
+            parser.error("--resume-preview cannot be combined with --window or --execute")
+        captured = captured_history_windows(args.cutoff, args.output)
+        next_number = next((number for number in range(1, len(windows) + 1)
+                            if number not in captured), None)
+        print(f"Locally captured windows: {len(captured)} of {len(windows)}")
+        if next_number is None:
+            print("All windows captured locally; Snowflake load status not checked.")
+        else:
+            site, start, end = windows[next_number - 1]
+            print("Next uncaptured:", next_number, site, iso_utc(start), iso_utc(end))
+        print("Preview only; no USGS or Snowflake calls made.")
+        return
     if args.window is None:
         if args.execute:
             parser.error("--execute requires --window so only one request runs")

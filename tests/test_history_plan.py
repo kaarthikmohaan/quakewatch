@@ -2,16 +2,40 @@
 
 import unittest
 import io
+import json
 from contextlib import redirect_stderr, redirect_stdout
 from datetime import UTC, datetime
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from quakewatch.history_plan import history_windows, main, selected_history_window
+from quakewatch.history_plan import captured_history_windows, history_windows, main, selected_history_window
 from quakewatch.settings import EVENT_HORIZON_YEARS, SITES
 
 
 class HistoryPlanTests(unittest.TestCase):
+    def test_resume_preview_skips_only_complete_local_captures(self) -> None:
+        cutoff = datetime(2026, 9, 29, tzinfo=UTC)
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            for number, status in ((1, "complete"), (2, "failed"), (3, "complete")):
+                site, start, end = selected_history_window(cutoff, number)
+                attempt = root / str(number)
+                attempt.mkdir()
+                (attempt / "events.jsonl").write_text("", encoding="utf-8")
+                (attempt / "manifest.json").write_text(json.dumps({
+                    "status": status, "coverage_gaps": [], "site": {"name": SITES[site].name},
+                    "requested_starttime": start.isoformat(), "requested_endtime": end.isoformat(),
+                    "events_file": "events.jsonl",
+                }), encoding="utf-8")
+            self.assertEqual(set(captured_history_windows(cutoff, root)), {1, 3})
+            with patch("sys.argv", ["history_plan", "--cutoff", "2026-09-29", "--output",
+                                    str(root), "--resume-preview"]):
+                with redirect_stdout(io.StringIO()) as output:
+                    main()
+            self.assertIn("Locally captured windows: 2 of 180", output.getvalue())
+            self.assertIn("Next uncaptured: 2 seattle", output.getvalue())
+
     def test_three_sites_get_sixty_contiguous_windows_each(self) -> None:
         cutoff = datetime(2026, 9, 29, tzinfo=UTC)
         windows = history_windows(cutoff)
