@@ -37,7 +37,7 @@ The local Snowflake CLI admin connection works. The [Phase 0 bootstrap SQL](../s
 
 ## Phase 1 raw tables
 
-The [raw-table SQL](../sql/phase1_raw_tables.sql) created `QUAKEWATCH.RAW.BATCH_ATTEMPT` and `QUAKEWATCH.RAW.RAW_EVENT_RECORDS` under `QUAKEWATCH_ROLE` on 2026-09-29. `DESCRIBE TABLE` confirmed 21 and 10 columns respectively, including the full-source `PAYLOAD VARIANT`. The first 15-row Seattle attempt was loaded on 2026-09-29; see [results](results.md). Repeat-run and wider history evidence remain pending.
+The [raw-table SQL](../sql/phase1_raw_tables.sql) created `QUAKEWATCH.RAW.BATCH_ATTEMPT` and `QUAKEWATCH.RAW.RAW_EVENT_RECORDS` under `QUAKEWATCH_ROLE` on 2026-09-29. `DESCRIBE TABLE` confirmed 21 and 10 columns respectively, including the full-source `PAYLOAD VARIANT`. Seattle attempts with 15 and 167 rows were loaded on 2026-09-29; see [results](results.md). Repeat-run and wider history evidence remain pending.
 
 The [RAW COPY mapping](../sql/phase1_copy_raw.sql) selects each JSONL record's capture metadata and full `source_feature`, plus Snowflake's staged filename and file row number. It ran for the first Seattle attempt. Its `attempt_id` template value names the unique stage directory containing that attempt's `events.jsonl`. Reconcile the COPY result and RAW row count against the completed manifest before recording a successful load.
 
