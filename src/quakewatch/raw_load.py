@@ -1,6 +1,8 @@
 """Local safeguards before and after a Snowflake RAW copy."""
 
 import json
+import re
+import argparse
 from pathlib import Path
 from typing import Any
 
@@ -51,3 +53,38 @@ def reconcile_loaded_rows(expected: int, copy_rows: int, raw_rows: int) -> None:
         raise LoadReconciliationError(
             f"row counts disagree (local={expected}, copied={copy_rows}, raw={raw_rows})"
         )
+
+
+def plan_raw_load(manifest_path: Path) -> dict[str, Any]:
+    """Build a read-only plan for one completed attempt; make no account calls."""
+    manifest, row_count = validate_local_batch(manifest_path)
+    attempt_id = manifest["attempt_id"]
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", attempt_id):
+        raise LoadReconciliationError("unsafe attempt ID for stage path")
+    events_path = (manifest_path.parent / "events.jsonl").resolve()
+    stage_path = f"@QUAKEWATCH.RAW.USGS_JSON_STAGE/{attempt_id}"
+    copy_template = Path("sql/phase1_copy_raw.sql").read_text(encoding="utf-8")
+    return {
+        "attempt_id": attempt_id,
+        "expected_rows": row_count,
+        "events_path": str(events_path),
+        "stage_path": stage_path,
+        "put_sql": f"PUT '{events_path.as_uri()}' {stage_path} AUTO_COMPRESS=FALSE OVERWRITE=FALSE",
+        "copy_sql": copy_template.replace("{{ attempt_id }}", attempt_id),
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Inspect a RAW load plan from the repository root")
+    parser.add_argument("manifest", type=Path)
+    args = parser.parse_args()
+    plan = plan_raw_load(args.manifest)
+    print(f"Attempt: {plan['attempt_id']}")
+    print(f"Expected RAW rows: {plan['expected_rows']}")
+    print(f"Local file: {plan['events_path']}")
+    print(f"Stage path: {plan['stage_path']}")
+    print("No upload, COPY, or account connection performed.")
+
+
+if __name__ == "__main__":
+    main()

@@ -5,7 +5,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from quakewatch.raw_load import LoadReconciliationError, reconcile_loaded_rows, validate_local_batch
+from quakewatch.raw_load import (
+    LoadReconciliationError,
+    plan_raw_load,
+    reconcile_loaded_rows,
+    validate_local_batch,
+)
 
 
 class RawLoadTests(unittest.TestCase):
@@ -61,3 +66,18 @@ class RawLoadTests(unittest.TestCase):
             reconcile_loaded_rows(1, 0, 1)
         with self.assertRaisesRegex(LoadReconciliationError, "raw=0"):
             reconcile_loaded_rows(1, 1, 0)
+
+    def test_plan_uses_attempt_specific_stage_path(self) -> None:
+        plan = plan_raw_load(self.root / "manifest.json")
+        self.assertEqual(plan["expected_rows"], 1)
+        self.assertEqual(plan["stage_path"], "@QUAKEWATCH.RAW.USGS_JSON_STAGE/attempt")
+        self.assertIn("/attempt/events.jsonl", plan["copy_sql"])
+        self.assertNotIn("{{ attempt_id }}", plan["copy_sql"])
+        self.assertIn("AUTO_COMPRESS=FALSE OVERWRITE=FALSE", plan["put_sql"])
+
+    def test_unsafe_attempt_id_blocks_plan(self) -> None:
+        self.manifest["attempt_id"] = "bad/id"
+        self.record["metadata"]["attempt_id"] = "bad/id"
+        self.write_batch()
+        with self.assertRaisesRegex(LoadReconciliationError, "unsafe attempt ID"):
+            plan_raw_load(self.root / "manifest.json")
