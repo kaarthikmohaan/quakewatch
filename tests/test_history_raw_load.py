@@ -42,6 +42,6 @@ class HistoryRawLoadTests(unittest.TestCase):
 
     def test_invalid_limit_blocks_account_work(self) -> None:
         with patch("quakewatch.history_raw_load.check_snowflake") as check:
-            with self.assertRaisesRegex(ValueError, "between 1 and 10"):
-                load_ready([], object(), 11)
+            with self.assertRaisesRegex(ValueError, "between 1 and 50"):
+                load_ready([], object(), 51)
         check.assert_not_called()

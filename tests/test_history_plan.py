@@ -24,8 +24,9 @@ class HistoryPlanTests(unittest.TestCase):
             self.assertEqual(selected, [1, 2])
             extract.assert_not_called()
             self.assertIn("no USGS or Snowflake calls made", output.getvalue())
-            with self.assertRaisesRegex(ValueError, "between 1 and 10"):
-                resume_capture(cutoff, Path(folder), 11, False)
+            with self.assertRaisesRegex(ValueError, "between 1 and 50"):
+                resume_capture(cutoff, Path(folder), 51, False)
+            self.assertEqual(len(resume_capture(cutoff, Path(folder), 50, False)), 50)
 
     def test_resume_stops_on_failed_manifest(self) -> None:
         cutoff = datetime(2026, 9, 29, tzinfo=UTC)

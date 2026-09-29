@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from quakewatch.extract_batch import iso_utc, parse_utc, run_batch
-from quakewatch.settings import EVENT_HORIZON_YEARS, SITES
+from quakewatch.settings import EVENT_HORIZON_YEARS, MAX_HISTORY_BATCH_WINDOWS, SITES
 
 
 def months_before(value: datetime, months: int) -> datetime:
@@ -66,8 +66,8 @@ def captured_history_windows(cutoff: datetime, output: Path) -> dict[int, Path]:
 
 def resume_capture(cutoff: datetime, output: Path, max_windows: int, execute: bool) -> list[int]:
     """Process a bounded consecutive run, stopping at the first source gap."""
-    if not 1 <= max_windows <= 10:
-        raise ValueError("max-windows must be between 1 and 10")
+    if not 1 <= max_windows <= MAX_HISTORY_BATCH_WINDOWS:
+        raise ValueError(f"max-windows must be between 1 and {MAX_HISTORY_BATCH_WINDOWS}")
     windows = history_windows(cutoff)
     captured = captured_history_windows(cutoff, output)
     pending = [number for number in range(1, len(windows) + 1) if number not in captured]
@@ -97,7 +97,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=Path("data/raw"))
     parser.add_argument("--resume-preview", action="store_true", help="Show next uncaptured local window")
     parser.add_argument("--resume", action="store_true", help="Process consecutive uncaptured windows")
-    parser.add_argument("--max-windows", type=int, help="Resume limit, 1 to 10")
+    parser.add_argument("--max-windows", type=int, help="Resume limit, 1 to 50")
     args = parser.parse_args()
     windows = history_windows(args.cutoff)
     if args.resume:
