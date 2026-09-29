@@ -1,0 +1,40 @@
+{
+  "geometry": {
+    "coordinates": [
+      -115.37,
+      36.0632,
+      16
+    ],
+    "type": "Point"
+  },
+  "id": "nn00925000",
+  "properties": {
+    "alert": null,
+    "cdi": null,
+    "code": "00925000",
+    "detail": "https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=nn00925000&format=geojson",
+    "dmin": null,
+    "felt": null,
+    "gap": null,
+    "ids": ",nn00925000,",
+    "mag": 1.68,
+    "magType": null,
+    "mmi": null,
+    "net": "nn",
+    "nst": null,
+    "place": null,
+    "rms": null,
+    "sig": 0,
+    "sources": ",nn,",
+    "status": "deleted",
+    "time": 1790626719577,
+    "title": "M 1.7 - ",
+    "tsunami": 0,
+    "type": "earthquake",
+    "types": null,
+    "tz": null,
+    "updated": 1790647527773,
+    "url": "https://earthquake.usgs.gov/earthquakes/eventpage/nn00925000"
+  },
+  "type": "Feature"
+}

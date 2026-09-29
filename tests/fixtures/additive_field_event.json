@@ -1,0 +1,46 @@
+{
+  "geometry": {
+    "coordinates": [
+      -121.516666666667,
+      46.211,
+      0.18
+    ],
+    "type": "Point"
+  },
+  "id": "uw714110682",
+  "properties": {
+    "alert": null,
+    "cdi": null,
+    "code": "714110682",
+    "detail": "https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=uw714110682&format=geojson",
+    "dmin": 0.09074,
+    "felt": null,
+    "future_catalog_field": {
+      "nested": [
+        "kept",
+        42
+      ]
+    },
+    "gap": 128,
+    "ids": ",uw714110682,",
+    "mag": 1.08,
+    "magType": "md",
+    "mmi": null,
+    "net": "uw",
+    "nst": 14,
+    "place": "23 km N of Trout Lake, Washington",
+    "rms": 0.15,
+    "sig": 18,
+    "sources": ",uw,",
+    "status": "reviewed",
+    "time": 1790553915410,
+    "title": "M 1.1 - 23 km N of Trout Lake, Washington",
+    "tsunami": 0,
+    "type": "earthquake",
+    "types": ",origin,phase-data,",
+    "tz": null,
+    "updated": 1790629112380,
+    "url": "https://earthquake.usgs.gov/earthquakes/eventpage/uw714110682"
+  },
+  "type": "Feature"
+}

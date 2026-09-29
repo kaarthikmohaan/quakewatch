@@ -1,0 +1,6 @@
+{
+  "count_before": 2,
+  "count_after": 2,
+  "feature_fixture": "normal_event.json",
+  "window_duration_microseconds": 1
+}
