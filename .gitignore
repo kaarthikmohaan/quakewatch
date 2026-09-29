@@ -1,0 +1,24 @@
+# Python environments and caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Credentials and private settings
+.env
+.env.*
+!.env.example
+*.pem
+*.p8
+
+# Local extracted data and outputs
+data/
+*.log
+
+# OS and editors
+.DS_Store
+.idea/
+.vscode/
