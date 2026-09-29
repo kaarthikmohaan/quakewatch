@@ -30,6 +30,7 @@ from quakewatch.settings import (
 
 MAX_HTTP_ATTEMPTS = 4
 MAX_WINDOW_RECONCILIATION_ATTEMPTS = 3
+MAX_TIMEOUT_SPLIT_DEPTH = 3
 
 
 class ExtractionError(RuntimeError):
@@ -150,8 +151,9 @@ def fetch_window(
     start: datetime,
     end: datetime,
     window_id: str,
+    timeout_split_depth: int = 0,
 ) -> tuple[list[tuple[dict[str, Any], str]], list[dict[str, Any]]]:
-    """Fetch one window; recursively split when it is too large or won't reconcile."""
+    """Fetch one window; split oversized, mismatched, or timed-out requests."""
     params = source_params(site, start, end)
     last_issue = "source count changed during fetch"
 
@@ -167,6 +169,11 @@ def fetch_window(
     for attempt in range(1, MAX_WINDOW_RECONCILIATION_ATTEMPTS + 1):
         try:
             count_before = get_count(client, params)
+        except httpx.ReadTimeout as exc:
+            last_issue = f"source count timed out: {exc}"
+            if timeout_split_depth >= MAX_TIMEOUT_SPLIT_DEPTH:
+                raise ExtractionError(f"{window_id}: {last_issue}", [unresolved(last_issue)]) from exc
+            break
         except (httpx.HTTPError, ExtractionError) as exc:
             raise ExtractionError(f"{window_id}: {exc}", [unresolved(str(exc))]) from exc
         if count_before >= MAX_TARGET_RESULTS_PER_WINDOW:
@@ -179,6 +186,11 @@ def fetch_window(
         try:
             features = get_features(client, params)
             count_after = get_count(client, params)
+        except httpx.ReadTimeout as exc:
+            last_issue = f"source fetch/count timed out: {exc}"
+            if timeout_split_depth >= MAX_TIMEOUT_SPLIT_DEPTH:
+                raise ExtractionError(f"{window_id}: {last_issue}", [unresolved(last_issue)]) from exc
+            break
         except (httpx.HTTPError, ExtractionError) as exc:
             raise ExtractionError(f"{window_id}: {exc}", [unresolved(str(exc))]) from exc
         if len(features) == count_before == count_after:
@@ -216,7 +228,8 @@ def fetch_window(
     for suffix, (child_start, child_end) in zip(("a", "b"), (left, right), strict=True):
         try:
             child_rows, child_audits = fetch_window(
-                client, site, child_start, child_end, f"{window_id}.{suffix}"
+                client, site, child_start, child_end, f"{window_id}.{suffix}",
+                timeout_split_depth + 1,
             )
         except ExtractionError as exc:
             exc.window_audit = [*audits, *exc.window_audit]

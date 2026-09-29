@@ -42,6 +42,43 @@ class GetFeaturesTests(unittest.TestCase):
 
 
 class FetchWindowTests(unittest.TestCase):
+    def test_parent_count_timeout_splits_into_reconciled_children(self) -> None:
+        start = datetime(2022, 8, 29, tzinfo=timezone.utc)
+        end = datetime(2022, 9, 29, tzinfo=timezone.utc)
+        parent = source_params(SITES["seattle"], start, end)
+        parent_bounds = (parent["starttime"], parent["endtime"])
+        requests = []
+
+        def respond(request: httpx.Request) -> httpx.Response:
+            bounds = (request.url.params["starttime"], request.url.params["endtime"])
+            requests.append((request.url.path, bounds))
+            if request.url.path.endswith("/count"):
+                if bounds == parent_bounds:
+                    raise httpx.ReadTimeout("parent timed out")
+                return httpx.Response(200, json={"count": 0})
+            return httpx.Response(200, json={"type": "FeatureCollection", "features": []})
+
+        with patch("quakewatch.extract_batch.time.sleep"):
+            with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+                rows, audits = fetch_window(client, SITES["seattle"], start, end, "timeout")
+        self.assertEqual(rows, [])
+        self.assertEqual([audit["status"] for audit in audits], ["split", "reconciled", "reconciled"])
+        self.assertIn("timed out", audits[0]["reason"])
+        self.assertFalse(any(path.endswith("/query") and bounds == parent_bounds
+                             for path, bounds in requests))
+
+    def test_repeated_child_timeout_remains_explicit_gap(self) -> None:
+        start = datetime(2022, 8, 29, tzinfo=timezone.utc)
+        end = datetime(2022, 9, 29, tzinfo=timezone.utc)
+        transport = httpx.MockTransport(lambda request: (_ for _ in ()).throw(
+            httpx.ReadTimeout("still timed out")))
+        with patch("quakewatch.extract_batch.time.sleep"):
+            with httpx.Client(transport=transport) as client:
+                with self.assertRaises(ExtractionError) as caught:
+                    fetch_window(client, SITES["seattle"], start, end, "timeout")
+        self.assertEqual([audit["status"] for audit in caught.exception.window_audit],
+                         ["split", "split", "split", "unresolved"])
+
     def test_incomplete_window_marks_batch_failed(self) -> None:
         case = json.loads((FIXTURES / "incomplete_window_case.json").read_text(encoding="utf-8"))
         feature = json.loads((FIXTURES / "normal_event.json").read_text(encoding="utf-8"))
