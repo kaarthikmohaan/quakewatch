@@ -36,11 +36,13 @@ class UpdateExtractTests(unittest.TestCase):
         client = httpx.Client(transport=httpx.MockTransport(respond))
         with tempfile.TemporaryDirectory() as directory:
             with patch('quakewatch.update_extract.httpx.Client', return_value=client):
-                path = run_update_sweep(*self.values, Path(directory), years_per_window=100)
+                path = run_update_sweep(*self.values, Path(directory), years_per_window=100,
+                                        recent_start_year=2026)
             manifest, count = validate_local_batch(path)
-            self.assertEqual(count, 3)
+            self.assertEqual(count, 4)
             self.assertEqual([a['status'] for a in manifest['window_audit']],
-                             ['split', 'split', 'reconciled', 'reconciled', 'reconciled'])
+                             ['split', 'split', 'reconciled', 'reconciled',
+                              'reconciled', 'reconciled'])
             self.assertFalse(manifest['watermark_advanced'])
             self.assertEqual(manifest['last_committed_watermark'], '2026-09-29T00:00:00.000Z')
             self.assertEqual(manifest['coverage_gaps'], [])
@@ -65,10 +67,12 @@ class UpdateExtractTests(unittest.TestCase):
     def test_planned_windows_are_contiguous_and_bounded(self):
         windows = initial_sweep_windows(datetime(1, 1, 1, tzinfo=UTC),
                                         datetime(2026, 9, 30, tzinfo=UTC), 50)
-        self.assertEqual(len(windows), 41)
+        self.assertEqual(len(windows), 46)
         self.assertEqual(windows[0][0], datetime(1, 1, 1, tzinfo=UTC))
         self.assertEqual(windows[-1][1], datetime(2026, 9, 30, tzinfo=UTC))
         self.assertTrue(all(a[1] == b[0] for a, b in zip(windows, windows[1:])))
+        self.assertEqual(windows[39][1], datetime(2001, 1, 1, tzinfo=UTC))
+        self.assertEqual(windows[40][1], datetime(2006, 1, 1, tzinfo=UTC))
 
     def test_deadline_after_first_child_preserves_precise_gap(self):
         values = (datetime(2024, 1, 1, tzinfo=UTC), datetime(2026, 1, 1, tzinfo=UTC),
@@ -81,7 +85,8 @@ class UpdateExtractTests(unittest.TestCase):
             with patch('quakewatch.update_extract.fetch_window',
                        side_effect=[first, SourceDeadlineExceeded('deadline')]):
                 with self.assertRaises(SourceDeadlineExceeded):
-                    run_update_sweep(*values, Path(directory), years_per_window=1)
+                    run_update_sweep(*values, Path(directory), years_per_window=1,
+                                     recent_years_per_window=1)
             m = json.loads(next(Path(directory).glob('*/manifest.json')).read_text())
             self.assertEqual([a['status'] for a in m['window_audit']],
                              ['split', 'reconciled', 'unresolved'])
