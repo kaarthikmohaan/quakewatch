@@ -54,3 +54,42 @@ def deduplicate_revision_candidates(
         ):
             by_revision[candidate.revision_key] = candidate
     return [by_revision[key] for key in sorted(by_revision)]
+
+
+@dataclass(frozen=True)
+class RevisionState(RevisionCandidate):
+    origin_time: datetime
+    source_status: str
+
+
+def latest_revision_by_event(revisions: Iterable[RevisionState]) -> dict[str, RevisionState]:
+    """Select the newest revision, including a latest deleted tombstone."""
+    latest: dict[str, RevisionState] = {}
+    for revision in revisions:
+        if not revision.canonical_event_id or not revision.source_status:
+            raise ValueError("current revision requires canonical ID and source status")
+        if any(
+            clock.tzinfo is None
+            for clock in (revision.origin_time, revision.source_updated_at, revision.fetched_at)
+        ):
+            raise ValueError("current revision timestamps must be timezone-aware")
+        previous = latest.get(revision.canonical_event_id)
+        rank = (
+            revision.source_updated_at, revision.fetched_at, revision.payload_hash,
+            revision.stage_file_name, revision.stage_file_row_number,
+        )
+        if previous is None or rank > (
+            previous.source_updated_at, previous.fetched_at, previous.payload_hash,
+            previous.stage_file_name, previous.stage_file_row_number,
+        ):
+            latest[revision.canonical_event_id] = revision
+    return latest
+
+
+def visible_current_revisions(revisions: Iterable[RevisionState]) -> dict[str, RevisionState]:
+    """Hide an event only when its latest revision is a deleted tombstone."""
+    return {
+        event_id: revision
+        for event_id, revision in latest_revision_by_event(revisions).items()
+        if revision.source_status != "deleted"
+    }
