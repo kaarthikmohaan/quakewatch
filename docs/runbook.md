@@ -89,6 +89,8 @@ Preview the [isolated current-view fixture check](phase2-current-fixture-plan.md
 
 The next [procedure-level fixture plan](phase2-procedure-fixture-plan.md) requires a separate test database because the deployed Snowpark code uses fully qualified project table names. Validate the namespace with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_namespace.py`, then build the ignored local test-only ZIP and SQL with `PYTHONPATH=src:. .venv/bin/python scripts/build_phase2_fixture_bundle.py`. Neither command connects. No test database or copied procedure has been created in Snowflake.
 
+The proposed [fixture database setup SQL](../sql/phase2_fixture_setup.sql) is review-only. It creates a new database and narrow project-role grants, and deliberately stops on a name collision. Check the target name and obtain separate approval for any live account change or possible charge before using it.
+
 ## Update-sweep preview
 
 `quakewatch.update_plan` prints a local plan only. Supply the catalog origin-time lower bound, a fixed origin-time cutoff, the prior committed update watermark, the sweep start, and a positive overlap in seconds. The resulting `updatedafter` is the prior watermark minus overlap; no spatial or magnitude filters are added. The proposed next watermark is the fixed sweep start. The planner does not persist or advance any watermark and does not count-size, extract, or load windows yet. Execution must verify all bounded source windows and their RAW loads before a later implementation can commit that watermark; failed or incomplete sweeps must retain the previous one.
