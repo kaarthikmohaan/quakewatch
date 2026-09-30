@@ -85,6 +85,8 @@ The first pilot completed on 2026-09-30: 15 staged rows, 15 revision rows, 45 br
 
 The [one-attempt rerun plan](phase2-rerun-plan.md) uses `PYTHONPATH=src:. .venv/bin/python scripts/phase2_rerun_check.py` for an offline preview. Its approved `--execute` run completed on 2026-09-30: zero revisions merged, model counts unchanged, and a second processing audit appended. See [measured results](results.md). Its first-pilot-state guard now prevents another live execution.
 
+Preview the [isolated current-view fixture check](phase2-current-fixture-plan.md) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_current_fixture.py`. It does not connect or modify Snowflake. The separately approved `--execute` mode will use a temporary revision table for a synthetic update, tombstone, and stale replay; it does not load fixtures into permanent RAW or curated tables or call the procedure. No live fixture check has run yet.
+
 ## Update-sweep preview
 
 `quakewatch.update_plan` prints a local plan only. Supply the catalog origin-time lower bound, a fixed origin-time cutoff, the prior committed update watermark, the sweep start, and a positive overlap in seconds. The resulting `updatedafter` is the prior watermark minus overlap; no spatial or magnitude filters are added. The proposed next watermark is the fixed sweep start. The planner does not persist or advance any watermark and does not count-size, extract, or load windows yet. Execution must verify all bounded source windows and their RAW loads before a later implementation can commit that watermark; failed or incomplete sweeps must retain the previous one.
