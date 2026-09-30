@@ -39,6 +39,8 @@ The approved guarded setup then created `QUAKEWATCH_PHASE2_FIXTURE` with `RAW` a
 
 The separately approved fixture deployment ran on 2026-09-30 using the project key-pair role. Its empty-schema guard passed, and its account package check found Python 3.12 with pinned `snowflake-snowpark-python` 1.55.0. The terminal reported `stage_upload: UPLOADED` and `ddl_statements_executed: 16` for the isolated `QUAKEWATCH_PHASE2_FIXTURE` database. These statements created the fixture RAW/curated objects and copied procedure. No synthetic fixture rows were loaded or processed. Warehouse credits and stage storage were not measured.
 
+The approved synthetic fixture RAW load then reported one loaded row for each isolated attempt: `fixture-original-v1`, `fixture-update-v1`, `fixture-deletion-v1`, and `fixture-stale-replay-v1`. The loader checked each COPY result against its attempt-filtered RAW count before appending a complete synthetic receipt. These four rows are local test fixtures, not USGS query results or coverage evidence. No fixture procedure call has run; warehouse and storage charges were not measured.
+
 ## Not measured yet
 
 - Overlapping-batch idempotency and procedure-level revision/tombstone behavior

@@ -97,9 +97,9 @@ Preview the [guarded fixture setup](../scripts/phase2_fixture_setup.py) with `PY
 
 Preview [fixture object deployment](../scripts/phase2_fixture_deploy.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_deploy.py`. It validates the reviewed ZIP hash and generated SQL without connecting. Its approved live mode completed on 2026-09-30 after empty-schema and package-catalog checks: the terminal reported the ZIP uploaded and 16 SQL statements executed. It made no procedure call or fixture RAW load. Its empty-schema guard now prevents rerunning the deployment command.
 
-Build the four ignored, synthetic RAW attempts locally with `PYTHONPATH=src:. .venv/bin/python scripts/build_phase2_fixture_attempts.py`. The [fixture plan](phase2-procedure-fixture-plan.md) explains their provenance and order. Each attempt has one source feature and an internally reconciled synthetic manifest; no USGS count or coverage claim is made. These files have not been uploaded or loaded into Snowflake.
+Build the four ignored, synthetic RAW attempts locally with `PYTHONPATH=src:. .venv/bin/python scripts/build_phase2_fixture_attempts.py`. The [fixture plan](phase2-procedure-fixture-plan.md) explains their provenance and order. Each attempt has one source feature and an internally reconciled synthetic manifest; no USGS count or coverage claim is made. These files were loaded into the isolated fixture RAW schema on 2026-09-30.
 
-Preview the [isolated fixture RAW loader](../scripts/phase2_fixture_raw_load.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_raw_load.py`. It validates all four local attempts without connecting. Its live mode requires separate cost approval; it stops unless fixture RAW tables and attempt stage paths are empty, then PUT/COPY loads one row per attempt, reconciles counts, and appends synthetic receipts. No fixture RAW load has run yet.
+Preview the [isolated fixture RAW loader](../scripts/phase2_fixture_raw_load.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_raw_load.py`. It validates all four local attempts without connecting. Its approved live run on 2026-09-30 loaded and reconciled one row in each test RAW attempt and appended synthetic receipts. The empty-table guard now prevents rerunning this loader; the copied procedure has not yet been called.
 
 ## Update-sweep preview
 
