@@ -37,6 +37,8 @@ The separately approved admin metadata preflight on 2026-09-30 reported `QUAKEWA
 
 The approved guarded setup then created `QUAKEWATCH_PHASE2_FIXTURE` with `RAW` and `CURATED` schemas and narrow creation grants for `QUAKEWATCH_ROLE`. The terminal reported `statements_executed: 12` and both schemas after post-setup verification. No fixture stage, tables, or procedure were created in this step. Metadata/storage charges were not measured.
 
+The separately approved fixture deployment ran on 2026-09-30 using the project key-pair role. Its empty-schema guard passed, and its account package check found Python 3.12 with pinned `snowflake-snowpark-python` 1.55.0. The terminal reported `stage_upload: UPLOADED` and `ddl_statements_executed: 16` for the isolated `QUAKEWATCH_PHASE2_FIXTURE` database. These statements created the fixture RAW/curated objects and copied procedure. No synthetic fixture rows were loaded or processed. Warehouse credits and stage storage were not measured.
+
 ## Not measured yet
 
 - Overlapping-batch idempotency and procedure-level revision/tombstone behavior
