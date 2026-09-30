@@ -58,7 +58,8 @@ def _count(cursor, sql: str, params: tuple = ()) -> int:
 
 def _guard_empty_curated(cursor) -> None:
     for kind in ("TABLES", "VIEWS", "PROCEDURES"):
-        cursor.execute(f"SHOW {kind} IN SCHEMA QUAKEWATCH.CURATED")
+        command = "SHOW USER PROCEDURES" if kind == "PROCEDURES" else f"SHOW {kind}"
+        cursor.execute(f"{command} IN SCHEMA QUAKEWATCH.CURATED")
         rows = cursor.fetchall()
         if rows:
             columns = [column[0].lower() for column in cursor.description]

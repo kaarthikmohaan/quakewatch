@@ -61,6 +61,12 @@ class Phase2PilotTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "already has tables"):
             _guard_empty_curated(cursor)
 
+    def test_preflight_uses_user_procedures_to_exclude_builtins(self):
+        cursor = FakeCursor()
+        _guard_empty_curated(cursor)
+        self.assertEqual(cursor.calls[-1][0],
+                         "SHOW USER PROCEDURES IN SCHEMA QUAKEWATCH.CURATED")
+
     def test_preflight_rejects_bad_receipt_or_raw_count(self):
         for cursor in (FakeCursor(receipt_rows=[]), FakeCursor(raw_count=14)):
             with self.subTest(cursor=cursor), self.assertRaises(RuntimeError):
