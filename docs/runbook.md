@@ -87,6 +87,8 @@ The [one-attempt rerun plan](phase2-rerun-plan.md) uses `PYTHONPATH=src:. .venv/
 
 Preview the [isolated current-view fixture check](phase2-current-fixture-plan.md) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_current_fixture.py`. It does not connect or modify Snowflake. The approved `--execute` mode used a temporary revision table for a synthetic update, tombstone, and stale replay; it did not load fixtures into permanent RAW or curated tables or call the procedure. The 2026-09-30 run passed; see [measured results](results.md).
 
+The next [procedure-level fixture plan](phase2-procedure-fixture-plan.md) requires a separate test database because the deployed Snowpark code uses fully qualified project table names. No test database or copied procedure has been created. Validate the namespace rewrite offline before considering any live setup or compute.
+
 ## Update-sweep preview
 
 `quakewatch.update_plan` prints a local plan only. Supply the catalog origin-time lower bound, a fixed origin-time cutoff, the prior committed update watermark, the sweep start, and a positive overlap in seconds. The resulting `updatedafter` is the prior watermark minus overlap; no spatial or magnitude filters are added. The proposed next watermark is the fixed sweep start. The planner does not persist or advance any watermark and does not count-size, extract, or load windows yet. Execution must verify all bounded source windows and their RAW loads before a later implementation can commit that watermark; failed or incomplete sweeps must retain the previous one.
