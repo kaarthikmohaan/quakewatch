@@ -109,3 +109,75 @@ class UpdateExtractTests(unittest.TestCase):
             self.assertEqual(m['coverage_gaps'][0]['starttime'], '2025-01-01T00:00:00.000Z')
             self.assertFalse(m['watermark_advanced'])
             self.assertFalse(list(Path(directory).glob('*/events.jsonl')))
+
+    def test_retry_reuses_validated_child_from_same_frozen_sweep(self):
+        values = (datetime(2024, 1, 1, tzinfo=UTC), datetime(2026, 1, 1, tzinfo=UTC),
+                  datetime(2025, 1, 1, tzinfo=UTC), datetime(2026, 1, 1, tzinfo=UTC), 86400)
+        def child(index):
+            year = 2023 + index
+            window_id = f'w0001.{index}'
+            return ([({'id': f'event-{index}'}, window_id)], [{
+                'window_id': window_id, 'starttime': f'{year}-01-01T00:00:00.000Z',
+                'endtime': f'{year + 1}-01-01T00:00:00.000Z', 'status': 'reconciled',
+                'count_before': 1, 'returned_rows': 1, 'count_after': 1}])
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch('quakewatch.update_extract.fetch_window',
+                       side_effect=[child(1), SourceDeadlineExceeded('deadline')]):
+                with self.assertRaises(SourceDeadlineExceeded):
+                    run_update_sweep(*values, root, years_per_window=1,
+                                     recent_years_per_window=1, resume_children=True)
+            failed_path = next(root.glob('*/manifest.json'))
+            self.assertFalse((failed_path.parent / 'events.jsonl').exists())
+            with patch('quakewatch.update_extract.fetch_window', return_value=child(2)) as fetch:
+                complete_path = run_update_sweep(*values, root, years_per_window=1,
+                                                 recent_years_per_window=1,
+                                                 resume_children=True)
+            self.assertEqual(fetch.call_count, 1)
+            manifest, count = validate_local_batch(complete_path)
+            self.assertEqual(count, 2)
+            self.assertEqual(manifest['reused_child_windows'], ['w0001.1'])
+            self.assertEqual(manifest['source_rows_reused'], 1)
+            self.assertEqual(manifest['source_rows_fetched_this_attempt'], 1)
+            self.assertFalse(manifest['watermark_advanced'])
+
+    def test_tampered_checkpoint_is_refetched(self):
+        values = (datetime(2024, 1, 1, tzinfo=UTC), datetime(2025, 1, 1, tzinfo=UTC),
+                  datetime(2024, 1, 1, tzinfo=UTC), datetime(2025, 1, 1, tzinfo=UTC), 86400)
+        child = ([({'id': 'event'}, 'w0001')], [{
+            'window_id': 'w0001', 'starttime': '2024-01-01T00:00:00.000Z',
+            'endtime': '2025-01-01T00:00:00.000Z', 'status': 'reconciled',
+            'count_before': 1, 'returned_rows': 1, 'count_after': 1}])
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch('quakewatch.update_extract.fetch_window', return_value=child):
+                first = run_update_sweep(*values, root, years_per_window=1,
+                                         resume_children=True)
+            checkpoint = first.parent / 'children' / 'w0001.json'
+            wrapper = json.loads(checkpoint.read_text())
+            wrapper['payload']['features'][0][0]['id'] = 'tampered'
+            checkpoint.write_text(json.dumps(wrapper))
+            with patch('quakewatch.update_extract.fetch_window', return_value=child) as fetch:
+                second = run_update_sweep(*values, root, years_per_window=1,
+                                          resume_children=True)
+            self.assertEqual(fetch.call_count, 1)
+            manifest, count = validate_local_batch(second)
+            self.assertEqual(count, 1)
+            self.assertEqual(manifest['reused_child_windows'], [])
+
+    def test_different_sweep_start_does_not_reuse_checkpoint(self):
+        values = (datetime(2024, 1, 1, tzinfo=UTC), datetime(2025, 1, 1, tzinfo=UTC),
+                  datetime(2024, 1, 1, tzinfo=UTC), datetime(2025, 1, 1, tzinfo=UTC), 86400)
+        child = ([], [{
+            'window_id': 'w0001', 'starttime': '2024-01-01T00:00:00.000Z',
+            'endtime': '2025-01-01T00:00:00.000Z', 'status': 'reconciled',
+            'count_before': 0, 'returned_rows': 0, 'count_after': 0}])
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch('quakewatch.update_extract.fetch_window', return_value=child):
+                run_update_sweep(*values, root, resume_children=True)
+            later = (*values[:3], datetime(2025, 1, 2, tzinfo=UTC), values[4])
+            with patch('quakewatch.update_extract.fetch_window', return_value=child) as fetch:
+                path = run_update_sweep(*later, root, resume_children=True)
+            self.assertEqual(fetch.call_count, 1)
+            self.assertEqual(json.loads(path.read_text())['reused_child_windows'], [])

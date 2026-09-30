@@ -11,7 +11,8 @@ from pathlib import Path
 import httpx
 
 from quakewatch.extract_batch import (
-    ExtractionError, fetch_window, iso_utc, parse_utc, source_deadline, stable_json,
+    ExtractionError, fetch_window, iso_utc, parse_utc,
+    read_child_checkpoint, save_child_checkpoint, source_deadline, stable_json,
 )
 from quakewatch.settings import PARSER_VERSION, SOURCE_WINDOW_DEADLINE_SECONDS, USER_AGENT
 from quakewatch.update_plan import plan_update_sweep
@@ -62,13 +63,27 @@ def run_update_sweep(catalog_start, cutoff, last_watermark, sweep_started_at,
                      years_per_window: int = 50, recent_start_year: int = 2001,
                      recent_years_per_window: int = 5,
                      monthly_start_year: int | None = None,
-                     recent_months_per_window: int = 1) -> Path:
+                     recent_months_per_window: int = 1,
+                     resume_children: bool = False) -> Path:
     plan = plan_update_sweep(catalog_start, cutoff, last_watermark,
                              sweep_started_at, overlap_seconds)
     initial_windows = initial_sweep_windows(catalog_start, cutoff, years_per_window,
                                             recent_start_year, recent_years_per_window,
                                             monthly_start_year, recent_months_per_window)
     logical_id = hashlib.sha256(stable_json(plan['query_parameters']).encode()).hexdigest()[:20]
+    checkpoints = {}
+    if resume_children:
+        for prior_path in sorted(output_root.glob('*/manifest.json'), reverse=True):
+            try:
+                prior = json.loads(prior_path.read_text(encoding='utf-8'))
+            except (OSError, ValueError):
+                continue
+            if (prior.get('batch_kind') != 'update_sweep'
+                    or prior.get('logical_batch_id') != logical_id
+                    or prior.get('sweep_started_at') != plan['sweep_started_at']):
+                continue
+            for child_path in (prior_path.parent / 'children').glob('*.json'):
+                checkpoints.setdefault(child_path.stem, []).append(child_path)
     attempt_id = f'{datetime.now(UTC):%Y%m%dT%H%M%SZ}-{uuid.uuid4().hex[:10]}'
     directory = output_root / attempt_id
     directory.mkdir(parents=True, exist_ok=False)
@@ -83,6 +98,9 @@ def run_update_sweep(catalog_start, cutoff, last_watermark, sweep_started_at,
                 'recent_source_years': recent_years_per_window,
                 'monthly_start_year': monthly_start_year,
                 'recent_source_months': recent_months_per_window if monthly_start_year else None,
+                'resume_children': resume_children,
+                'reused_child_windows': [], 'source_rows_reused': 0,
+                'source_rows_fetched_this_attempt': 0,
                 'source_rows_returned': 0, 'raw_rows_written': 0,
                 'events_file': 'events.jsonl',
                 'note': 'Extraction only. RAW loading and watermark commit remain pending; '
@@ -97,13 +115,13 @@ def run_update_sweep(catalog_start, cutoff, last_watermark, sweep_started_at,
     audits = []
     active = None
     if len(initial_windows) > 1:
-        sizing = (f'planned slices: {years_per_window} years before '
-                  f'{recent_start_year}, {recent_years_per_window} years after')
+        sizing_note = (f'planned slices: {years_per_window} years before '
+                       f'{recent_start_year}, {recent_years_per_window} years after')
         if monthly_start_year is not None:
-            sizing += f'; {recent_months_per_window} months from {monthly_start_year}'
+            sizing_note += f'; {recent_months_per_window} months from {monthly_start_year}'
         audits.append({'window_id': 'w0001', 'starttime': iso_utc(catalog_start),
                        'endtime': iso_utc(cutoff), 'status': 'split',
-                       'reason': sizing})
+                       'reason': sizing_note})
     try:
         rows = []
         with source_deadline(SOURCE_WINDOW_DEADLINE_SECONDS):
@@ -116,14 +134,42 @@ def run_update_sweep(catalog_start, cutoff, last_watermark, sweep_started_at,
                                                  'endtime': iso_utc(child_end)}
                     manifest['window_audit'] = audits
                     save()
-                    try:
-                        child_rows, child_audits = fetch_window(
-                            client, None, child_start, child_end, window_id,
-                            query_base=plan['query_parameters'])
-                    except ExtractionError as exc:
-                        exc.window_audit = [*audits, *exc.window_audit]
-                        raise
-                    rows.extend(child_rows)
+                    params = {**plan['query_parameters'], 'starttime': iso_utc(child_start),
+                              'endtime': iso_utc(child_end)}
+                    checkpoint = (read_child_checkpoint(checkpoints.get(window_id, []),
+                                                        params, window_id)
+                                  if resume_children else None)
+                    if checkpoint is None:
+                        try:
+                            child_rows, child_audits = fetch_window(
+                                client, None, child_start, child_end, window_id,
+                                query_base=plan['query_parameters'])
+                        except ExtractionError as exc:
+                            exc.window_audit = [*audits, *exc.window_audit]
+                            raise
+                        fetched_at = iso_utc(datetime.now(UTC))
+                        manifest['source_rows_fetched_this_attempt'] += len(child_rows)
+                        if resume_children:
+                            child_audits = [{**audit, 'source_fetched_at': fetched_at}
+                                            for audit in child_audits]
+                            save_child_checkpoint(directory / 'children' / f'{window_id}.json', {
+                                'query_parameters': params, 'window_id': window_id,
+                                'attempt_id': attempt_id, 'fetched_at': fetched_at,
+                                'window_audit': child_audits,
+                                'features': [[feature, row_window_id]
+                                             for feature, row_window_id in child_rows],
+                            })
+                    else:
+                        child_rows = [(feature, row_window_id)
+                                      for feature, row_window_id in checkpoint['features']]
+                        child_audits = [{**audit,
+                                         'reused_from_attempt_id': checkpoint['attempt_id']}
+                                        for audit in checkpoint['window_audit']]
+                        fetched_at = checkpoint['fetched_at']
+                        manifest['reused_child_windows'].append(window_id)
+                        manifest['source_rows_reused'] += len(child_rows)
+                    rows.extend((feature, row_window_id, fetched_at)
+                                for feature, row_window_id in child_rows)
                     audits.extend(child_audits)
                     active = None
                     manifest.pop('active_window', None)
@@ -131,10 +177,11 @@ def run_update_sweep(catalog_start, cutoff, last_watermark, sweep_started_at,
                     save()
         temporary_events = directory / 'events.jsonl.tmp'
         with temporary_events.open('w', encoding='utf-8') as stream:
-            for feature, window_id in rows:
+            for feature, window_id, fetched_at in rows:
                 record = {'source_feature': feature, 'metadata': {
                     'logical_batch_id': logical_id, 'attempt_id': attempt_id,
-                    'window_id': window_id, 'fetched_at': manifest['fetched_at'],
+                    'window_id': window_id,
+                    'fetched_at': fetched_at if resume_children else manifest['fetched_at'],
                     'payload_hash': hashlib.sha256(stable_json(feature).encode()).hexdigest(),
                     'parser_version': PARSER_VERSION,
                 }}
@@ -170,6 +217,7 @@ def main():
     parser.add_argument('--recent-years-per-window', type=int, default=5)
     parser.add_argument('--monthly-start-year', type=int)
     parser.add_argument('--recent-months-per-window', type=int, default=1)
+    parser.add_argument('--resume-children', action='store_true')
     parser.add_argument('--execute', action='store_true')
     args = parser.parse_args()
     values = (args.catalog_start, args.cutoff, args.last_watermark,
@@ -189,7 +237,8 @@ def main():
                                                 recent_start_year=args.recent_start_year,
                                                 recent_years_per_window=args.recent_years_per_window,
                                                 monthly_start_year=args.monthly_start_year,
-                                                recent_months_per_window=args.recent_months_per_window))
+                                                recent_months_per_window=args.recent_months_per_window,
+                                                resume_children=args.resume_children))
 
 
 if __name__ == '__main__':
