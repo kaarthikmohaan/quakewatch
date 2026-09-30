@@ -75,6 +75,10 @@ For read-only row checks, use this Python Connector boundary too. The installed 
 
 The loader has an explicit `--execute` path. It checks for an existing attempt receipt or RAW rows, uploads one new file, runs the COPY mapping, compares COPY and attempt-filtered RAW counts with the local manifest, then appends a `BATCH_ATTEMPT` receipt. A COPY or count failure appends a failed receipt if the connection still permits it; a retry needs a new extraction attempt ID. The command without `--execute` remains read-only. Ask for warehouse-cost approval before each live run.
 
+## Phase 2 procedure bundle
+
+The Phase 2 procedure can be bundled offline with `PYTHONPATH=src .venv/bin/python scripts/build_procedure_bundle.py`. It writes `data/procedure/quakewatch_procedure.zip`, an ignored local artifact, and prints its SHA-256. The [procedure definition](../sql/phase2_create_procedure.sql) expects that ZIP at `@QUAKEWATCH.RAW.USGS_JSON_STAGE/procedure/quakewatch_procedure.zip`. Uploading it, creating the procedure, and calling it are separate live steps requiring explicit approval for possible warehouse cost and for the collision handler's curated-row deletions. Do not run the SQL before the stage import exists.
+
 ## Update-sweep preview
 
 `quakewatch.update_plan` prints a local plan only. Supply the catalog origin-time lower bound, a fixed origin-time cutoff, the prior committed update watermark, the sweep start, and a positive overlap in seconds. The resulting `updatedafter` is the prior watermark minus overlap; no spatial or magnitude filters are added. The proposed next watermark is the fixed sweep start. The planner does not persist or advance any watermark and does not count-size, extract, or load windows yet. Execution must verify all bounded source windows and their RAW loads before a later implementation can commit that watermark; failed or incomplete sweeps must retain the previous one.
