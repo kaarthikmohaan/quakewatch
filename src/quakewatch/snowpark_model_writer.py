@@ -6,6 +6,7 @@ from typing import Any, Callable
 
 from quakewatch.process_batch import BatchProjection
 from quakewatch.process_transaction import ProcessOutcome
+from quakewatch.snowpark_alias_rekey import rekey_existing_aliases
 from quakewatch.snowpark_batch_fact_write import write_successful_batch_fact
 from quakewatch.snowpark_dimensions_write import write_dimensions_and_bridge
 from quakewatch.snowpark_process_log import append_process_outcome
@@ -19,8 +20,8 @@ CanonicalResolver = Callable[[Any, BatchProjection], dict[str, str]]
 class SnowparkModelWriter:
     """Run model DML in order; the coordinator owns BEGIN/COMMIT/ROLLBACK.
 
-    The resolver must use durable alias observations. If an existing fact needs
-    rekeying, the revision writer raises and the coordinator rolls back.
+    The resolver must use durable alias observations. Rekey collisions stop
+    before model writes; the coordinator rolls back the staging transaction.
     """
 
     def __init__(self, canonical_resolver: CanonicalResolver):
@@ -30,6 +31,7 @@ class SnowparkModelWriter:
     def write_models(self, session: Any, projection: BatchProjection) -> int:
         write_staging(session, projection)
         canonical_ids = self.canonical_resolver(session, projection)
+        rekey_existing_aliases(session, canonical_ids)
         merged = write_revision_fact(session, projection, canonical_ids)
         write_dimensions_and_bridge(session, projection, canonical_ids)
         self._projection = projection

@@ -21,11 +21,13 @@ class ModelWriterTest(unittest.TestCase):
     @patch("quakewatch.snowpark_model_writer.write_successful_batch_fact")
     @patch("quakewatch.snowpark_model_writer.write_dimensions_and_bridge")
     @patch("quakewatch.snowpark_model_writer.write_revision_fact", return_value=1)
+    @patch("quakewatch.snowpark_model_writer.rekey_existing_aliases")
     @patch("quakewatch.snowpark_model_writer.write_staging")
-    def test_models_then_batch_fact_then_success_log(self, staging, revision, bridge,
-                                                      batch, log):
+    def test_models_then_batch_fact_then_success_log(self, staging, rekey, revision,
+                                                      bridge, batch, log):
         events = []
-        for name, mock in (("staging", staging), ("revision", revision),
+        for name, mock in (("staging", staging), ("rekey", rekey),
+                           ("revision", revision),
                            ("bridge", bridge), ("batch", batch), ("log", log)):
             mock.side_effect = lambda *args, name=name: events.append(name) or (
                 1 if name == "revision" else None
@@ -37,7 +39,8 @@ class ModelWriterTest(unittest.TestCase):
         writer = SnowparkModelWriter(resolve)
         self.assertEqual(writer.write_models(object(), PROJECTION), 1)
         writer.record_success(object(), SUCCESS)
-        self.assertEqual(events, ["staging", "aliases", "revision", "bridge", "batch", "log"])
+        self.assertEqual(events, ["staging", "aliases", "rekey", "revision",
+                                  "bridge", "batch", "log"])
 
     @patch("quakewatch.snowpark_model_writer.append_process_outcome")
     def test_failure_only_appends_log(self, log):
@@ -51,9 +54,10 @@ class ModelWriterTest(unittest.TestCase):
             writer.record_success(object(), SUCCESS)
 
     @patch("quakewatch.snowpark_model_writer.write_staging")
+    @patch("quakewatch.snowpark_model_writer.rekey_existing_aliases")
     @patch("quakewatch.snowpark_model_writer.write_revision_fact",
            side_effect=ValueError("alias rekey required"))
-    def test_rekey_conflict_does_not_continue_to_bridge(self, revision, staging):
+    def test_rekey_conflict_does_not_continue_to_bridge(self, revision, rekey, staging):
         writer = SnowparkModelWriter(lambda _session, _projection: {})
         with patch("quakewatch.snowpark_model_writer.write_dimensions_and_bridge") as bridge:
             with self.assertRaisesRegex(ValueError, "alias rekey required"):
