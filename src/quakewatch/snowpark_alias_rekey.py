@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC
 from typing import Any
 
 from quakewatch.settings import SITES
@@ -32,12 +33,14 @@ WHERE CANONICAL_EVENT_ID = ?
 
 DELETE_FACT_SQL = """
 DELETE FROM QUAKEWATCH.CURATED.FACT_EVENT_REVISION
-WHERE CANONICAL_EVENT_ID = ? AND SOURCE_UPDATED_AT = ? AND PAYLOAD_HASH = ?
+WHERE CANONICAL_EVENT_ID = ? AND SOURCE_UPDATED_AT = TO_TIMESTAMP_TZ(?)
+  AND PAYLOAD_HASH = ?
 """
 
 DELETE_BRIDGE_SQL = """
 DELETE FROM QUAKEWATCH.CURATED.BRIDGE_EVENT_SITE
-WHERE CANONICAL_EVENT_ID = ? AND SOURCE_UPDATED_AT = ? AND PAYLOAD_HASH = ?
+WHERE CANONICAL_EVENT_ID = ? AND SOURCE_UPDATED_AT = TO_TIMESTAMP_TZ(?)
+  AND PAYLOAD_HASH = ?
 """
 
 
@@ -132,7 +135,7 @@ def rekey_existing_aliases(session: Any, canonical_ids: dict[str, str]) -> int:
             fact_update_counts[old] = fact_update_counts.get(old, 0) + 1
             bridge_update_counts[old] = bridge_update_counts.get(old, 0) + bridge_counts.get(original, 0)
     for old, updated_at, payload_hash in sorted(losers):
-        params = [old, updated_at, payload_hash]
+        params = [old, updated_at.astimezone(UTC).isoformat(), payload_hash]
         _require_affected(session, DELETE_BRIDGE_SQL, params,
                           bridge_counts.get((old, updated_at, payload_hash), 0), "deleted")
         _require_affected(session, DELETE_FACT_SQL, params, 1, "deleted")

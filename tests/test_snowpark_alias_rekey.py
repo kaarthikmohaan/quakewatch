@@ -41,7 +41,8 @@ class FakeSession:
         if "DELETE FROM" in query:
             rows = self.bridges if "BRIDGE_EVENT_SITE" in query else self.facts
             matched = [row for row in rows if (
-                row["CANONICAL_EVENT_ID"], row["SOURCE_UPDATED_AT"], row["PAYLOAD_HASH"]
+                row["CANONICAL_EVENT_ID"], row["SOURCE_UPDATED_AT"].isoformat(),
+                row["PAYLOAD_HASH"]
             ) == tuple(params)]
             for row in matched:
                 rows.remove(row)
@@ -96,6 +97,7 @@ class AliasRekeyTest(unittest.TestCase):
         self.assertIn("DELETE FROM QUAKEWATCH.CURATED.BRIDGE_EVENT_SITE", writes[0][0])
         self.assertIn("DELETE FROM QUAKEWATCH.CURATED.FACT_EVENT_REVISION", writes[1][0])
         self.assertEqual(writes[0][1][0], "a")
+        self.assertIn("TO_TIMESTAMP_TZ(?)", writes[0][0])
         self.assertEqual(writes[2][1], ["a", "z"])
 
     def test_collision_without_survivor_bridge_stops_before_write(self):
