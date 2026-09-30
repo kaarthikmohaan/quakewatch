@@ -59,8 +59,16 @@ def _count(cursor, sql: str, params: tuple = ()) -> int:
 def _guard_empty_curated(cursor) -> None:
     for kind in ("TABLES", "VIEWS", "PROCEDURES"):
         cursor.execute(f"SHOW {kind} IN SCHEMA QUAKEWATCH.CURATED")
-        if cursor.fetchone() is not None:
-            raise RuntimeError(f"CURATED already has {kind.lower()}; stop for schema review")
+        rows = cursor.fetchall()
+        if rows:
+            columns = [column[0].lower() for column in cursor.description]
+            name_index = columns.index("name") if "name" in columns else None
+            names = [str(row[name_index]) for row in rows] if name_index is not None else [
+                f"{len(rows)} object(s)"
+            ]
+            raise RuntimeError(
+                f"CURATED already has {kind.lower()}: {', '.join(names)}; stop for schema review"
+            )
 
 
 def _guard_receipt(cursor) -> None:

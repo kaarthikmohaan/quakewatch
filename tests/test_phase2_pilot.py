@@ -20,6 +20,7 @@ class FakeCursor:
         ]
         self.raw_count = raw_count
         self.query = ""
+        self.description = [("name",)]
 
     def execute(self, query, params=None):
         self.query = query
@@ -31,6 +32,9 @@ class FakeCursor:
         return (self.raw_count,)
 
     def fetchall(self):
+        if self.query.startswith("SHOW"):
+            row = self.show_rows.get(self.query)
+            return [row] if row is not None else []
         return self.receipt_rows
 
 
