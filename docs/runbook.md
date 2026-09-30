@@ -74,3 +74,20 @@ The Python Connector boundary reads only `quakewatch_project` from the local Sno
 For read-only row checks, use this Python Connector boundary too. The installed Snowflake CLI `snow sql -c quakewatch_project` does not prompt for the encrypted key passphrase and fails unless that passphrase is supplied through CLI configuration or environment; do not place it in chat or shell history. The connector prompts privately in the terminal. The first independent check found one complete receipt and 15 RAW rows for the Seattle attempt.
 
 The loader has an explicit `--execute` path. It checks for an existing attempt receipt or RAW rows, uploads one new file, runs the COPY mapping, compares COPY and attempt-filtered RAW counts with the local manifest, then appends a `BATCH_ATTEMPT` receipt. A COPY or count failure appends a failed receipt if the connection still permits it; a retry needs a new extraction attempt ID. The command without `--execute` remains read-only. Ask for warehouse-cost approval before each live run.
+
+## Update-sweep preview
+
+`quakewatch.update_plan` prints a local plan only. Supply the catalog origin-time lower bound, a fixed origin-time cutoff, the prior committed update watermark, the sweep start, and a positive overlap in seconds. The resulting `updatedafter` is the prior watermark minus overlap; no spatial or magnitude filters are added. The proposed next watermark is the fixed sweep start. The planner does not persist or advance any watermark and does not count-size, extract, or load windows yet. Execution must verify all bounded source windows and their RAW loads before a later implementation can commit that watermark; failed or incomplete sweeps must retain the previous one.
+
+This offline example uses illustrative inputs, **not an established production watermark or an approved catalog coverage boundary**. The first live sweep still needs an explicit bootstrap watermark and catalog lower-bound decision based on the history capture dates and required source coverage.
+
+```bash
+PYTHONPATH=src .venv/bin/python -m quakewatch.update_plan \
+  --catalog-start 1900-01-01T00:00:00Z \
+  --cutoff 2026-09-30T00:00:00Z \
+  --last-watermark 2026-09-29T00:00:00Z \
+  --sweep-started-at 2026-09-30T00:00:00Z \
+  --overlap-seconds 86400
+```
+
+Expect `status: preview`, `updatedafter: 2026-09-28T00:00:00.000Z`, and `watermark_advanced: false`. Dates before the configured catalog lower bound are outside this plan. The source does not provide a transactionally consistent snapshot. See the [USGS parameter contract](https://earthquake.usgs.gov/fdsnws/event/1/) for the distinction between origin time and update time.
