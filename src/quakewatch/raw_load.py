@@ -140,7 +140,7 @@ INSERT INTO QUAKEWATCH.RAW.BATCH_ATTEMPT (
     SOURCE_ROWS_RETURNED, RAW_ROWS_WRITTEN, LOADED_ROWS,
     STAGED_FILES, COPY_RESULTS, ERROR_TYPE, ERROR_MESSAGE, MANIFEST
 )
-SELECT %s, %s, 'origin', %s,
+SELECT %s, %s, %s, %s,
        TO_TIMESTAMP_TZ(%s), TO_TIMESTAMP_TZ(%s), PARSE_JSON(%s), PARSE_JSON(%s),
        PARSE_JSON(%s), TO_TIMESTAMP_TZ(%s), %s, %s,
        %s, %s, %s, PARSE_JSON(%s), PARSE_JSON(%s), %s, %s, PARSE_JSON(%s)
@@ -154,7 +154,8 @@ def append_receipt(cursor: Any, plan: dict[str, Any], status: str, loaded: int,
     site_name = manifest.get("site", {}).get("name", "")
     site_key = site_name.lower().replace(" ", "-") or None
     values = (
-        manifest["attempt_id"], manifest["logical_batch_id"], site_key,
+        manifest["attempt_id"], manifest["logical_batch_id"],
+        manifest.get("batch_kind", "origin"), site_key,
         manifest["requested_starttime"], manifest["requested_endtime"],
         json.dumps(manifest["query_parameters"]), json.dumps(manifest["window_audit"]),
         json.dumps(manifest.get("coverage_gaps", [])), manifest["fetched_at"],

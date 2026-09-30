@@ -26,6 +26,8 @@ def run_update_sweep(catalog_start, cutoff, last_watermark, sweep_started_at,
     directory.mkdir(parents=True, exist_ok=False)
     path = directory / 'manifest.json'
     manifest = {**plan, 'batch_kind': 'update_sweep', 'logical_batch_id': logical_id,
+                'requested_starttime': plan['catalog_lower_bound'],
+                'requested_endtime': plan['origin_time_cutoff'],
                 'attempt_id': attempt_id, 'fetched_at': iso_utc(datetime.now(UTC)),
                 'status': 'running', 'window_audit': [], 'coverage_gaps': [],
                 'source_rows_returned': 0, 'raw_rows_written': 0,

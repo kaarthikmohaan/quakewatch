@@ -107,3 +107,11 @@ PYTHONPATH=src .venv/bin/python -m unittest \
 ```
 
 On 2026-09-30 these 38 tests passed, including mocked over-limit splitting with an old deleted record, source failure/deadline evidence, and local loader compatibility. No live update-sweep extraction or Snowflake sweep load has been demonstrated yet.
+
+## Sweep load and watermark completion
+
+Use `PYTHONPATH=src .venv/bin/python -m quakewatch.update_load <sweep-manifest>` to validate a completed sweep locally. Preview mode does not connect or write state. Execution requires cost approval and `--execute`; the first committed sweep also requires `--initial-watermark` matching its explicitly chosen bootstrap watermark.
+
+The runner validates contiguous audited origin-time coverage, each leaf's before/returned/after counts, and local rows per window. It checks the prior committed watermark before loading. It then loads a ready attempt or recognizes a previously loaded attempt, rereads its complete receipt and RAW total, compares the stored receipt manifest with the local manifest, and checks RAW counts per window. Only after all checks pass does it atomically replace `data/watermarks/update.json`, recording the sweep start as the committed watermark and retaining the prior watermark and source attempt ID. Each attempt's original manifest remains unchanged. A file lock serializes this single-Mac writer; the local state and lock must not be shared across hosts. Back up local state with the ignored raw data. A changed catalog lower bound or backward cutoff requires investigation, not silent reuse.
+
+If loading fails or counts disagree, the prior state remains. If loading succeeds but local state writing fails, rerunning the same attempt can verify its existing receipt and complete the state write without another COPY. A stale sweep whose prior watermark no longer matches is rejected. No automatic watermark is inferred from the history load. This workflow has offline evidence only; no live sweep load or watermark commit has run.

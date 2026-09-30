@@ -118,9 +118,10 @@ class RawLoadTests(unittest.TestCase):
         cursor = FakeCursor()
         loaded = execute_raw_load(plan_raw_load(self.root / "manifest.json"), FakeConnection(cursor))
         self.assertEqual(loaded, 1)
+        self.assertEqual(cursor.receipts[0][2], "origin")
         self.assertEqual(len(cursor.receipts), 1)
-        self.assertEqual(cursor.receipts[0][10], "complete")
-        self.assertEqual(cursor.receipts[0][13], 1)
+        self.assertEqual(cursor.receipts[0][11], "complete")
+        self.assertEqual(cursor.receipts[0][14], 1)
         self.assertTrue(cursor.closed)
 
     def test_copy_failure_appends_failed_receipt(self) -> None:
@@ -128,8 +129,8 @@ class RawLoadTests(unittest.TestCase):
         with self.assertRaisesRegex(LoadReconciliationError, "COPY did not load"):
             execute_raw_load(plan_raw_load(self.root / "manifest.json"), FakeConnection(cursor))
         self.assertEqual(len(cursor.receipts), 1)
-        self.assertEqual(cursor.receipts[0][10], "failed")
-        self.assertEqual(cursor.receipts[0][16], "LoadReconciliationError")
+        self.assertEqual(cursor.receipts[0][11], "failed")
+        self.assertEqual(cursor.receipts[0][17], "LoadReconciliationError")
 
     def test_existing_attempt_receipt_blocks_mutation(self) -> None:
         cursor = FakeCursor(existing_receipts=1)
@@ -141,8 +142,8 @@ class RawLoadTests(unittest.TestCase):
         cursor = FakeCursor(raw_count_after=0)
         with self.assertRaisesRegex(LoadReconciliationError, "raw=0"):
             execute_raw_load(plan_raw_load(self.root / "manifest.json"), FakeConnection(cursor))
-        self.assertEqual(cursor.receipts[0][10], "failed")
-        self.assertEqual(cursor.receipts[0][13], 1)
+        self.assertEqual(cursor.receipts[0][11], "failed")
+        self.assertEqual(cursor.receipts[0][14], 1)
 
     def test_existing_raw_rows_block_mutation(self) -> None:
         cursor = FakeCursor(raw_count_before=1)
