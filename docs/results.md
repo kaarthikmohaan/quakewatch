@@ -23,7 +23,11 @@ On 2026-09-29, the Python loader ran for attempt `20260929T075452Z-26375840ea`. 
 
 On 2026-09-30, the approved bounded pilot uploaded the procedure ZIP, created the local Phase 2 curated objects, and called `QUAKEWATCH.CURATED.PROCESS_LOADED_ATTEMPT` once for the same 15-row Seattle attempt. The live terminal returned `status=complete`, `loaded_rows=15`, `processed_rows=15`, `rejected_rows=0`, and `revision_rows_merged=15`. The process attempt ID was `42fc37d34e1545498ad004d8eeb35b72`. Its post-call count checks reported 15 typed staging rows, 15 revision fact rows, 45 event-site bridge rows, three public site rows, one batch fact row, and one processing-attempt row. The empty curated-schema preflight means this first call had no pre-existing curated fact or bridge rows to delete.
 
-This verifies one small procedure execution and its aggregate counts. It does not yet establish overlapping-rerun idempotency, alias rekey behavior, tombstone/current-view behavior, historical model completeness, or actual Snowflake credit usage. The three history source gaps and incomplete catalog-wide update sweep remain unresolved.
+This verifies one small procedure execution and its aggregate counts. It does not yet establish alias rekey behavior, tombstone/current-view behavior, historical model completeness, or actual Snowflake credit usage. The three history source gaps and incomplete catalog-wide update sweep remain unresolved.
+
+## Phase 2 same-attempt idempotency rerun
+
+On 2026-09-30, the approved guarded rerun called `QUAKEWATCH.CURATED.PROCESS_LOADED_ATTEMPT` once more for the same 15-row Seattle attempt `20260929T075452Z-26375840ea`. The terminal returned `status=complete`, `loaded_rows=15`, `processed_rows=15`, `rejected_rows=0`, and `revision_rows_merged=0`, with new process attempt ID `27b80b92c21a47c7b27ecaaf676c0ede`. Post-call counts were unchanged at 15 staged rows, 15 revision facts, 45 event-site bridges, three public sites, and one batch fact. The append-only processing audit grew from one to two rows. The guarded command also checked unique revision and bridge keys and that the batch fact points to the new process attempt. This establishes idempotency for this unchanged, same-attempt input only; overlapping attempts and changed source revisions still need separate checks. Actual credits were not measured.
 
 ## Not measured yet
 

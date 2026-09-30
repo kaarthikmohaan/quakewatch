@@ -83,7 +83,7 @@ The [first pilot plan](phase2-pilot-plan.md) narrows deployment to the already l
 
 The first pilot completed on 2026-09-30: 15 staged rows, 15 revision rows, 45 bridge rows, one batch fact, one process attempt, and three public sites. See [measured results](results.md). The pilot command is intentionally first-run only; its empty-schema guard now stops a second execution. Do not rerun it to process more attempts. A separate, guarded processing command and acceptance checks are needed before wider history processing.
 
-The [one-attempt rerun plan](phase2-rerun-plan.md) uses `PYTHONPATH=src:. .venv/bin/python scripts/phase2_rerun_check.py` for an offline preview. Its `--execute` mode is a separately approved live step. It requires the exact first-pilot state, makes one procedure call for the same 15-row attempt, and checks that revision and bridge counts stay fixed while a second processing audit is appended.
+The [one-attempt rerun plan](phase2-rerun-plan.md) uses `PYTHONPATH=src:. .venv/bin/python scripts/phase2_rerun_check.py` for an offline preview. Its approved `--execute` run completed on 2026-09-30: zero revisions merged, model counts unchanged, and a second processing audit appended. See [measured results](results.md). Its first-pilot-state guard now prevents another live execution.
 
 ## Update-sweep preview
 

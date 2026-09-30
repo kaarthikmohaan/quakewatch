@@ -1,6 +1,6 @@
 # Phase 2 one-attempt idempotency rerun
 
-Prepared 2026-09-30. This is a guarded plan, not evidence of a second procedure call.
+Prepared and executed 2026-09-30. The measured result is in [results.md](results.md).
 
 The first Snowpark pilot processed the existing 15-row Seattle attempt `20260929T075452Z-26375840ea` and left 15 staged rows, 15 revision facts, 45 site bridge rows, one batch fact, one complete processing audit, and three public sites. This check processes **that same load attempt once more**; it does not re-extract USGS data, upload a file, or create schema objects.
 
@@ -10,4 +10,4 @@ The live command first requires the original 15-row complete RAW receipt, exact 
 
 The procedure contains conditional alias-collision deletion of curated fact/bridge duplicates. None is expected for this unchanged 15-row attempt; approval is still required before execution because the code can delete curated rows if an unexpected alias conflict appears. RAW and staged source records are not deleted. This run will use the X-Small warehouse again. At the documented Gen1 rate of 1 credit/hour with a 60-second minimum, the minimum is about 0.017 credit; 2–6 minutes including idle time would be about 0.033–0.100 credits. This is a scenario, not a cap or dollar quote; actual credits and the account's price remain unmeasured. [Snowflake warehouse billing](https://docs.snowflake.com/en/user-guide/warehouses-overview).
 
-No live rerun was made while preparing this plan. The [first pilot result](results.md) remains the only measured Phase 2 model run.
+The approved live rerun completed with zero revision rows merged, unchanged model counts, and a second complete processing audit. See [measured results](results.md). Do not execute this guarded command again: its preflight requires the first-pilot processing-audit count of one and will now stop.
