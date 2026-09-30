@@ -65,13 +65,15 @@ def captured_history_windows(cutoff: datetime, output: Path) -> dict[int, Path]:
 
 
 def resume_capture(cutoff: datetime, output: Path, max_windows: int, execute: bool,
-                   start_window: int = 1) -> list[int]:
+                   start_window: int = 1, source_days: int | None = None) -> list[int]:
     """Process a bounded consecutive run, stopping at the first source gap."""
     if not 1 <= max_windows <= MAX_HISTORY_BATCH_WINDOWS:
         raise ValueError(f"max-windows must be between 1 and {MAX_HISTORY_BATCH_WINDOWS}")
     windows = history_windows(cutoff)
     if not 1 <= start_window <= len(windows):
         raise ValueError(f"start-window must be between 1 and {len(windows)}")
+    if source_days is not None and not 1 <= source_days <= 7:
+        raise ValueError("source-days must be between 1 and 7")
     captured = captured_history_windows(cutoff, output)
     pending = [number for number in range(start_window, len(windows) + 1)
                if number not in captured]
@@ -81,7 +83,10 @@ def resume_capture(cutoff: datetime, output: Path, max_windows: int, execute: bo
         print(number, site, iso_utc(start), iso_utc(end))
         if not execute:
             continue
-        manifest_path = run_batch(site, start, end, output)
+        if source_days is None:
+            manifest_path = run_batch(site, start, end, output)
+        else:
+            manifest_path = run_batch(site, start, end, output, source_days=source_days)
         print(f"Captured manifest: {manifest_path}")
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         if manifest.get("status") != "complete" or manifest.get("coverage_gaps"):
@@ -104,6 +109,8 @@ def main() -> None:
     parser.add_argument("--max-windows", type=int, help="Resume limit, 1 to 50")
     parser.add_argument("--start-window", type=int, default=1,
                         help="Explicit first eligible window; earlier gaps remain unresolved")
+    parser.add_argument("--source-days", type=int,
+                        help="Start with audited source slices of 1 to 7 days")
     args = parser.parse_args()
     windows = history_windows(args.cutoff)
     if args.resume:
@@ -111,7 +118,7 @@ def main() -> None:
             parser.error("--resume requires --max-windows and cannot use --window or --resume-preview")
         try:
             resume_capture(args.cutoff, args.output, args.max_windows, args.execute,
-                           args.start_window)
+                           args.start_window, args.source_days)
         except ValueError as exc:
             parser.error(str(exc))
         return
@@ -119,6 +126,8 @@ def main() -> None:
         parser.error("--max-windows requires --resume")
     if args.start_window != 1:
         parser.error("--start-window requires --resume")
+    if args.source_days is not None and not 1 <= args.source_days <= 7:
+        parser.error("source-days must be between 1 and 7")
     if args.resume_preview:
         if args.window is not None or args.execute:
             parser.error("--resume-preview cannot be combined with --window or --execute")
@@ -148,7 +157,11 @@ def main() -> None:
     if not args.execute:
         print("Preview only; add --execute to fetch this one window.")
         return
-    manifest_path = run_batch(site_key, start, end, args.output)
+    if args.source_days is None:
+        manifest_path = run_batch(site_key, start, end, args.output)
+    else:
+        manifest_path = run_batch(site_key, start, end, args.output,
+                                  source_days=args.source_days)
     print(f"Captured manifest: {manifest_path}")
 
 

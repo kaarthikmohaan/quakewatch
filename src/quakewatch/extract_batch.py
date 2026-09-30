@@ -12,7 +12,7 @@ import uuid
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import asdict
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -284,9 +284,27 @@ def stable_json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
-def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path) -> Path:
+def initial_request_windows(start: datetime, end: datetime,
+                            source_days: int | None) -> list[tuple[datetime, datetime]]:
+    """Keep one logical month while optionally starting with shorter source calls."""
+    if source_days is None:
+        return [(start, end)]
+    if not 1 <= source_days <= 7:
+        raise ValueError("source-days must be between 1 and 7")
+    windows = []
+    cursor = start
+    while cursor < end:
+        next_end = min(cursor + timedelta(days=source_days), end)
+        windows.append((cursor, next_end))
+        cursor = next_end
+    return windows
+
+
+def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
+              source_days: int | None = None) -> Path:
     if start >= end:
         raise ExtractionError("--start must be earlier than --end")
+    initial_windows = initial_request_windows(start, end, source_days)
     site = SITES[site_key]
     query_fingerprint = stable_json(
         {"site": asdict(site), "starttime": iso_utc(start), "endtime": iso_utc(end)}
@@ -305,6 +323,7 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path) 
         "requested_starttime": iso_utc(start),
         "requested_endtime": iso_utc(end),
         "query_parameters": source_params(site, start, end),
+        "initial_source_days": source_days,
         "fetched_at": fetched_at,
         "window_audit": [],
         "coverage_gaps": [],
@@ -322,13 +341,31 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path) 
     save_manifest()
     try:
         headers = {"User-Agent": USER_AGENT, "Accept": "application/geo+json, application/json"}
+        features: list[tuple[dict[str, Any], str]] = []
+        windows: list[dict[str, Any]] = []
+        if len(initial_windows) > 1:
+            windows.append({
+                "window_id": "w0001", "starttime": iso_utc(start),
+                "endtime": iso_utc(end), "status": "split",
+                "reason": f"planned source slices of at most {source_days} days",
+            })
         with source_deadline(SOURCE_WINDOW_DEADLINE_SECONDS):
             with httpx.Client(
                 headers=headers,
                 timeout=REQUEST_TIMEOUT_SECONDS,
                 follow_redirects=True,
             ) as client:
-                features, windows = fetch_window(client, site, start, end, "w0001")
+                for index, (child_start, child_end) in enumerate(initial_windows, start=1):
+                    window_id = f"w0001.{index}" if len(initial_windows) > 1 else "w0001"
+                    try:
+                        child_features, child_audits = fetch_window(
+                            client, site, child_start, child_end, window_id
+                        )
+                    except ExtractionError as exc:
+                        exc.window_audit = [*windows, *exc.window_audit]
+                        raise
+                    features.extend(child_features)
+                    windows.extend(child_audits)
 
         rows_written = 0
         with events_path.open("w", encoding="utf-8") as output:

@@ -119,6 +119,15 @@ class HistoryPlanTests(unittest.TestCase):
             datetime(2021, 10, 29, tzinfo=UTC), Path("data/raw")
         )
 
+    def test_execute_passes_week_source_option(self) -> None:
+        args = ["history_plan", "--cutoff", "2026-09-29", "--window", "73",
+                "--source-days", "7", "--execute"]
+        with patch("sys.argv", args):
+            with patch("quakewatch.history_plan.run_batch", return_value=Path("manifest.json")) as extract:
+                with redirect_stdout(io.StringIO()):
+                    main()
+        self.assertEqual(extract.call_args.kwargs, {"source_days": 7})
+
     def test_execute_without_window_is_rejected(self) -> None:
         with patch("sys.argv", ["history_plan", "--cutoff", "2026-09-29", "--execute"]):
             with patch("quakewatch.history_plan.run_batch") as extract:

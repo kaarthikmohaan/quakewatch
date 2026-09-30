@@ -41,6 +41,8 @@ The extractor targets fewer than 10,000 features per leaf request, giving headro
 
 If the source count or feature request repeatedly times out, the extractor now splits that time window into smaller audited requests, up to three timeout split levels. It still compares before/fetched/after counts on each leaf. If a leaf continues timing out, the attempt fails with an unresolved coverage gap; partial sibling rows are not written as a complete capture. This responds to the two saved window-12 timeout attempts without erasing them.
 
+For a known slow month, add `--source-days 7` to an explicit `history_plan --window N --execute` (or a bounded `--resume --max-windows N --execute`) command. The logical monthly batch stays the same, while the extractor begins with contiguous, overlapping-at-boundary source calls of at most seven days. The manifest records the planned parent split and every child count/fetch result. Every child must reconcile before the monthly attempt is complete; a failed child leaves the month unresolved and writes no partial file. This option is based on the exact-parameter seven-day San Francisco count that returned 341 on 2026-09-30; its live feature capture has not yet been verified.
+
 Each source window has a 180-second wall-clock budget shared by its HTTP retries and splits. Before each request and retry wait, the extractor checks the remaining time and caps the request timeout to it. If the budget expires, the attempt is marked failed with zero written rows and an explicit full-window unresolved gap. An interrupted command is audited the same way. A 50-window run still stops at that failed month; use an explicit later `--start-window` to continue while keeping the gap visible.
 
 ## Inspect a run
