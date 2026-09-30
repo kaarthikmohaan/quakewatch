@@ -134,3 +134,5 @@ The matching count request for 2023-10-01 through 2023-10-02 returned HTTP 200 w
 Six more matching, bounded daily count requests for October 2–7 each returned HTTP 200 with count zero. Thus all seven individual UTC days in October 1–8 returned zero, while the combined seven-day request timed out. This points to range-sensitive source response time for that query; it does not complete October coverage or reconcile a full update sweep.
 
 The remaining 24 October daily count probes returned count zero for 23 days. The October 9–10 UTC request timed out at 20 seconds, so that day's count is unknown. The other 30 daily zero counts are only diagnostic count results; they do not substitute for a reconciled feature capture, and the monthly sweep gap remains unresolved. Retry the single timed-out day before inferring whether it is persistently slow.
+
+A repeat count request for October 9–10 UTC, with the same parameters and 20-second limit, also timed out. This is a repeat source timeout for that day, not a zero count. The October 9 daily range can be divided into two half-day probes to locate the slow interval; no update-sweep coverage or watermark was advanced.
