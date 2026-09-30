@@ -101,6 +101,8 @@ Build the four ignored, synthetic RAW attempts locally with `PYTHONPATH=src:. .v
 
 Preview the [isolated fixture RAW loader](../scripts/phase2_fixture_raw_load.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_raw_load.py`. It validates all four local attempts without connecting. Its approved live run on 2026-09-30 loaded and reconciled one row in each test RAW attempt and appended synthetic receipts. The empty-table guard now prevents rerunning this loader; the copied procedure has not yet been called.
 
+Preview the [original fixture procedure check](../scripts/phase2_fixture_original.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_original.py`. Its separately approved live mode will require the original synthetic RAW receipt and empty fixture curated model, make one copied-procedure call, and check a single active magnitude-1.08 revision plus batch/process audits. It will not process the update, tombstone, or stale replay in this step.
+
 ## Update-sweep preview
 
 `quakewatch.update_plan` prints a local plan only. Supply the catalog origin-time lower bound, a fixed origin-time cutoff, the prior committed update watermark, the sweep start, and a positive overlap in seconds. The resulting `updatedafter` is the prior watermark minus overlap; no spatial or magnitude filters are added. The proposed next watermark is the fixed sweep start. The planner does not persist or advance any watermark and does not count-size, extract, or load windows yet. Execution must verify all bounded source windows and their RAW loads before a later implementation can commit that watermark; failed or incomplete sweeps must retain the previous one.
