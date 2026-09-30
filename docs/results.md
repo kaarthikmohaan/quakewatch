@@ -140,3 +140,5 @@ A repeat count request for October 9–10 UTC, with the same parameters and 20-s
 Half-day count probes for October 9 found that 00:00–12:00 UTC timed out at 20 seconds, while 12:00–October 10 00:00 UTC returned HTTP 200 with count zero. The first half-day remains unknown. These are diagnostics only: no event features were captured, no full sweep reconciled, and no watermark advanced.
 
 The next split found the same pattern: October 9 00:00–06:00 UTC timed out at 20 seconds, while 06:00–12:00 UTC returned HTTP 200 with count zero. The unknown interval has narrowed to the first six hours; a zero count cannot be inferred for it. No source features were captured or loaded.
+
+Six one-hour count probes for October 9 00:00–06:00 UTC returned zero for 00:00–01:00, 01:00–02:00, and 03:00–06:00. The 02:00–03:00 request timed out after 20 seconds. That hour remains an explicit unknown despite the surrounding zero counts. These diagnostics do not reconcile the October monthly window or permit watermark advancement.
