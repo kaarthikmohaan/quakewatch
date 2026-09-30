@@ -35,6 +35,8 @@ On 2026-09-30, the approved fixture check used a session-only Snowflake table sh
 
 The separately approved admin metadata preflight on 2026-09-30 reported `QUAKEWATCH_PHASE2_FIXTURE` available for setup. This was one read-only `SHOW DATABASES LIKE` check, not fixture database creation or procedure execution. Availability is a point-in-time observation; cloud services usage was not measured.
 
+The approved guarded setup then created `QUAKEWATCH_PHASE2_FIXTURE` with `RAW` and `CURATED` schemas and narrow creation grants for `QUAKEWATCH_ROLE`. The terminal reported `statements_executed: 12` and both schemas after post-setup verification. No fixture stage, tables, or procedure were created in this step. Metadata/storage charges were not measured.
+
 ## Not measured yet
 
 - Overlapping-batch idempotency and procedure-level revision/tombstone behavior
