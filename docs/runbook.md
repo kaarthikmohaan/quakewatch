@@ -93,6 +93,8 @@ The proposed [fixture database setup SQL](../sql/phase2_fixture_setup.sql) is re
 
 Preview the [fixture name check](../scripts/phase2_fixture_name_check.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_name_check.py`. Its approved `--execute` mode performed one metadata-only `SHOW DATABASES LIKE` through the existing admin profile on 2026-09-30 and reported the exact test database name available. It did not create objects. Recheck before live setup; this result is a point-in-time snapshot.
 
+Preview the [guarded fixture setup](../scripts/phase2_fixture_setup.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_setup.py`. It checks the 12 reviewed SQL statements offline. A separately approved `--execute` call would recheck the exact database name, create the isolated database and schemas, grant project-role access, and verify visibility. If any statement fails after creation, inspect the partial setup before retrying; no cleanup is automatic.
+
 ## Update-sweep preview
 
 `quakewatch.update_plan` prints a local plan only. Supply the catalog origin-time lower bound, a fixed origin-time cutoff, the prior committed update watermark, the sweep start, and a positive overlap in seconds. The resulting `updatedafter` is the prior watermark minus overlap; no spatial or magnitude filters are added. The proposed next watermark is the fixed sweep start. The planner does not persist or advance any watermark and does not count-size, extract, or load windows yet. Execution must verify all bounded source windows and their RAW loads before a later implementation can commit that watermark; failed or incomplete sweeps must retain the previous one.

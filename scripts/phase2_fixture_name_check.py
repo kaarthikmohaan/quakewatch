@@ -20,17 +20,22 @@ def admin_params(config_path: Path) -> dict[str, str]:
     return {name: profile[name] for name in (*required, "role")}
 
 
+def name_occupied(cursor) -> bool:
+    """Check an exact name with the caller's existing admin connection."""
+    cursor.execute(f"SHOW DATABASES LIKE '{TEST_DATABASE}'")
+    columns = [column[0].lower() for column in cursor.description]
+    name_index = columns.index("name")
+    names = {str(row[name_index]).upper() for row in cursor.fetchall()}
+    return TEST_DATABASE in names
+
+
 def check_name(config_path: Path) -> bool:
     """Return True if the exact fixture database name is already present."""
     import snowflake.connector
 
     with snowflake.connector.connect(**admin_params(config_path)) as connection:
         with connection.cursor() as cursor:
-            cursor.execute(f"SHOW DATABASES LIKE '{TEST_DATABASE}'")
-            columns = [column[0].lower() for column in cursor.description]
-            name_index = columns.index("name")
-            names = {str(row[name_index]).upper() for row in cursor.fetchall()}
-            return TEST_DATABASE in names
+            return name_occupied(cursor)
 
 
 def main() -> None:
