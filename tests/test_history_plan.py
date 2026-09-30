@@ -27,6 +27,11 @@ class HistoryPlanTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "between 1 and 50"):
                 resume_capture(cutoff, Path(folder), 51, False)
             self.assertEqual(len(resume_capture(cutoff, Path(folder), 50, False)), 50)
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(resume_capture(cutoff, Path(folder), 3, False, 13),
+                                 [13, 14, 15])
+            with self.assertRaisesRegex(ValueError, "start-window must be between 1 and 180"):
+                resume_capture(cutoff, Path(folder), 1, False, 181)
 
     def test_resume_stops_on_failed_manifest(self) -> None:
         cutoff = datetime(2026, 9, 29, tzinfo=UTC)

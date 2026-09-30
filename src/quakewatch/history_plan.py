@@ -64,13 +64,17 @@ def captured_history_windows(cutoff: datetime, output: Path) -> dict[int, Path]:
     return captured
 
 
-def resume_capture(cutoff: datetime, output: Path, max_windows: int, execute: bool) -> list[int]:
+def resume_capture(cutoff: datetime, output: Path, max_windows: int, execute: bool,
+                   start_window: int = 1) -> list[int]:
     """Process a bounded consecutive run, stopping at the first source gap."""
     if not 1 <= max_windows <= MAX_HISTORY_BATCH_WINDOWS:
         raise ValueError(f"max-windows must be between 1 and {MAX_HISTORY_BATCH_WINDOWS}")
     windows = history_windows(cutoff)
+    if not 1 <= start_window <= len(windows):
+        raise ValueError(f"start-window must be between 1 and {len(windows)}")
     captured = captured_history_windows(cutoff, output)
-    pending = [number for number in range(1, len(windows) + 1) if number not in captured]
+    pending = [number for number in range(start_window, len(windows) + 1)
+               if number not in captured]
     selected = pending[:max_windows]
     for number in selected:
         site, start, end = windows[number - 1]
@@ -98,18 +102,23 @@ def main() -> None:
     parser.add_argument("--resume-preview", action="store_true", help="Show next uncaptured local window")
     parser.add_argument("--resume", action="store_true", help="Process consecutive uncaptured windows")
     parser.add_argument("--max-windows", type=int, help="Resume limit, 1 to 50")
+    parser.add_argument("--start-window", type=int, default=1,
+                        help="Explicit first eligible window; earlier gaps remain unresolved")
     args = parser.parse_args()
     windows = history_windows(args.cutoff)
     if args.resume:
         if args.window is not None or args.resume_preview or args.max_windows is None:
             parser.error("--resume requires --max-windows and cannot use --window or --resume-preview")
         try:
-            resume_capture(args.cutoff, args.output, args.max_windows, args.execute)
+            resume_capture(args.cutoff, args.output, args.max_windows, args.execute,
+                           args.start_window)
         except ValueError as exc:
             parser.error(str(exc))
         return
     if args.max_windows is not None:
         parser.error("--max-windows requires --resume")
+    if args.start_window != 1:
+        parser.error("--start-window requires --resume")
     if args.resume_preview:
         if args.window is not None or args.execute:
             parser.error("--resume-preview cannot be combined with --window or --execute")
