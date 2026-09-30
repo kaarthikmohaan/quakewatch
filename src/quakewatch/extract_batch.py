@@ -339,10 +339,11 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
         temporary_path.replace(manifest_path)
 
     save_manifest()
+    windows: list[dict[str, Any]] = []
+    active_window: tuple[str, datetime, datetime] | None = None
     try:
         headers = {"User-Agent": USER_AGENT, "Accept": "application/geo+json, application/json"}
         features: list[tuple[dict[str, Any], str]] = []
-        windows: list[dict[str, Any]] = []
         if len(initial_windows) > 1:
             windows.append({
                 "window_id": "w0001", "starttime": iso_utc(start),
@@ -357,6 +358,13 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
             ) as client:
                 for index, (child_start, child_end) in enumerate(initial_windows, start=1):
                     window_id = f"w0001.{index}" if len(initial_windows) > 1 else "w0001"
+                    active_window = (window_id, child_start, child_end)
+                    manifest["active_window"] = {
+                        "window_id": window_id, "starttime": iso_utc(child_start),
+                        "endtime": iso_utc(child_end),
+                    }
+                    manifest["window_audit"] = windows
+                    save_manifest()
                     try:
                         child_features, child_audits = fetch_window(
                             client, site, child_start, child_end, window_id
@@ -366,6 +374,10 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
                         raise
                     features.extend(child_features)
                     windows.extend(child_audits)
+                    active_window = None
+                    manifest.pop("active_window", None)
+                    manifest["window_audit"] = windows
+                    save_manifest()
 
         rows_written = 0
         with events_path.open("w", encoding="utf-8") as output:
@@ -403,14 +415,15 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
             ]
         else:
             reason = str(exc) or type(exc).__name__
+            gap_id, gap_start, gap_end = active_window or ("w0001", start, end)
             gap = {
-                "window_id": "w0001",
-                "starttime": iso_utc(start),
-                "endtime": iso_utc(end),
+                "window_id": gap_id,
+                "starttime": iso_utc(gap_start),
+                "endtime": iso_utc(gap_end),
                 "status": "unresolved",
                 "reason": reason,
             }
-            manifest["window_audit"] = [gap]
+            manifest["window_audit"] = [*windows, gap]
             manifest["coverage_gaps"] = [gap]
         save_manifest()
         raise

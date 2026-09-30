@@ -92,6 +92,26 @@ class FetchWindowTests(unittest.TestCase):
             self.assertEqual(manifest["coverage_gaps"], [gap])
             self.assertFalse(list(Path(directory).glob("*/events.jsonl")))
 
+    def test_deadline_identifies_active_week_and_keeps_completed_week(self) -> None:
+        start = datetime(2022, 9, 29, tzinfo=timezone.utc)
+        end = datetime(2022, 10, 29, tzinfo=timezone.utc)
+        good = ([], [{"window_id": "w0001.1", "status": "reconciled",
+                      "count_before": 0, "returned_rows": 0, "count_after": 0}])
+        with tempfile.TemporaryDirectory() as directory:
+            with patch("quakewatch.extract_batch.fetch_window", side_effect=[
+                good, SourceDeadlineExceeded("source window exceeded its wall-clock deadline")]):
+                with self.assertRaises(SourceDeadlineExceeded):
+                    run_batch("san-francisco", start, end, Path(directory), source_days=7)
+            manifest = json.loads(next(Path(directory).glob("*/manifest.json")).read_text())
+            self.assertEqual(manifest["status"], "failed")
+            self.assertEqual([a["status"] for a in manifest["window_audit"]],
+                             ["split", "reconciled", "unresolved"])
+            self.assertEqual(manifest["coverage_gaps"][0]["window_id"], "w0001.2")
+            self.assertEqual(manifest["coverage_gaps"][0]["starttime"],
+                             "2022-10-06T00:00:00.000Z")
+            self.assertEqual(manifest["raw_rows_written"], 0)
+            self.assertFalse(list(Path(directory).glob("*/events.jsonl")))
+
     def test_source_deadline_stops_next_retry_after_budget(self) -> None:
         client = httpx.Client(transport=httpx.MockTransport(
             lambda request: httpx.Response(200, json={"count": 0})))

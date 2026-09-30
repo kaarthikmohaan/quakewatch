@@ -43,6 +43,8 @@ If the source count or feature request repeatedly times out, the extractor now s
 
 For a known slow month, add `--source-days 7` to an explicit `history_plan --window N --execute` (or a bounded `--resume --max-windows N --execute`) command. The logical monthly batch stays the same, while the extractor begins with contiguous, overlapping-at-boundary source calls of at most seven days. The manifest records the planned parent split and every child count/fetch result. Every child must reconcile before the monthly attempt is complete; a failed child leaves the month unresolved and writes no partial file. This option is based on the exact-parameter seven-day San Francisco count that returned 341 on 2026-09-30; its live feature capture has not yet been verified.
 
+During a week-sliced capture, `manifest.json` now records `active_window` and saves each completed child audit before beginning the next. If the deadline or an interruption occurs, the failed manifest retains the reconciled child audits and marks the active child as unresolved. The attempt still writes no partial `events.jsonl`; rerun it as a new attempt after investigating the gap.
+
 Each source window has a 180-second wall-clock budget shared by its HTTP retries and splits. Before each request and retry wait, the extractor checks the remaining time and caps the request timeout to it. If the budget expires, the attempt is marked failed with zero written rows and an explicit full-window unresolved gap. An interrupted command is audited the same way. A 50-window run still stops at that failed month; use an explicit later `--start-window` to continue while keeping the gap visible.
 
 ## Inspect a run
