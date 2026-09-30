@@ -99,9 +99,9 @@ Preview [fixture object deployment](../scripts/phase2_fixture_deploy.py) with `P
 
 Build the four ignored, synthetic RAW attempts locally with `PYTHONPATH=src:. .venv/bin/python scripts/build_phase2_fixture_attempts.py`. The [fixture plan](phase2-procedure-fixture-plan.md) explains their provenance and order. Each attempt has one source feature and an internally reconciled synthetic manifest; no USGS count or coverage claim is made. These files were loaded into the isolated fixture RAW schema on 2026-09-30.
 
-Preview the [isolated fixture RAW loader](../scripts/phase2_fixture_raw_load.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_raw_load.py`. It validates all four local attempts without connecting. Its approved live run on 2026-09-30 loaded and reconciled one row in each test RAW attempt and appended synthetic receipts. The empty-table guard now prevents rerunning this loader; the copied procedure has not yet been called.
+Preview the [isolated fixture RAW loader](../scripts/phase2_fixture_raw_load.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_raw_load.py`. It validates all four local attempts without connecting. Its approved live run on 2026-09-30 loaded and reconciled one row in each test RAW attempt and appended synthetic receipts. The empty-table guard now prevents rerunning this loader; the original fixture was subsequently processed.
 
-Preview the [original fixture procedure check](../scripts/phase2_fixture_original.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_original.py`. Its separately approved live mode will require the original synthetic RAW receipt and empty fixture curated model, make one copied-procedure call, and check a single active magnitude-1.08 revision plus batch/process audits. It will not process the update, tombstone, or stale replay in this step.
+Preview the [original fixture procedure check](../scripts/phase2_fixture_original.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_original.py`. Its approved live run on 2026-09-30 processed `fixture-original-v1` and checked a single active magnitude-1.08 revision plus batch/process audits. Its empty-curated guard now prevents rerunning this command. The update, tombstone, and stale replay have not been processed.
 
 ## Update-sweep preview
 
