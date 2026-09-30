@@ -97,6 +97,8 @@ Preview the [guarded fixture setup](../scripts/phase2_fixture_setup.py) with `PY
 
 Preview [fixture object deployment](../scripts/phase2_fixture_deploy.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_deploy.py`. It validates the reviewed ZIP hash and generated SQL without connecting. Its approved live mode completed on 2026-09-30 after empty-schema and package-catalog checks: the terminal reported the ZIP uploaded and 16 SQL statements executed. It made no procedure call or fixture RAW load. Its empty-schema guard now prevents rerunning the deployment command.
 
+Build the four ignored, synthetic RAW attempts locally with `PYTHONPATH=src:. .venv/bin/python scripts/build_phase2_fixture_attempts.py`. The [fixture plan](phase2-procedure-fixture-plan.md) explains their provenance and order. Each attempt has one source feature and an internally reconciled synthetic manifest; no USGS count or coverage claim is made. These files have not been uploaded or loaded into Snowflake.
+
 ## Update-sweep preview
 
 `quakewatch.update_plan` prints a local plan only. Supply the catalog origin-time lower bound, a fixed origin-time cutoff, the prior committed update watermark, the sweep start, and a positive overlap in seconds. The resulting `updatedafter` is the prior watermark minus overlap; no spatial or magnitude filters are added. The proposed next watermark is the fixed sweep start. The planner does not persist or advance any watermark and does not count-size, extract, or load windows yet. Execution must verify all bounded source windows and their RAW loads before a later implementation can commit that watermark; failed or incomplete sweeps must retain the previous one.
