@@ -37,6 +37,20 @@ class StagingProjectionTest(unittest.TestCase):
         self.assertEqual(row["source_status"], "deleted")
         self.assertIsNone(row["longitude"])
 
+    def test_synthetic_revision_and_tombstone_share_old_event_origin(self) -> None:
+        original = project_feature(fixture("normal_event.json"))
+        revised = project_feature(fixture("synthetic_revision_event.json"))
+        deleted = project_feature(fixture("synthetic_tombstone_event.json"))
+        self.assertTrue(all(row["reject_reason"] is None for row in (original, revised, deleted)))
+        self.assertEqual({row["source_event_id"] for row in (original, revised, deleted)},
+                         {"uw714110682"})
+        self.assertEqual({row["origin_time"] for row in (original, revised, deleted)},
+                         {original["origin_time"]})
+        self.assertLess(original["source_updated_at"], revised["source_updated_at"])
+        self.assertLess(revised["source_updated_at"], deleted["source_updated_at"])
+        self.assertEqual(deleted["source_status"], "deleted")
+        self.assertIsNone(deleted["longitude"])
+
     def test_missing_id_and_bad_clock_are_rejected(self) -> None:
         feature = fixture("normal_event.json")
         feature["id"] = ""
