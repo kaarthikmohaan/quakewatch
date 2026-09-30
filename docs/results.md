@@ -130,3 +130,5 @@ The first monthly-slice sweep, `20260930T091846Z-31d7a86ca6`, reconciled 71 chil
 A standalone count request for 2023-10-01 through 2023-10-08, with the same update filter, GeoJSON format, deletion flag, and ordering as that sweep, timed out after the 20-second client limit. No count or feature data was returned. This is a source-response timeout for one week, not evidence that the week has zero matching records. The next diagnostic can try one UTC day to narrow the slow request.
 
 The matching count request for 2023-10-01 through 2023-10-02 returned HTTP 200 with `{"count":0,"maxAllowed":20000}`. This is a successful zero count for that UTC day only. The remainder of the first week and the October sweep gap remain unresolved.
+
+Six more matching, bounded daily count requests for October 2–7 each returned HTTP 200 with count zero. Thus all seven individual UTC days in October 1–8 returned zero, while the combined seven-day request timed out. This points to range-sensitive source response time for that query; it does not complete October coverage or reconcile a full update sweep.
