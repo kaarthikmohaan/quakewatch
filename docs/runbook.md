@@ -91,6 +91,8 @@ The next [procedure-level fixture plan](phase2-procedure-fixture-plan.md) requir
 
 The proposed [fixture database setup SQL](../sql/phase2_fixture_setup.sql) is review-only. It creates a new database and narrow project-role grants, and deliberately stops on a name collision. Check the target name and obtain separate approval for any live account change or possible charge before using it.
 
+Preview the [fixture name check](../scripts/phase2_fixture_name_check.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_name_check.py`. Its `--execute` mode performs one metadata-only `SHOW DATABASES LIKE` through the existing admin profile and needs separate approval before connecting. It reports only whether the exact test database name is occupied; it does not create objects.
+
 ## Update-sweep preview
 
 `quakewatch.update_plan` prints a local plan only. Supply the catalog origin-time lower bound, a fixed origin-time cutoff, the prior committed update watermark, the sweep start, and a positive overlap in seconds. The resulting `updatedafter` is the prior watermark minus overlap; no spatial or magnitude filters are added. The proposed next watermark is the fixed sweep start. The planner does not persist or advance any watermark and does not count-size, extract, or load windows yet. Execution must verify all bounded source windows and their RAW loads before a later implementation can commit that watermark; failed or incomplete sweeps must retain the previous one.
