@@ -74,6 +74,22 @@ class UpdateExtractTests(unittest.TestCase):
         self.assertEqual(windows[39][1], datetime(2001, 1, 1, tzinfo=UTC))
         self.assertEqual(windows[40][1], datetime(2006, 1, 1, tzinfo=UTC))
 
+    def test_monthly_recent_windows_are_contiguous_and_bounded(self):
+        start = datetime(2022, 1, 1, tzinfo=UTC)
+        cutoff = datetime(2024, 2, 15, tzinfo=UTC)
+        windows = initial_sweep_windows(start, cutoff, 50, 2001, 5, 2023, 1)
+        self.assertEqual(windows[0], (start, datetime(2023, 1, 1, tzinfo=UTC)))
+        self.assertEqual(windows[1], (datetime(2023, 1, 1, tzinfo=UTC),
+                                      datetime(2023, 2, 1, tzinfo=UTC)))
+        self.assertEqual(len(windows), 15)
+        self.assertEqual(windows[-1][1], cutoff)
+        self.assertTrue(all(a[1] == b[0] for a, b in zip(windows, windows[1:])))
+
+    def test_monthly_recent_windows_reject_invalid_configuration(self):
+        with self.assertRaisesRegex(ValueError, 'monthly-start-year'):
+            initial_sweep_windows(datetime(2022, 1, 1, tzinfo=UTC),
+                                  datetime(2024, 1, 1, tzinfo=UTC), 50, 2001, 5, 2000)
+
     def test_deadline_after_first_child_preserves_precise_gap(self):
         values = (datetime(2024, 1, 1, tzinfo=UTC), datetime(2026, 1, 1, tzinfo=UTC),
                   datetime(2025, 1, 1, tzinfo=UTC), datetime(2026, 1, 1, tzinfo=UTC), 86400)
