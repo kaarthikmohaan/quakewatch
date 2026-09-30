@@ -11,7 +11,8 @@ from unittest.mock import patch
 import httpx
 
 from quakewatch.extract_batch import (ExtractionError, SourceDeadlineExceeded, fetch_window,
-                                      get_features, run_batch, source_deadline, source_params)
+                                      get_features, request_with_retry, run_batch,
+                                      source_deadline, source_params)
 from quakewatch.settings import SITES
 from quakewatch.settings import MAX_TARGET_RESULTS_PER_WINDOW
 
@@ -44,10 +45,14 @@ class GetFeaturesTests(unittest.TestCase):
 
 
 class FetchWindowTests(unittest.TestCase):
-    def test_source_deadline_interrupts_wait_and_restores_timer(self) -> None:
+    def test_source_deadline_stops_next_retry_after_budget(self) -> None:
+        client = httpx.Client(transport=httpx.MockTransport(
+            lambda request: httpx.Response(200, json={"count": 0})))
         with self.assertRaises(SourceDeadlineExceeded):
             with source_deadline(0.01):
                 time.sleep(0.1)
+                request_with_retry(client, "https://example.test/count", {})
+        client.close()
 
     def test_deadline_failure_saves_full_window_gap(self) -> None:
         start = datetime(2023, 9, 29, tzinfo=timezone.utc)

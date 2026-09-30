@@ -6,11 +6,11 @@ import argparse
 import hashlib
 import json
 import random
-import signal
 import sys
 import time
 import uuid
 from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
@@ -48,23 +48,27 @@ class SourceDeadlineExceeded(TimeoutError):
     """The bounded source capture exceeded its wall-clock budget."""
 
 
+_source_deadline_at: ContextVar[float | None] = ContextVar("source_deadline_at", default=None)
+
+
+def remaining_source_time() -> float | None:
+    deadline_at = _source_deadline_at.get()
+    if deadline_at is None:
+        return None
+    remaining = deadline_at - time.monotonic()
+    if remaining <= 0:
+        raise SourceDeadlineExceeded("source window exceeded its wall-clock deadline")
+    return remaining
+
+
 @contextmanager
 def source_deadline(seconds: int):
-    """Interrupt slow network retries on the project's POSIX host."""
-    def expired(_signum, _frame):
-        raise SourceDeadlineExceeded(f"source window exceeded {seconds} seconds")
-
-    previous_handler = signal.signal(signal.SIGALRM, expired)
-    previous_timer = signal.setitimer(signal.ITIMER_REAL, seconds)
-    started = time.monotonic()
+    """Share one wall-clock budget across retries and recursively split requests."""
+    token = _source_deadline_at.set(time.monotonic() + seconds)
     try:
         yield
     finally:
-        signal.setitimer(signal.ITIMER_REAL, 0)
-        signal.signal(signal.SIGALRM, previous_handler)
-        if previous_timer[0] > 0:
-            remaining = max(0.000001, previous_timer[0] - (time.monotonic() - started))
-            signal.setitimer(signal.ITIMER_REAL, remaining, previous_timer[1])
+        _source_deadline_at.reset(token)
 
 
 def parse_utc(value: str) -> datetime:
@@ -89,12 +93,21 @@ def request_with_retry(
     """Retry temporary HTTP/network failures a small, bounded number of times."""
     retryable_statuses = {429, 500, 502, 503, 504}
     for attempt in range(1, MAX_HTTP_ATTEMPTS + 1):
+        remaining = remaining_source_time()
         try:
-            response = client.get(url, params=params)
+            response = client.get(
+                url, params=params,
+                timeout=min(REQUEST_TIMEOUT_SECONDS, remaining)
+                if remaining is not None else REQUEST_TIMEOUT_SECONDS,
+            )
+            remaining_source_time()
         except httpx.TransportError:
+            remaining_source_time()
             if attempt == MAX_HTTP_ATTEMPTS:
                 raise
-            time.sleep(min(2 ** (attempt - 1), 8) + random.random() * 0.25)
+            delay = min(2 ** (attempt - 1), 8) + random.random() * 0.25
+            remaining = remaining_source_time()
+            time.sleep(min(delay, remaining) if remaining is not None else delay)
             continue
 
         if response.status_code not in retryable_statuses:
@@ -107,7 +120,9 @@ def request_with_retry(
             delay = min(float(retry_after), 30.0) if retry_after else min(2 ** (attempt - 1), 8)
         except ValueError:
             delay = min(2 ** (attempt - 1), 8)
-        time.sleep(delay + random.random() * 0.25)
+        delay += random.random() * 0.25
+        remaining = remaining_source_time()
+        time.sleep(min(delay, remaining) if remaining is not None else delay)
 
     raise AssertionError("retry loop ended unexpectedly")
 
