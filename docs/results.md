@@ -33,6 +33,8 @@ On 2026-09-30, the approved guarded rerun called `QUAKEWATCH.CURATED.PROCESS_LOA
 
 On 2026-09-30, the approved fixture check used a session-only Snowflake table shaped like `FACT_EVENT_REVISION` and ran the checked-in `EVENT_CURRENT` SELECT against it. The first two versions of `uw714110682` returned the later active revision at magnitude `1.28`. Adding a synthetic latest `deleted` revision returned zero current rows; replaying the old active row still returned zero. The temporary table held four rows at the end (original, update, tombstone, stale replay). The command completed without writing synthetic records to permanent RAW or curated tables. This verifies the checked-in current-view SQL on this fixture, not the deployed view or full Snowpark processing path. Warehouse credits were not measured.
 
+The separately approved admin metadata preflight on 2026-09-30 reported `QUAKEWATCH_PHASE2_FIXTURE` available for setup. This was one read-only `SHOW DATABASES LIKE` check, not fixture database creation or procedure execution. Availability is a point-in-time observation; cloud services usage was not measured.
+
 ## Not measured yet
 
 - Overlapping-batch idempotency and procedure-level revision/tombstone behavior

@@ -91,7 +91,7 @@ The next [procedure-level fixture plan](phase2-procedure-fixture-plan.md) requir
 
 The proposed [fixture database setup SQL](../sql/phase2_fixture_setup.sql) is review-only. It creates a new database and narrow project-role grants, and deliberately stops on a name collision. Check the target name and obtain separate approval for any live account change or possible charge before using it.
 
-Preview the [fixture name check](../scripts/phase2_fixture_name_check.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_name_check.py`. Its `--execute` mode performs one metadata-only `SHOW DATABASES LIKE` through the existing admin profile and needs separate approval before connecting. It reports only whether the exact test database name is occupied; it does not create objects.
+Preview the [fixture name check](../scripts/phase2_fixture_name_check.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_name_check.py`. Its approved `--execute` mode performed one metadata-only `SHOW DATABASES LIKE` through the existing admin profile on 2026-09-30 and reported the exact test database name available. It did not create objects. Recheck before live setup; this result is a point-in-time snapshot.
 
 ## Update-sweep preview
 
