@@ -98,14 +98,10 @@ def _wire_row(item: ProjectedObservation, canonical_id: str) -> dict[str, Any]:
     }
 
 
-def write_revision_fact(
-    session: Any, projection: BatchProjection, canonical_ids: dict[str, str]
-) -> int:
-    """MERGE valid, deduplicated revisions; return actual inserted+updated rows.
-
-    The caller must supply a map from all durable alias observations and handle
-    any changed canonical keys for existing facts before invoking this writer.
-    """
+def selected_revision_observations(
+    projection: BatchProjection, canonical_ids: dict[str, str]
+) -> list[tuple[str, ProjectedObservation]]:
+    """Choose one valid observation per canonical revision key."""
     by_source: dict[tuple[str, int], ProjectedObservation] = {}
     candidates = []
     for item in projection.observations:
@@ -121,8 +117,22 @@ def write_revision_fact(
             canonical_id, item.fields["source_updated_at"], raw.payload_hash,
             raw.fetched_at, raw.stage_file_name, raw.stage_file_row_number,
         ))
-    selected = deduplicate_revision_candidates(candidates)
-    affected_canonical = {c.canonical_event_id for c in selected}
+    return [
+        (candidate.canonical_event_id, by_source[candidate.source_key])
+        for candidate in deduplicate_revision_candidates(candidates)
+    ]
+
+
+def write_revision_fact(
+    session: Any, projection: BatchProjection, canonical_ids: dict[str, str]
+) -> int:
+    """MERGE valid, deduplicated revisions; return actual inserted+updated rows.
+
+    The caller must supply a map from all durable alias observations and handle
+    any changed canonical keys for existing facts before invoking this writer.
+    """
+    selected = selected_revision_observations(projection, canonical_ids)
+    affected_canonical = {canonical_id for canonical_id, _ in selected}
     affected_ids = sorted(
         source_id for source_id, canonical_id in canonical_ids.items()
         if canonical_id in affected_canonical
@@ -139,7 +149,7 @@ def write_revision_fact(
     for start in range(0, len(selected), MAX_ROWS_PER_MERGE):
         chunk = selected[start:start + MAX_ROWS_PER_MERGE]
         body = json.dumps([
-            _wire_row(by_source[c.source_key], c.canonical_event_id) for c in chunk
+            _wire_row(item, canonical_id) for canonical_id, item in chunk
         ], separators=(",", ":"), allow_nan=False)
         rows = session.sql(MERGE_SQL, params=[body]).collect()
         if len(rows) != 1:
@@ -149,7 +159,7 @@ def write_revision_fact(
         if not isinstance(inserted, int) or not isinstance(updated, int):
             raise ValueError("revision MERGE result lacks inserted/updated counts")
         changed += inserted + updated
-    canonical_set = sorted({c.canonical_event_id for c in selected})
+    canonical_set = sorted(affected_canonical)
     if canonical_set and session.sql(
         KEY_CHECK_SQL, params=[json.dumps(canonical_set)]
     ).collect():
