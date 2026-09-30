@@ -29,9 +29,13 @@ This verifies one small procedure execution and its aggregate counts. It does no
 
 On 2026-09-30, the approved guarded rerun called `QUAKEWATCH.CURATED.PROCESS_LOADED_ATTEMPT` once more for the same 15-row Seattle attempt `20260929T075452Z-26375840ea`. The terminal returned `status=complete`, `loaded_rows=15`, `processed_rows=15`, `rejected_rows=0`, and `revision_rows_merged=0`, with new process attempt ID `27b80b92c21a47c7b27ecaaf676c0ede`. Post-call counts were unchanged at 15 staged rows, 15 revision facts, 45 event-site bridges, three public sites, and one batch fact. The append-only processing audit grew from one to two rows. The guarded command also checked unique revision and bridge keys and that the batch fact points to the new process attempt. This establishes idempotency for this unchanged, same-attempt input only; overlapping attempts and changed source revisions still need separate checks. Actual credits were not measured.
 
+## Phase 2 isolated current-view fixture
+
+On 2026-09-30, the approved fixture check used a session-only Snowflake table shaped like `FACT_EVENT_REVISION` and ran the checked-in `EVENT_CURRENT` SELECT against it. The first two versions of `uw714110682` returned the later active revision at magnitude `1.28`. Adding a synthetic latest `deleted` revision returned zero current rows; replaying the old active row still returned zero. The temporary table held four rows at the end (original, update, tombstone, stale replay). The command completed without writing synthetic records to permanent RAW or curated tables. This verifies the checked-in current-view SQL on this fixture, not the deployed view or full Snowpark processing path. Warehouse credits were not measured.
+
 ## Not measured yet
 
-- Repeat-batch idempotency and revision/tombstone behavior
+- Overlapping-batch idempotency and procedure-level revision/tombstone behavior
 - Snowflake fetch-to-curated latency, nonzero rejects, and pending batches
 - FDSN update-sweep coverage gaps
 - Warehouse credit usage

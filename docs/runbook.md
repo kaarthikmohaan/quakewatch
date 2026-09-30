@@ -85,7 +85,7 @@ The first pilot completed on 2026-09-30: 15 staged rows, 15 revision rows, 45 br
 
 The [one-attempt rerun plan](phase2-rerun-plan.md) uses `PYTHONPATH=src:. .venv/bin/python scripts/phase2_rerun_check.py` for an offline preview. Its approved `--execute` run completed on 2026-09-30: zero revisions merged, model counts unchanged, and a second processing audit appended. See [measured results](results.md). Its first-pilot-state guard now prevents another live execution.
 
-Preview the [isolated current-view fixture check](phase2-current-fixture-plan.md) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_current_fixture.py`. It does not connect or modify Snowflake. The separately approved `--execute` mode will use a temporary revision table for a synthetic update, tombstone, and stale replay; it does not load fixtures into permanent RAW or curated tables or call the procedure. No live fixture check has run yet.
+Preview the [isolated current-view fixture check](phase2-current-fixture-plan.md) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_current_fixture.py`. It does not connect or modify Snowflake. The approved `--execute` mode used a temporary revision table for a synthetic update, tombstone, and stale replay; it did not load fixtures into permanent RAW or curated tables or call the procedure. The 2026-09-30 run passed; see [measured results](results.md).
 
 ## Update-sweep preview
 
