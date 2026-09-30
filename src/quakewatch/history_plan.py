@@ -65,7 +65,8 @@ def captured_history_windows(cutoff: datetime, output: Path) -> dict[int, Path]:
 
 
 def resume_capture(cutoff: datetime, output: Path, max_windows: int, execute: bool,
-                   start_window: int = 1, source_days: int | None = None) -> list[int]:
+                   start_window: int = 1, source_days: int | None = None,
+                   resume_children: bool = False) -> list[int]:
     """Process a bounded consecutive run, stopping at the first source gap."""
     if not 1 <= max_windows <= MAX_HISTORY_BATCH_WINDOWS:
         raise ValueError(f"max-windows must be between 1 and {MAX_HISTORY_BATCH_WINDOWS}")
@@ -85,6 +86,9 @@ def resume_capture(cutoff: datetime, output: Path, max_windows: int, execute: bo
             continue
         if source_days is None:
             manifest_path = run_batch(site, start, end, output)
+        elif resume_children:
+            manifest_path = run_batch(site, start, end, output, source_days=source_days,
+                                      resume_children=True)
         else:
             manifest_path = run_batch(site, start, end, output, source_days=source_days)
         print(f"Captured manifest: {manifest_path}")
@@ -111,14 +115,18 @@ def main() -> None:
                         help="Explicit first eligible window; earlier gaps remain unresolved")
     parser.add_argument("--source-days", type=int,
                         help="Start with audited source slices of 1 to 7 days")
+    parser.add_argument("--resume-children", action="store_true",
+                        help="Reuse validated local child checkpoints from prior attempts")
     args = parser.parse_args()
+    if args.resume_children and args.source_days is None:
+        parser.error("--resume-children requires --source-days")
     windows = history_windows(args.cutoff)
     if args.resume:
         if args.window is not None or args.resume_preview or args.max_windows is None:
             parser.error("--resume requires --max-windows and cannot use --window or --resume-preview")
         try:
             resume_capture(args.cutoff, args.output, args.max_windows, args.execute,
-                           args.start_window, args.source_days)
+                           args.start_window, args.source_days, args.resume_children)
         except ValueError as exc:
             parser.error(str(exc))
         return
@@ -159,6 +167,9 @@ def main() -> None:
         return
     if args.source_days is None:
         manifest_path = run_batch(site_key, start, end, args.output)
+    elif args.resume_children:
+        manifest_path = run_batch(site_key, start, end, args.output,
+                                  source_days=args.source_days, resume_children=True)
     else:
         manifest_path = run_batch(site_key, start, end, args.output,
                                   source_days=args.source_days)

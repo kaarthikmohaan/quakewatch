@@ -307,8 +307,75 @@ def initial_request_windows(start: datetime, end: datetime,
     return windows
 
 
+def prior_child_checkpoints(output_root: Path, logical_batch_id: str,
+                            source_days: int | None) -> dict[str, list[Path]]:
+    """Find prior attempts for the same query and planned slice size."""
+    checkpoints: dict[str, list[Path]] = {}
+    for manifest_path in sorted(output_root.glob("*/manifest.json"), reverse=True):
+        try:
+            prior = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if (prior.get("logical_batch_id") != logical_batch_id
+                or prior.get("initial_source_days") != source_days):
+            continue
+        for path in (manifest_path.parent / "children").glob("*.json"):
+            checkpoints.setdefault(path.stem, []).append(path)
+    return checkpoints
+
+
+def read_child_checkpoint(paths: list[Path], params: dict[str, Any],
+                          window_id: str) -> dict[str, Any] | None:
+    """Reuse only a complete, self-consistent local slice."""
+    for path in paths:
+        try:
+            wrapper = json.loads(path.read_text(encoding="utf-8"))
+            payload = wrapper["payload"]
+            digest = hashlib.sha256(stable_json(payload).encode("utf-8")).hexdigest()
+            audits = payload["window_audit"]
+            rows = payload["features"]
+            leaves = [audit for audit in audits if audit["status"] == "reconciled"]
+            valid = (
+                wrapper["sha256"] == digest
+                and payload["query_parameters"] == params
+                and payload["window_id"] == window_id
+                and isinstance(payload["attempt_id"], str)
+                and isinstance(payload["fetched_at"], str)
+                and isinstance(audits, list)
+                and isinstance(rows, list)
+                and all(isinstance(row, list) and len(row) == 2
+                        and isinstance(row[0], dict) and isinstance(row[1], str)
+                        for row in rows)
+                and all(audit["status"] in {"split", "reconciled"} for audit in audits)
+                and all(row[1] in {audit["window_id"] for audit in leaves}
+                        for row in rows)
+                and sum(audit["returned_rows"] for audit in leaves) == len(rows)
+                and all(audit["count_before"] == audit["returned_rows"]
+                        == audit["count_after"] for audit in leaves)
+                and all(audit["source_fetched_at"] == payload["fetched_at"]
+                        for audit in leaves)
+            )
+            if valid:
+                return payload
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+    return None
+
+
+def save_child_checkpoint(path: Path, payload: dict[str, Any]) -> None:
+    """Write a reconciled slice atomically within its source attempt."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    wrapper = {
+        "payload": payload,
+        "sha256": hashlib.sha256(stable_json(payload).encode("utf-8")).hexdigest(),
+    }
+    temporary_path = path.with_suffix(".json.tmp")
+    temporary_path.write_text(stable_json(wrapper) + "\n", encoding="utf-8")
+    temporary_path.replace(path)
+
+
 def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
-              source_days: int | None = None) -> Path:
+              source_days: int | None = None, resume_children: bool = False) -> Path:
     if start >= end:
         raise ExtractionError("--start must be earlier than --end")
     initial_windows = initial_request_windows(start, end, source_days)
@@ -317,6 +384,10 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
         {"site": asdict(site), "starttime": iso_utc(start), "endtime": iso_utc(end)}
     )
     logical_batch_id = hashlib.sha256(query_fingerprint.encode("utf-8")).hexdigest()[:20]
+    if resume_children and source_days is None:
+        raise ValueError("resume-children requires source-days")
+    checkpoints = (prior_child_checkpoints(output_root, logical_batch_id, source_days)
+                   if resume_children else {})
     attempt_id = f"{datetime.now(UTC):%Y%m%dT%H%M%SZ}-{uuid.uuid4().hex[:10]}"
     fetched_at = iso_utc(datetime.now(UTC))
     attempt_dir = output_root / attempt_id
@@ -331,10 +402,14 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
         "requested_endtime": iso_utc(end),
         "query_parameters": source_params(site, start, end),
         "initial_source_days": source_days,
+        "resume_children": resume_children,
+        "reused_child_windows": [],
         "fetched_at": fetched_at,
         "window_audit": [],
         "coverage_gaps": [],
         "source_rows_returned": 0,
+        "source_rows_fetched_this_attempt": 0,
+        "source_rows_reused": 0,
         "raw_rows_written": 0,
         "events_file": events_path.name,
         "status": "running",
@@ -350,7 +425,7 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
     active_window: tuple[str, datetime, datetime] | None = None
     try:
         headers = {"User-Agent": USER_AGENT, "Accept": "application/geo+json, application/json"}
-        features: list[tuple[dict[str, Any], str]] = []
+        features: list[tuple[dict[str, Any], str, str]] = []
         if len(initial_windows) > 1:
             windows.append({
                 "window_id": "w0001", "starttime": iso_utc(start),
@@ -365,6 +440,10 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
             ) as client:
                 for index, (child_start, child_end) in enumerate(initial_windows, start=1):
                     window_id = f"w0001.{index}" if len(initial_windows) > 1 else "w0001"
+                    params = source_params(site, child_start, child_end)
+                    checkpoint = read_child_checkpoint(
+                        checkpoints.get(window_id, []), params, window_id
+                    ) if resume_children else None
                     active_window = (window_id, child_start, child_end)
                     manifest["active_window"] = {
                         "window_id": window_id, "starttime": iso_utc(child_start),
@@ -372,14 +451,43 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
                     }
                     manifest["window_audit"] = windows
                     save_manifest()
-                    try:
-                        child_features, child_audits = fetch_window(
-                            client, site, child_start, child_end, window_id
-                        )
-                    except ExtractionError as exc:
-                        exc.window_audit = [*windows, *exc.window_audit]
-                        raise
-                    features.extend(child_features)
+                    if checkpoint is None:
+                        try:
+                            child_features, child_audits = fetch_window(
+                                client, site, child_start, child_end, window_id
+                            )
+                        except ExtractionError as exc:
+                            exc.window_audit = [*windows, *exc.window_audit]
+                            raise
+                        child_fetched_at = iso_utc(datetime.now(UTC))
+                        if resume_children:
+                            child_audits = [
+                                {**audit, "source_fetched_at": child_fetched_at}
+                                for audit in child_audits
+                            ]
+                        manifest["source_rows_fetched_this_attempt"] += len(child_features)
+                        if resume_children:
+                            save_child_checkpoint(attempt_dir / "children" / f"{window_id}.json", {
+                                "query_parameters": params,
+                                "window_id": window_id,
+                                "attempt_id": attempt_id,
+                                "fetched_at": child_fetched_at,
+                                "window_audit": child_audits,
+                                "features": [[feature, row_window_id]
+                                             for feature, row_window_id in child_features],
+                            })
+                    else:
+                        child_features = [(feature, row_window_id)
+                                          for feature, row_window_id in checkpoint["features"]]
+                        child_audits = [
+                            {**audit, "reused_from_attempt_id": checkpoint["attempt_id"]}
+                            for audit in checkpoint["window_audit"]
+                        ]
+                        child_fetched_at = checkpoint["fetched_at"]
+                        manifest["reused_child_windows"].append(window_id)
+                        manifest["source_rows_reused"] += len(child_features)
+                    features.extend((feature, row_window_id, child_fetched_at)
+                                    for feature, row_window_id in child_features)
                     windows.extend(child_audits)
                     active_window = None
                     manifest.pop("active_window", None)
@@ -388,7 +496,7 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
 
         rows_written = 0
         with events_path.open("w", encoding="utf-8") as output:
-            for feature, window_id in features:
+            for feature, window_id, child_fetched_at in features:
                 feature_json = stable_json(feature)
                 record = {
                     "source_feature": feature,
@@ -396,7 +504,7 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
                         "logical_batch_id": logical_batch_id,
                         "attempt_id": attempt_id,
                         "window_id": window_id,
-                        "fetched_at": fetched_at,
+                        "fetched_at": child_fetched_at if resume_children else fetched_at,
                         "payload_hash": hashlib.sha256(feature_json.encode("utf-8")).hexdigest(),
                         "parser_version": PARSER_VERSION,
                     },

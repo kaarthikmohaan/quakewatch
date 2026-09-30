@@ -62,6 +62,20 @@ def validate_local_batch(manifest_path: Path) -> tuple[dict[str, Any], int]:
     if not events_path.is_file():
         raise LoadReconciliationError("events file is missing")
 
+    child_fetch_times: dict[str, str] = {}
+    if manifest.get("resume_children"):
+        for audit in manifest.get("window_audit", []):
+            if audit.get("status") != "reconciled":
+                continue
+            window_id = audit.get("window_id")
+            fetched_at = audit.get("source_fetched_at")
+            if (not window_id or not isinstance(fetched_at, str) or not fetched_at
+                    or window_id in child_fetch_times):
+                raise LoadReconciliationError("invalid resumed child audit")
+            child_fetch_times[window_id] = fetched_at
+        if not child_fetch_times:
+            raise LoadReconciliationError("resumed attempt has no reconciled child audit")
+
     count = 0
     with events_path.open(encoding="utf-8") as stream:
         for line in stream:
@@ -71,9 +85,14 @@ def validate_local_batch(manifest_path: Path) -> tuple[dict[str, Any], int]:
                 metadata = record["metadata"]
                 if not isinstance(record["source_feature"], dict) or any(
                     metadata[field] != manifest[field]
-                    for field in ("logical_batch_id", "attempt_id", "fetched_at")
+                    for field in ("logical_batch_id", "attempt_id")
                 ):
                     raise ValueError("record does not match manifest")
+                expected_fetch_time = (child_fetch_times.get(metadata["window_id"])
+                                       if manifest.get("resume_children")
+                                       else manifest["fetched_at"])
+                if not expected_fetch_time or metadata["fetched_at"] != expected_fetch_time:
+                    raise ValueError("row fetch time does not match its window audit")
                 for field in ("window_id", "payload_hash", "parser_version"):
                     if not metadata[field]:
                         raise ValueError(f"missing {field}")

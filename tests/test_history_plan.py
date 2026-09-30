@@ -128,6 +128,26 @@ class HistoryPlanTests(unittest.TestCase):
                     main()
         self.assertEqual(extract.call_args.kwargs, {"source_days": 7})
 
+    def test_execute_passes_child_resume_option(self) -> None:
+        args = ["history_plan", "--cutoff", "2026-09-29", "--window", "73",
+                "--source-days", "1", "--resume-children", "--execute"]
+        with patch("sys.argv", args):
+            with patch("quakewatch.history_plan.run_batch", return_value=Path("manifest.json")) as extract:
+                with redirect_stdout(io.StringIO()):
+                    main()
+        self.assertEqual(extract.call_args.kwargs,
+                         {"source_days": 1, "resume_children": True})
+
+    def test_child_resume_requires_source_days(self) -> None:
+        args = ["history_plan", "--cutoff", "2026-09-29", "--window", "73",
+                "--resume-children", "--execute"]
+        with patch("sys.argv", args):
+            with patch("quakewatch.history_plan.run_batch") as extract:
+                with redirect_stderr(io.StringIO()):
+                    with self.assertRaises(SystemExit):
+                        main()
+        extract.assert_not_called()
+
     def test_execute_without_window_is_rejected(self) -> None:
         with patch("sys.argv", ["history_plan", "--cutoff", "2026-09-29", "--execute"]):
             with patch("quakewatch.history_plan.run_batch") as extract:
