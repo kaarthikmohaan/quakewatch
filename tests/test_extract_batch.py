@@ -45,6 +45,34 @@ class GetFeaturesTests(unittest.TestCase):
 
 
 class FetchWindowTests(unittest.TestCase):
+    def test_two_read_timeouts_trigger_split_without_four_long_waits(self) -> None:
+        calls = 0
+
+        def respond(_request):
+            nonlocal calls
+            calls += 1
+            raise httpx.ReadTimeout("slow source")
+
+        with patch("quakewatch.extract_batch.time.sleep"):
+            with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+                with self.assertRaises(httpx.ReadTimeout):
+                    request_with_retry(client, "https://example.test/count", {})
+        self.assertEqual(calls, 2)
+
+    def test_other_temporary_response_still_has_four_attempts(self) -> None:
+        calls = 0
+
+        def respond(_request):
+            nonlocal calls
+            calls += 1
+            return httpx.Response(503)
+
+        with patch("quakewatch.extract_batch.time.sleep"):
+            with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+                response = request_with_retry(client, "https://example.test/count", {})
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(calls, 4)
+
     def test_planned_week_slices_keep_month_and_audit_each_child(self) -> None:
         start = datetime(2022, 9, 29, tzinfo=timezone.utc)
         end = datetime(2022, 10, 29, tzinfo=timezone.utc)

@@ -32,6 +32,7 @@ from quakewatch.settings import (
 )
 
 MAX_HTTP_ATTEMPTS = 4
+MAX_CONSECUTIVE_READ_TIMEOUTS = 2
 MAX_WINDOW_RECONCILIATION_ATTEMPTS = 3
 MAX_TIMEOUT_SPLIT_DEPTH = 3
 
@@ -92,6 +93,7 @@ def request_with_retry(
 ) -> httpx.Response:
     """Retry temporary HTTP/network failures a small, bounded number of times."""
     retryable_statuses = {429, 500, 502, 503, 504}
+    consecutive_read_timeouts = 0
     for attempt in range(1, MAX_HTTP_ATTEMPTS + 1):
         remaining = remaining_source_time()
         try:
@@ -101,15 +103,20 @@ def request_with_retry(
                 if remaining is not None else REQUEST_TIMEOUT_SECONDS,
             )
             remaining_source_time()
-        except httpx.TransportError:
+        except httpx.TransportError as exc:
             remaining_source_time()
-            if attempt == MAX_HTTP_ATTEMPTS:
+            consecutive_read_timeouts = (
+                consecutive_read_timeouts + 1 if isinstance(exc, httpx.ReadTimeout) else 0
+            )
+            if (attempt == MAX_HTTP_ATTEMPTS
+                    or consecutive_read_timeouts >= MAX_CONSECUTIVE_READ_TIMEOUTS):
                 raise
             delay = min(2 ** (attempt - 1), 8) + random.random() * 0.25
             remaining = remaining_source_time()
             time.sleep(min(delay, remaining) if remaining is not None else delay)
             continue
 
+        consecutive_read_timeouts = 0
         if response.status_code not in retryable_statuses:
             return response
         if attempt == MAX_HTTP_ATTEMPTS:

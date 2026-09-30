@@ -45,6 +45,8 @@ For a known slow month, add `--source-days 7` to an explicit `history_plan --win
 
 During a week-sliced capture, `manifest.json` now records `active_window` and saves each completed child audit before beginning the next. If the deadline or an interruption occurs, the failed manifest retains the reconciled child audits and marks the active child as unresolved. The attempt still writes no partial `events.jsonl`; rerun it as a new attempt after investigating the gap.
 
+After the one-day-sliced window-73 attempt spent its remaining deadline on repeated reads of October 25–26, consecutive HTTP read timeouts were capped at two attempts. This gives recursive time splitting a chance before the monthly budget expires. Other temporary transport errors and retryable HTTP statuses retain the four-attempt cap. A completed month still requires before/fetch/after reconciliation for every leaf.
+
 Each source window has a 180-second wall-clock budget shared by its HTTP retries and splits. Before each request and retry wait, the extractor checks the remaining time and caps the request timeout to it. If the budget expires, the attempt is marked failed with zero written rows and an explicit full-window unresolved gap. An interrupted command is audited the same way. A 50-window run still stops at that failed month; use an explicit later `--start-window` to continue while keeping the gap visible.
 
 ## Inspect a run
