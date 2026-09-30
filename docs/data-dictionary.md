@@ -14,7 +14,7 @@ The extractor writes one JSON object per line to `events.jsonl`. Each line conta
 | `metadata.payload_hash` | SHA-256 of canonicalized source-feature JSON |
 | `metadata.parser_version` | Version of the local raw-record envelope; currently `1` |
 
-`manifest.json` records the requested site and time range, query parameters, per-window counts before and after retrieval, returned and written row counts, and final status. Local raw output is ignored by Git. The 15-row day and 167-row and 185-row months around Seattle have been loaded into the Snowflake RAW table; the local files remain as capture evidence.
+`manifest.json` records the requested site and time range, query parameters, per-window counts before and after retrieval, returned and written row counts, and final status. Local raw output is ignored by Git. The 15-row Seattle sample and 177 complete planned history windows have been loaded into the Snowflake RAW table; three planned history windows remain source gaps. See [observed results](results.md) for verified counts.
 
 ## Planned warehouse grains
 
@@ -22,7 +22,7 @@ See [design.md](design.md) for the full model. The planned raw grain is one sour
 
 ## Phase 1 raw tables
 
-The [raw-table SQL](../sql/phase1_raw_tables.sql) created two tables in `QUAKEWATCH.RAW` on 2026-09-29. `DESCRIBE TABLE` verified their columns and types. Three Seattle source attempts, with 15, 167, and 185 rows, have since been loaded:
+The [raw-table SQL](../sql/phase1_raw_tables.sql) created two tables in `QUAKEWATCH.RAW` on 2026-09-29. `DESCRIBE TABLE` verified their columns and types. The subsequent read-only receipt check confirmed 177 complete history attempts loaded with matching RAW counts:
 
 | Table | Grain and important fields |
 |---|---|
@@ -30,3 +30,19 @@ The [raw-table SQL](../sql/phase1_raw_tables.sql) created two tables in `QUAKEWA
 | `RAW_EVENT_RECORDS` | One returned GeoJSON feature per attempt and query window. `PAYLOAD VARIANT` retains the complete `source_feature`. Attempt/window IDs, fetch time, payload hash, parser version, staged file name and file row number identify where it came from. |
 
 The pair `(STAGE_FILE_NAME, STAGE_FILE_ROW_NUMBER)` identifies a row in a staged file. The loader must use an attempt-specific stage path so this pair stays stable. It is not a global event ID and it does not deduplicate overlapping windows or retry attempts. Phase 1 load logic must reconcile these rows with the attempt manifest; Phase 2 will deduplicate logical event revisions.
+
+## Phase 2 typed staging contract
+
+`STG_EVENT_REVISION` has one row per RAW source observation, before revision deduplication. It reads `RAW_EVENT_RECORDS.PAYLOAD` without modifying that `VARIANT`. The source attempt ID, window ID, fetch time, payload hash, and staged file-row key remain attached so a rejected projection can be traced back to its original feature.
+
+| Typed field | GeoJSON source | Rule |
+|---|---|---|
+| `source_event_id` | `id` | Required non-empty string; preserve exactly as supplied |
+| `origin_time` | `properties.time` | Required epoch milliseconds, converted to UTC |
+| `source_updated_at` | `properties.updated` | Required epoch milliseconds, converted to UTC |
+| `source_status` | `properties.status` | Required non-empty string; `deleted` remains a tombstone candidate |
+| `associated_ids` | `properties.ids` | Preserve the source list for later alias resolution; absence is allowed |
+| `magnitude`, `magnitude_type`, `place` | `properties.mag`, `magType`, `place` | Nullable typed attributes; never infer a missing magnitude |
+| `longitude`, `latitude`, `depth_km` | `geometry.coordinates` | Validate a Point's longitude/latitude for active records; allow nullable geometry on a deleted tombstone |
+
+An invalid required ID, clock, status, or active-record location goes to rejects with a reason and its RAW source key. Optional fields and newly added source fields remain in the preserved `VARIANT`; they do not silently change this typed contract. This staging step does not choose a canonical ID or a current revision. Those decisions belong to the revision fact and current view after alias and tombstone rules are applied.
