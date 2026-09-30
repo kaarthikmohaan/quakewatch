@@ -1,0 +1,9 @@
+# Phase 2 isolated current-event fixture check
+
+Prepared 2026-09-30. No Snowflake fixture SQL has run.
+
+Purpose: check the deployed `EVENT_CURRENT` ranking rule with three versions of one event: [the original public record](../tests/fixtures/normal_event.json), a [synthetic later revision](../tests/fixtures/synthetic_revision_event.json), and a [synthetic latest deletion](../tests/fixtures/synthetic_tombstone_event.json). The fixture source ID and origin time stay fixed; source update times increase. These synthetic records are test data, not claims about later USGS publications.
+
+The live check will use a uniquely named Snowflake temporary table with the revision-fact shape. It will insert only these three fixture revisions into that temporary table and run the `EVENT_CURRENT` SELECT definition against it. The active-only pair should return the later magnitude `1.28`. Adding the deletion should return no current row while preserving all three revision rows. Replaying the old active row should still return no current row. It must not upload fixture files, write to project RAW or curated permanent tables, replace the deployed view, or call the processing procedure. The temporary table disappears when the session ends.
+
+Before any live execution, implement a guarded script and offline tests that verify the SQL comes from [the current-view definition](../sql/phase2_revision_current.sql), uses only the temporary table, and checks all expected row counts and statuses. Its default mode must print the plan without connecting. A separate `--execute` mode will need owner approval for Snowflake compute. This tests the warehouse current-view SQL, not the full RAW-to-Snowpark procedure or update-sweep capture path; those need separate evidence.
