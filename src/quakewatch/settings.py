@@ -21,6 +21,7 @@ USGS_QUERY_URL = "https://earthquake.usgs.gov/fdsnws/event/1/query"
 USGS_COUNT_URL = "https://earthquake.usgs.gov/fdsnws/event/1/count"
 USER_AGENT = "QuakeWatch/0.1 (educational batch data project)"
 REQUEST_TIMEOUT_SECONDS = 30.0
+SOURCE_WINDOW_DEADLINE_SECONDS = 180
 MAX_RESULTS_PER_WINDOW = 20_000
 MAX_TARGET_RESULTS_PER_WINDOW = 10_000
 PARSER_VERSION = "1"

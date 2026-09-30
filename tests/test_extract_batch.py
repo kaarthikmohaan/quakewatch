@@ -2,6 +2,7 @@
 
 import json
 import tempfile
+import time
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -9,7 +10,8 @@ from unittest.mock import patch
 
 import httpx
 
-from quakewatch.extract_batch import ExtractionError, fetch_window, get_features, run_batch, source_params
+from quakewatch.extract_batch import (ExtractionError, SourceDeadlineExceeded, fetch_window,
+                                      get_features, run_batch, source_deadline, source_params)
 from quakewatch.settings import SITES
 from quakewatch.settings import MAX_TARGET_RESULTS_PER_WINDOW
 
@@ -42,6 +44,40 @@ class GetFeaturesTests(unittest.TestCase):
 
 
 class FetchWindowTests(unittest.TestCase):
+    def test_source_deadline_interrupts_wait_and_restores_timer(self) -> None:
+        with self.assertRaises(SourceDeadlineExceeded):
+            with source_deadline(0.01):
+                time.sleep(0.1)
+
+    def test_deadline_failure_saves_full_window_gap(self) -> None:
+        start = datetime(2023, 9, 29, tzinfo=timezone.utc)
+        end = datetime(2023, 10, 29, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as directory:
+            with patch("quakewatch.extract_batch.fetch_window",
+                       side_effect=SourceDeadlineExceeded("source window exceeded 180 seconds")):
+                with self.assertRaises(SourceDeadlineExceeded):
+                    run_batch("seattle", start, end, Path(directory))
+            manifest_path = next(Path(directory).glob("*/manifest.json"))
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            self.assertEqual(manifest["status"], "failed")
+            self.assertEqual(manifest["error_type"], "SourceDeadlineExceeded")
+            self.assertEqual(manifest["raw_rows_written"], 0)
+            self.assertEqual(len(manifest["coverage_gaps"]), 1)
+            self.assertEqual(manifest["coverage_gaps"][0]["starttime"],
+                             manifest["requested_starttime"])
+
+    def test_keyboard_interrupt_saves_gap(self) -> None:
+        start = datetime(2023, 9, 29, tzinfo=timezone.utc)
+        end = datetime(2023, 10, 29, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as directory:
+            with patch("quakewatch.extract_batch.fetch_window", side_effect=KeyboardInterrupt):
+                with self.assertRaises(KeyboardInterrupt):
+                    run_batch("seattle", start, end, Path(directory))
+            manifest = json.loads(next(Path(directory).glob("*/manifest.json")).read_text())
+            self.assertEqual(manifest["status"], "failed")
+            self.assertEqual(manifest["error_type"], "KeyboardInterrupt")
+            self.assertEqual(len(manifest["coverage_gaps"]), 1)
+
     def test_parent_count_timeout_splits_into_reconciled_children(self) -> None:
         start = datetime(2022, 8, 29, tzinfo=timezone.utc)
         end = datetime(2022, 9, 29, tzinfo=timezone.utc)

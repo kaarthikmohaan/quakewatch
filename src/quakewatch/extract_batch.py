@@ -6,9 +6,11 @@ import argparse
 import hashlib
 import json
 import random
+import signal
 import sys
 import time
 import uuid
+from contextlib import contextmanager
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
@@ -21,6 +23,7 @@ from quakewatch.settings import (
     MAX_TARGET_RESULTS_PER_WINDOW,
     PARSER_VERSION,
     REQUEST_TIMEOUT_SECONDS,
+    SOURCE_WINDOW_DEADLINE_SECONDS,
     SITES,
     USER_AGENT,
     USGS_COUNT_URL,
@@ -39,6 +42,29 @@ class ExtractionError(RuntimeError):
     def __init__(self, message: str, window_audit: list[dict[str, Any]] | None = None) -> None:
         super().__init__(message)
         self.window_audit = window_audit or []
+
+
+class SourceDeadlineExceeded(TimeoutError):
+    """The bounded source capture exceeded its wall-clock budget."""
+
+
+@contextmanager
+def source_deadline(seconds: int):
+    """Interrupt slow network retries on the project's POSIX host."""
+    def expired(_signum, _frame):
+        raise SourceDeadlineExceeded(f"source window exceeded {seconds} seconds")
+
+    previous_handler = signal.signal(signal.SIGALRM, expired)
+    previous_timer = signal.setitimer(signal.ITIMER_REAL, seconds)
+    started = time.monotonic()
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous_handler)
+        if previous_timer[0] > 0:
+            remaining = max(0.000001, previous_timer[0] - (time.monotonic() - started))
+            signal.setitimer(signal.ITIMER_REAL, remaining, previous_timer[1])
 
 
 def parse_utc(value: str) -> datetime:
@@ -281,12 +307,13 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path) 
     save_manifest()
     try:
         headers = {"User-Agent": USER_AGENT, "Accept": "application/geo+json, application/json"}
-        with httpx.Client(
-            headers=headers,
-            timeout=REQUEST_TIMEOUT_SECONDS,
-            follow_redirects=True,
-        ) as client:
-            features, windows = fetch_window(client, site, start, end, "w0001")
+        with source_deadline(SOURCE_WINDOW_DEADLINE_SECONDS):
+            with httpx.Client(
+                headers=headers,
+                timeout=REQUEST_TIMEOUT_SECONDS,
+                follow_redirects=True,
+            ) as client:
+                features, windows = fetch_window(client, site, start, end, "w0001")
 
         rows_written = 0
         with events_path.open("w", encoding="utf-8") as output:
@@ -315,13 +342,24 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path) 
             }
         )
         save_manifest()
-    except Exception as exc:
+    except (Exception, KeyboardInterrupt) as exc:
         manifest.update({"status": "failed", "error_type": type(exc).__name__, "error": str(exc)})
         if isinstance(exc, ExtractionError):
             manifest["window_audit"] = exc.window_audit
             manifest["coverage_gaps"] = [
                 audit for audit in exc.window_audit if audit["status"] == "unresolved"
             ]
+        else:
+            reason = str(exc) or type(exc).__name__
+            gap = {
+                "window_id": "w0001",
+                "starttime": iso_utc(start),
+                "endtime": iso_utc(end),
+                "status": "unresolved",
+                "reason": reason,
+            }
+            manifest["window_audit"] = [gap]
+            manifest["coverage_gaps"] = [gap]
         save_manifest()
         raise
     return manifest_path

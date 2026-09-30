@@ -41,6 +41,8 @@ The extractor targets fewer than 10,000 features per leaf request, giving headro
 
 If the source count or feature request repeatedly times out, the extractor now splits that time window into smaller audited requests, up to three timeout split levels. It still compares before/fetched/after counts on each leaf. If a leaf continues timing out, the attempt fails with an unresolved coverage gap; partial sibling rows are not written as a complete capture. This responds to the two saved window-12 timeout attempts without erasing them.
 
+Each source window now has a 180-second wall-clock deadline on the project's macOS/POSIX host. If network retries or splits exceed it, the attempt is marked failed with zero written rows and an explicit full-window unresolved gap. An interrupted command is audited the same way. A 50-window run still stops at that failed month; use an explicit later `--start-window` to continue while keeping the gap visible.
+
 ## Inspect a run
 
 Read `manifest.json` first. A successful manifest has status `complete`; each leaf query window should show matching `count_before`, `returned_rows`, and `count_after`. A failed source window appears in `coverage_gaps` with its ID, bounds, and reason; `window_audit` also retains parent split and earlier sibling results. A failed run writes no event file and needs investigation and retry. The source is not a durable event log, and a successful response does not prove gap-free catalog coverage.
