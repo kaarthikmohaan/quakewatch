@@ -138,3 +138,5 @@ The remaining 24 October daily count probes returned count zero for 23 days. The
 A repeat count request for October 9–10 UTC, with the same parameters and 20-second limit, also timed out. This is a repeat source timeout for that day, not a zero count. The October 9 daily range can be divided into two half-day probes to locate the slow interval; no update-sweep coverage or watermark was advanced.
 
 Half-day count probes for October 9 found that 00:00–12:00 UTC timed out at 20 seconds, while 12:00–October 10 00:00 UTC returned HTTP 200 with count zero. The first half-day remains unknown. These are diagnostics only: no event features were captured, no full sweep reconciled, and no watermark advanced.
+
+The next split found the same pattern: October 9 00:00–06:00 UTC timed out at 20 seconds, while 06:00–12:00 UTC returned HTTP 200 with count zero. The unknown interval has narrowed to the first six hours; a zero count cannot be inferred for it. No source features were captured or loaded.
