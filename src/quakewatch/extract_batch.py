@@ -195,14 +195,20 @@ def split_window(start: datetime, end: datetime) -> tuple[tuple[datetime, dateti
 
 def fetch_window(
     client: httpx.Client,
-    site: Site,
+    site: Site | None,
     start: datetime,
     end: datetime,
     window_id: str,
     timeout_split_depth: int = 0,
+    query_base: dict[str, Any] | None = None,
 ) -> tuple[list[tuple[dict[str, Any], str]], list[dict[str, Any]]]:
     """Fetch one window; split oversized, mismatched, or timed-out requests."""
-    params = source_params(site, start, end)
+    if query_base is None:
+        if site is None:
+            raise ValueError("site or query_base is required")
+        params = source_params(site, start, end)
+    else:
+        params = {**query_base, "starttime": iso_utc(start), "endtime": iso_utc(end)}
     last_issue = "source count changed during fetch"
 
     def unresolved(reason: str) -> dict[str, Any]:
@@ -277,7 +283,7 @@ def fetch_window(
         try:
             child_rows, child_audits = fetch_window(
                 client, site, child_start, child_end, f"{window_id}.{suffix}",
-                timeout_split_depth + 1,
+                timeout_split_depth + 1, query_base=query_base,
             )
         except ExtractionError as exc:
             exc.window_audit = [*audits, *exc.window_audit]

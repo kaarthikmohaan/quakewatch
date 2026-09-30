@@ -91,3 +91,19 @@ PYTHONPATH=src .venv/bin/python -m quakewatch.update_plan \
 ```
 
 Expect `status: preview`, `updatedafter: 2026-09-28T00:00:00.000Z`, and `watermark_advanced: false`. Dates before the configured catalog lower bound are outside this plan. The source does not provide a transactionally consistent snapshot. See the [USGS parameter contract](https://earthquake.usgs.gov/fdsnws/event/1/) for the distinction between origin time and update time.
+
+## Update-sweep extraction
+
+`PYTHONPATH=src .venv/bin/python -m quakewatch.update_extract` accepts the same five required planning arguments. Without `--execute` it only prints the plan. Adding `--execute` performs a bounded source capture: it uses the shared extractor to split origin-time windows by counts, preserves the same `updatedafter` on every child, includes deletions, and applies no spatial or magnitude filters. Every leaf compares source counts before/after against returned features. One three-minute deadline bounds the entire attempt. Split boundaries overlap deliberately; later revision processing must deduplicate observations.
+
+Each execution writes a unique attempt manifest under ignored `data/raw/`, with `batch_kind: update_sweep`. A successful extraction atomically publishes `events.jsonl` in the existing RAW-loader format. Failure records an explicit coverage gap and cannot be loaded as complete. A deadline failure may conservatively identify the whole requested range when no completed recursive audit is available. `last_committed_watermark` and `watermark_advanced: false` remain unchanged on success and failure: extraction alone does not authorize a watermark commit. The load-and-commit workflow is not implemented yet. History loading commands intentionally exclude catalog-wide sweep attempts.
+
+Offline verification:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m unittest \
+  tests.test_update_extract tests.test_update_plan \
+  tests.test_extract_batch tests.test_raw_load -q
+```
+
+On 2026-09-30 these 38 tests passed, including mocked over-limit splitting with an old deleted record, source failure/deadline evidence, and local loader compatibility. No live update-sweep extraction or Snowflake sweep load has been demonstrated yet.
