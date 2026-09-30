@@ -19,10 +19,16 @@ This is one source-capture observation, not a completeness guarantee or a perfor
 
 On 2026-09-29, the Python loader ran for attempt `20260929T075452Z-26375840ea`. Its manifest and local JSONL each contained 15 rows. The visible terminal reported `Loaded and reconciled RAW rows: 15` after the COPY result and attempt-filtered RAW count both matched 15 and the append-only batch receipt insert returned without an error. An independent read through the Snowflake Python Connector then returned `(receipt_count=1, load_status='complete', loaded_rows=15, raw_rows=15)` for this attempt. Warehouse credits and stage storage charges have not been measured.
 
+## First Phase 2 Snowpark pilot
+
+On 2026-09-30, the approved bounded pilot uploaded the procedure ZIP, created the local Phase 2 curated objects, and called `QUAKEWATCH.CURATED.PROCESS_LOADED_ATTEMPT` once for the same 15-row Seattle attempt. The live terminal returned `status=complete`, `loaded_rows=15`, `processed_rows=15`, `rejected_rows=0`, and `revision_rows_merged=15`. The process attempt ID was `42fc37d34e1545498ad004d8eeb35b72`. Its post-call count checks reported 15 typed staging rows, 15 revision fact rows, 45 event-site bridge rows, three public site rows, one batch fact row, and one processing-attempt row. The empty curated-schema preflight means this first call had no pre-existing curated fact or bridge rows to delete.
+
+This verifies one small procedure execution and its aggregate counts. It does not yet establish overlapping-rerun idempotency, alias rekey behavior, tombstone/current-view behavior, historical model completeness, or actual Snowflake credit usage. The three history source gaps and incomplete catalog-wide update sweep remain unresolved.
+
 ## Not measured yet
 
 - Repeat-batch idempotency and revision/tombstone behavior
-- Snowflake fetch-to-curated latency, rejects, and pending batches
+- Snowflake fetch-to-curated latency, nonzero rejects, and pending batches
 - FDSN update-sweep coverage gaps
 - Warehouse credit usage
 - User task completion time or usefulness

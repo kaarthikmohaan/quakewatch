@@ -1,6 +1,6 @@
 # Phase 2 first Snowflake pilot plan
 
-Prepared 2026-09-30. This is a deployment plan, not evidence of a deployed procedure.
+Prepared and executed 2026-09-30. The plan below describes the bounded first run; [results](results.md) record the measured outcome.
 
 ## Scope and preflight
 
@@ -23,4 +23,4 @@ The runnable code for this sequence is [scripts/phase2_pilot.py](../scripts/phas
 
 The project warehouse was configured X-Small with 60-second auto-suspend and auto-resume. Snowflake lists a **Gen1 X-Small standard warehouse at 1 credit/hour**, billed per second with a **60-second minimum each time it starts**. That is about **0.017 credit minimum**; a continuously running 2–6 minute pilot, including idle time before auto-suspend, would be about **0.033–0.100 credits**. This is a scenario, not a cap or bill forecast. Procedure compilation or a failing query can extend runtime. The account's dollar price per credit, warehouse generation, other service charges, and storage price have not been verified. Stage storage for the 24 KB ZIP and small curated tables is expected to be small but is not measured. [Snowflake warehouse billing](https://docs.snowflake.com/en/user-guide/warehouses-overview), [warehouse considerations](https://docs.snowflake.com/en/user-guide/warehouses-considerations).
 
-No Snowflake upload, DDL, `CALL`, or data deletion was performed while preparing this plan. No GitHub push was performed.
+The live pilot subsequently completed one procedure call and the expected count checks: 15 staged rows, 15 revisions, 45 bridge rows, one batch fact, one processing attempt, and three public sites. The initial curated schema was empty, so there were no pre-existing curated rows to delete. Actual credits remain unmeasured. No GitHub push was performed.

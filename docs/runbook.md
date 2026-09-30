@@ -81,6 +81,8 @@ The Phase 2 procedure can be bundled offline with `PYTHONPATH=src .venv/bin/pyth
 
 The [first pilot plan](phase2-pilot-plan.md) narrows deployment to the already loaded 15-row Seattle attempt. `PYTHONPATH=src .venv/bin/python scripts/phase2_pilot.py` prints its checks and DDL order without connecting. Its `--execute` mode requires explicit cost approval; it stops unless the curated schema is empty and the RAW receipt/count reconcile, then performs one procedure call and count check.
 
+The first pilot completed on 2026-09-30: 15 staged rows, 15 revision rows, 45 bridge rows, one batch fact, one process attempt, and three public sites. See [measured results](results.md). The pilot command is intentionally first-run only; its empty-schema guard now stops a second execution. Do not rerun it to process more attempts. A separate, guarded processing command and acceptance checks are needed before wider history processing.
+
 ## Update-sweep preview
 
 `quakewatch.update_plan` prints a local plan only. Supply the catalog origin-time lower bound, a fixed origin-time cutoff, the prior committed update watermark, the sweep start, and a positive overlap in seconds. The resulting `updatedafter` is the prior watermark minus overlap; no spatial or magnitude filters are added. The proposed next watermark is the fixed sweep start. The planner does not persist or advance any watermark and does not count-size, extract, or load windows yet. Execution must verify all bounded source windows and their RAW loads before a later implementation can commit that watermark; failed or incomplete sweeps must retain the previous one.
