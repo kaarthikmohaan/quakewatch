@@ -6,7 +6,7 @@ This is a retrospective data project. It is not an earthquake warning, risk scor
 
 ## Status
 
-The Python 3.12 environment and bounded USGS extractor are in place. Three Seattle attempts have been loaded into Snowflake RAW: a reconciled 15-row day and reconciled 167-row and 185-row months. The five-year history and update sweep are still incomplete. Warehouse models and CI are not implemented yet.
+The Python 3.12 environment and bounded USGS extractor are in place. The loader has reported 177 of 180 planned history windows loaded and reconciled into Snowflake RAW, totaling 216,361 history rows; three history windows remain explicit USGS source gaps. A separate 15-row Seattle sample was also loaded. The catalog-wide update sweep remains incomplete because a bounded source request times out; its watermark has not advanced. Warehouse models and CI are not implemented yet. See [observed results](docs/results.md) for the evidence and its limits.
 
 ## Quickstart
 
@@ -28,7 +28,7 @@ The command requires an explicit location and time range. It writes `events.json
 USGS FDSN GeoJSON
   -> Python bounded batch extractor
   -> JSON Lines + query-count manifest
-  -> Snowflake internal stage and COPY INTO (three Seattle loads complete)
+  -> Snowflake internal stage and COPY INTO (177 history windows loader-reported complete)
   -> raw VARIANT records (loaded) -> Snowpark warehouse models (planned)
 ```
 
