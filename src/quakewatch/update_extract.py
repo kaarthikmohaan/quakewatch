@@ -4,8 +4,9 @@ import argparse
 import calendar
 import hashlib
 import json
+import re
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import httpx
@@ -22,7 +23,8 @@ def initial_sweep_windows(start, end, years_per_window: int,
                           recent_start_year: int = 2001,
                           recent_years_per_window: int = 5,
                           monthly_start_year: int | None = None,
-                          recent_months_per_window: int = 1):
+                          recent_months_per_window: int = 1,
+                          daily_month: str | None = None):
     """Partition origin time before calling the catalog-wide source endpoint."""
     if not 1 <= years_per_window <= 100 or not 1 <= recent_years_per_window <= 100:
         raise ValueError('window sizes must be between 1 and 100 years')
@@ -32,10 +34,27 @@ def initial_sweep_windows(start, end, years_per_window: int,
         raise ValueError('monthly-start-year must be between recent-start-year and 9999')
     if not 1 <= recent_months_per_window <= 1200:
         raise ValueError('recent-months-per-window must be between 1 and 1200')
+    daily_start = daily_end = None
+    if daily_month is not None:
+        if not re.fullmatch(r'[0-9]{4}-(0[1-9]|1[0-2])', daily_month):
+            raise ValueError('daily-month must be YYYY-MM')
+        year, month = map(int, daily_month.split('-'))
+        if monthly_start_year is None or year < monthly_start_year or year > 9999:
+            raise ValueError('daily-month requires monthly-start-year at or before it')
+        if year == 9999 and month == 12:
+            raise ValueError('daily-month exceeds the supported datetime range')
+        daily_start = start.replace(year=year, month=month, day=1,
+                                    hour=0, minute=0, second=0, microsecond=0)
+        daily_end = (daily_start.replace(year=year + 1, month=1) if month == 12
+                     else daily_start.replace(month=month + 1))
+        if not start <= daily_start < daily_end <= end:
+            raise ValueError('daily-month must fit within requested sweep bounds')
     windows = []
     cursor = start
     while cursor < end:
-        if monthly_start_year is not None and cursor.year >= monthly_start_year:
+        if daily_start is not None and daily_start <= cursor < daily_end:
+            next_end = min(cursor + timedelta(days=1), daily_end, end)
+        elif monthly_start_year is not None and cursor.year >= monthly_start_year:
             month_index = (cursor.year - 1) * 12 + cursor.month - 1 + recent_months_per_window
             year, month_offset = divmod(min(month_index, 9999 * 12 - 1), 12)
             year += 1
@@ -51,6 +70,8 @@ def initial_sweep_windows(start, end, years_per_window: int,
             next_end = min(next_end, cursor.replace(year=recent_start_year, month=1, day=1))
         elif monthly_start_year is not None and cursor.year < monthly_start_year:
             next_end = min(next_end, cursor.replace(year=monthly_start_year, month=1, day=1))
+        if daily_start is not None and cursor < daily_start:
+            next_end = min(next_end, daily_start)
         if next_end <= cursor:
             raise ValueError('cannot advance the origin-time window')
         windows.append((cursor, next_end))
@@ -64,12 +85,14 @@ def run_update_sweep(catalog_start, cutoff, last_watermark, sweep_started_at,
                      recent_years_per_window: int = 5,
                      monthly_start_year: int | None = None,
                      recent_months_per_window: int = 1,
-                     resume_children: bool = False) -> Path:
+                     resume_children: bool = False,
+                     daily_month: str | None = None) -> Path:
     plan = plan_update_sweep(catalog_start, cutoff, last_watermark,
                              sweep_started_at, overlap_seconds)
     initial_windows = initial_sweep_windows(catalog_start, cutoff, years_per_window,
                                             recent_start_year, recent_years_per_window,
-                                            monthly_start_year, recent_months_per_window)
+                                            monthly_start_year, recent_months_per_window,
+                                            daily_month)
     logical_id = hashlib.sha256(stable_json(plan['query_parameters']).encode()).hexdigest()[:20]
     checkpoints = {}
     if resume_children:
@@ -98,6 +121,7 @@ def run_update_sweep(catalog_start, cutoff, last_watermark, sweep_started_at,
                 'recent_source_years': recent_years_per_window,
                 'monthly_start_year': monthly_start_year,
                 'recent_source_months': recent_months_per_window if monthly_start_year else None,
+                'daily_month': daily_month,
                 'resume_children': resume_children,
                 'reused_child_windows': [], 'source_rows_reused': 0,
                 'source_rows_fetched_this_attempt': 0,
@@ -119,6 +143,8 @@ def run_update_sweep(catalog_start, cutoff, last_watermark, sweep_started_at,
                        f'{recent_start_year}, {recent_years_per_window} years after')
         if monthly_start_year is not None:
             sizing_note += f'; {recent_months_per_window} months from {monthly_start_year}'
+        if daily_month is not None:
+            sizing_note += f'; one day within {daily_month}'
         audits.append({'window_id': 'w0001', 'starttime': iso_utc(catalog_start),
                        'endtime': iso_utc(cutoff), 'status': 'split',
                        'reason': sizing_note})
@@ -217,6 +243,7 @@ def main():
     parser.add_argument('--recent-years-per-window', type=int, default=5)
     parser.add_argument('--monthly-start-year', type=int)
     parser.add_argument('--recent-months-per-window', type=int, default=1)
+    parser.add_argument('--daily-month')
     parser.add_argument('--resume-children', action='store_true')
     parser.add_argument('--execute', action='store_true')
     args = parser.parse_args()
@@ -226,7 +253,8 @@ def main():
         plan = plan_update_sweep(*values)
         initial_sweep_windows(args.catalog_start, args.cutoff, args.years_per_window,
                               args.recent_start_year, args.recent_years_per_window,
-                              args.monthly_start_year, args.recent_months_per_window)
+                              args.monthly_start_year, args.recent_months_per_window,
+                              args.daily_month)
     except ValueError as exc:
         parser.error(str(exc))
     if not args.execute:
@@ -238,7 +266,8 @@ def main():
                                                 recent_years_per_window=args.recent_years_per_window,
                                                 monthly_start_year=args.monthly_start_year,
                                                 recent_months_per_window=args.recent_months_per_window,
-                                                resume_children=args.resume_children))
+                                                resume_children=args.resume_children,
+                                                daily_month=args.daily_month))
 
 
 if __name__ == '__main__':

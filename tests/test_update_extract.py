@@ -90,6 +90,25 @@ class UpdateExtractTests(unittest.TestCase):
             initial_sweep_windows(datetime(2022, 1, 1, tzinfo=UTC),
                                   datetime(2024, 1, 1, tzinfo=UTC), 50, 2001, 5, 2000)
 
+    def test_one_daily_month_preserves_earlier_window_ids_and_coverage(self):
+        start = datetime(1, 1, 1, tzinfo=UTC)
+        cutoff = datetime(2026, 9, 30, tzinfo=UTC)
+        monthly = initial_sweep_windows(start, cutoff, 50, 2001, 1, 2023, 1)
+        daily = initial_sweep_windows(start, cutoff, 50, 2001, 1, 2023, 1, '2023-10')
+        self.assertEqual(daily[:71], monthly[:71])
+        self.assertEqual(daily[71], (datetime(2023, 10, 1, tzinfo=UTC),
+                                     datetime(2023, 10, 2, tzinfo=UTC)))
+        self.assertEqual(daily[101][1], datetime(2023, 11, 1, tzinfo=UTC))
+        self.assertEqual(daily[-1][1], cutoff)
+        self.assertTrue(all(a[1] == b[0] for a, b in zip(daily, daily[1:])))
+
+    def test_daily_month_must_be_bounded_and_in_monthly_range(self):
+        start = datetime(2023, 1, 1, tzinfo=UTC)
+        end = datetime(2024, 1, 1, tzinfo=UTC)
+        for daily_month in ('2023-13', '2022-12', '2024-01'):
+            with self.subTest(daily_month=daily_month), self.assertRaises(ValueError):
+                initial_sweep_windows(start, end, 50, 2001, 1, 2023, 1, daily_month)
+
     def test_deadline_after_first_child_preserves_precise_gap(self):
         values = (datetime(2024, 1, 1, tzinfo=UTC), datetime(2026, 1, 1, tzinfo=UTC),
                   datetime(2025, 1, 1, tzinfo=UTC), datetime(2026, 1, 1, tzinfo=UTC), 86400)
