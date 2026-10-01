@@ -1,5 +1,144 @@
 # Results
 
+## Phase 4 ten-case Cortex aggregate snapshot
+
+The owner ran the approved read-only aggregate query on 2026-10-01 under
+`QUAKEWATCH_ROLE` and `QUAKEWATCH_WH`. The runner saved ten public-site,
+fixed-window SQL rows to Git-ignored
+`data/cortex/phase4_aggregates.json`. Query ID:
+`01c77065-0002-b136-000e-fef20003852e`; reviewed SQL SHA-256:
+`9b2110deeb6dfe241b0e6f1b5f2c809d9b6331988fa02ee7f64c6814492c7743`.
+Each row also has a hash of its saved aggregate input. The modeled within-radius
+event counts were:
+
+| Public site | 2022 | 2024 | 2026 to Sep 29 UTC |
+|---|---:|---:|---:|
+| Anchorage | 22,056 | 21,711 | 10,685 |
+| Seattle | 2,651 | 3,514 | 2,469 |
+| San Francisco | 15,975 | 18,859 | 16,183 |
+
+The tenth case, Seattle 2026-09-28 UTC, had 15 modeled events. All ten
+saved cases have one configured 250 km public radius, a nonzero count, and a
+nearest event with magnitude, source status, and record age. The script and
+saved file contain no site coordinates. These are counts of currently modeled
+rows in selected windows, **not** full USGS counts or proof of complete
+coverage; three history gaps and the incomplete update sweep remain open.
+The query may have resumed warehouse compute, but no per-query credit amount
+was measured. No Cortex call was made by this aggregate snapshot step.
+
+## Phase 4 nine-case Cortex evaluation
+
+The owner ran the approved bounded evaluator on 2026-10-01 for the nine saved
+annual/public-site cases. The Seattle day was excluded because its earlier
+`llama3.1-8b` result had already used one retry. The evaluator used
+`claude-haiku-4-5` under `QUAKEWATCH_ROLE`, issued exactly nine new
+`AI_COMPLETE` calls, and saved model, generation time, input/prompt hashes,
+query IDs, token usage, output, and local validation in Git-ignored
+`data/cortex/phase4_briefs.json`. A subsequent invocation returned
+`status=cached`, `new_calls=0`, showing no duplicate paid calls.
+
+All nine outputs passed the strict local screen. Human review then compared
+each stated UTC window, modeled count, 250 km radius, nearest event ID and
+distance **from the site**, magnitude, source status, and age at SQL check time
+against its saved SQL row; all nine passed. No output included a hazard/action
+or complete-source-coverage claim. The saved cache marks each human fact
+review as passed. This establishes factual agreement for these nine
+point-in-time aggregates only; it does not establish complete source coverage
+or that a target user finds the text easier to scan than SQL.
+
+The nine completions reported 1,845 prompt tokens and 926 completion tokens
+in total. Using the published `AI_COMPLETE` rates for this model (0.60 AI
+credits per million input tokens and 3.00 per million output tokens), a simple
+token-rate calculation is about **0.003885 AI credits**. This is an estimate
+from returned tokens; the later Account Usage query below verified the same
+AI-credit subtotal. Warehouse platform credits are separate and unmeasured
+for these calls.
+
+The owner then compared the Seattle 2024 SQL fact row with its generated
+Cortex sentence in chat and said **“cortex brief”** was easier to scan. This
+is one owner preference on one example, supporting continued optional use.
+It is not a target-analyst interview or a measured task-time improvement;
+those product checks remain open.
+
+The owner ran the separately approved read-only Account Usage query at
+2026-10-01 13:27:00 UTC (metering query ID
+`01c77087-0002-b1e7-000e-fef200036b0a`).
+`SNOWFLAKE.ACCOUNT_USAGE.CORTEX_AI_FUNCTIONS_USAGE_HISTORY` returned all 11
+expected query IDs, each marked completed, with **0.003948756 reported AI
+credits** in total: **0.003885000** for the nine `claude-haiku-4-5` briefs and
+**0.000063756** for the two `llama3.1-8b` briefs. This is measured AI-function
+usage for those exact successful calls, rather than the earlier token-rate
+estimate. The rejected trial-account calls generated no brief and were not
+among the 11 successful IDs. The metering query itself may have used XS
+warehouse compute; warehouse platform credits for the aggregate query,
+Cortex calls, and metering query are not isolated by this AI usage view.
+
+## Phase 4 Cortex trial attempt
+
+At the owner's request, optional Cortex work was reopened after the Phase 4
+exit review. On 2026-10-01, an approved bounded trial used the public Seattle
+2026-09-28 UTC sample, checked modeled events within the site radius, and
+selected one nearest event. The planned `AI_COMPLETE('llama3.1-8b', ...)` call
+was limited to one invocation and 120 output tokens. Snowflake rejected the
+call with error `399258 (0A000): AI function
+_COMPLETE_WITH_PROMPT_HISTORY_LLM is not available for trial accounts`.
+Therefore **no Cortex summary or usefulness result exists**. The SQL checks
+may have consumed warehouse compute; AI-function usage was not measured, so
+no exact cost or zero-charge claim is made. The deterministic SQL result is
+the fallback. Snowflake's current trial-account documentation says AI features
+are disabled by default until a credit card is added. Adding a payment method
+is an owner billing decision; no account billing setting was changed here.
+These early trial calls used the local administrator profile; the saved trial
+runner was later changed to execute as `QUAKEWATCH_ROLE`, matching the
+dedicated-role rule used by the nine-case evaluator.
+
+The owner then ran the bounded command again in the visible terminal. It
+returned `cortex_unavailable_for_trial_account` with the same Snowflake error
+`399258`; no AI summary was generated. The SQL result for the public Seattle
+sample was 15 modeled events within radius. The nearest was event
+`uw714111042`, 42.1 km away, magnitude 1.23, source status `reviewed`, and
+source-record age 59.6 hours at query time. The count and nearest query IDs
+were `01c76fc5-0002-afd6-000e-fef200033a4e` and
+`01c76fc5-0002-b113-000e-fef200035d76`. These SQL facts are a bounded
+sample, not a full-source coverage claim. Cortex access was still blocked at
+that point. The owner then verified the payment method in Snowsight before
+authorizing another paid attempt.
+
+After the owner confirmed a saved payment method and approved a third bounded
+attempt, `AI_COMPLETE` returned a `llama3.1-8b` completion (query ID
+`01c76fcf-0002-afd6-000e-fef200033b12`) with 140 prompt tokens and 120
+completion tokens. The count and nearest SQL queries were
+`01c76fcf-0002-b1e7-000e-fef20003693a` and
+`01c76fcf-0002-b136-000e-fef20003837e`. SQL again found 15 modeled
+Seattle-sample events within the configured site radius. The nearest event
+was `uw714111042`, distance 42.1 km, magnitude 1.23, source status
+`reviewed`, with source-record age 59.8 hours at query time.
+
+The generated text incorrectly said **“15 km Radius”** by treating the event
+count as a radius size; no 15 km radius was provided. It also stopped before
+stating the source-record age. This brief was **rejected** and the SQL facts
+remain the deterministic fallback. A tighter one-sentence prompt and local
+validation now reject missing facts, unsupported radius-size claims, hazard
+language, and truncated endings. That revision has not been sent to Cortex.
+The 260 returned tokens were the first usage evidence; the later Account Usage
+query above measured its AI credits. No usefulness claim is made from this
+failed example.
+
+The owner approved the single bounded retry for that same aggregate. It
+returned query ID `01c76fd2-0002-b113-000e-fef200035e4e` with 141 prompt
+tokens and 82 completion tokens. The contemporaneous SQL queries
+`01c76fd2-0002-afd6-000e-fef200033b1e` and
+`01c76fd2-0002-b136-000e-fef200038386` again found 15 events and nearest
+event `uw714111042`, 42.1 km **from the Seattle site**, magnitude 1.23,
+status `reviewed`, source-record age 59.8 hours. The output included those
+values and passed the first automatic checks, but said the nearest event was
+"42.1 km away from uw714111042," incorrectly anchoring distance to the event's
+own ID. Human fact review therefore **rejected the retry**. The validator now
+also rejects that phrasing. The one-retry limit for this aggregate has been
+reached; no further call on this saved input is planned. Actual billed AI
+credits were later measured above; warehouse credits remain unmeasured for
+these calls.
+
 ## Phase 4 exit review
 
 The owner accepted the Phase 4 optional-demo exit on 2026-10-01. The sandbox

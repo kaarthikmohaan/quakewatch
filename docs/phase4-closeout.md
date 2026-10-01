@@ -50,3 +50,15 @@ The [design](design.md) remains the project plan. The first-backfill p95 was
 35.9 hours against a predeclared 24-hour target. This miss remains visible in
 [results](results.md), along with the 485 typed rejects and the fact that
 216,376 total observations include an overlapping 15-row Seattle pilot.
+
+## Later Cortex work
+
+After this close-out snapshot, the owner asked to use Cortex. Two bounded
+briefs for one Seattle aggregate were rejected during human fact review; the
+[dated results](results.md) explain why. A [ten-case evaluation plan](phase4-cortex-evaluation.md)
+was then run: ten aggregates were saved, nine later briefs passed human fact
+review, and the owner preferred the Cortex brief in one scan comparison.
+Account Usage reported 0.003948756 AI credits for eleven completed calls,
+including the two rejected Llama briefs. This later work does not change the
+original accepted Phase 4 exit, measure an isolated warehouse bill, replace
+the target-user interview, or close the open core gaps.
