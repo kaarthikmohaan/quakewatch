@@ -4,6 +4,25 @@
 guide implements the target-user check in [the design](design.md). Do not mark
 it complete from the project owner's Cortex scan comparison.
 
+## Finding one participant
+
+The owner has no existing target-analyst contact. A practical referral route is
+the [International Association of Emergency Managers' Asia council](https://www.iaem.org/global/iaem-asia/),
+whose public page includes India and invites contact with its leadership. Ask
+for a referral to a practitioner who compares historical hazard records for
+facilities or preparedness work. This is a recruitment lead, not a confirmed
+participant, and no membership or purchase is needed to review the public
+page. The project team has not contacted the council or any individual.
+
+Suggested short invitation for the owner to send if they choose:
+
+> I am building a small educational batch warehouse that compares historical
+> USGS earthquake records near three public example cities. Would a facilities
+> planning or preparedness analyst be willing to spend about 15 minutes trying
+> one comparison task and telling me what is useful or misleading? This is
+> research feedback, not an alert or safety tool. I will share the known data
+> gaps up front and can keep their notes anonymous.
+
 ## Participant and task
 
 Ask one facilities-planning or community-preparedness analyst who actually
