@@ -105,6 +105,8 @@ Preview the [original fixture procedure check](../scripts/phase2_fixture_origina
 
 Preview the [later-update fixture check](../scripts/phase2_fixture_update.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_update.py`. It does not connect. The approved live run on 2026-10-01 processed only `fixture-update-v1` and checked that the original and later revisions remained in history while the current row moved to magnitude 1.28. Its exact-original-state guard now prevents rerunning the command.
 
+Preview the [deletion fixture check](../scripts/phase2_fixture_deletion.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_deletion.py`. It does not connect. A separately approved live run will require the exact measured update result, process only `fixture-deletion-v1`, and check a retained third revision with `deleted` status while `EVENT_CURRENT` returns no row. No deletion fixture call has run yet.
+
 ## Update-sweep preview
 
 `quakewatch.update_plan` prints a local plan only. Supply the catalog origin-time lower bound, a fixed origin-time cutoff, the prior committed update watermark, the sweep start, and a positive overlap in seconds. The resulting `updatedafter` is the prior watermark minus overlap; no spatial or magnitude filters are added. The proposed next watermark is the fixed sweep start. The planner does not persist or advance any watermark and does not count-size, extract, or load windows yet. Execution must verify all bounded source windows and their RAW loads before a later implementation can commit that watermark; failed or incomplete sweeps must retain the previous one.
