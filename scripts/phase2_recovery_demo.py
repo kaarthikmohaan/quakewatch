@@ -56,10 +56,10 @@ def _count(cursor, table: str, where: str = "", params: tuple = ()) -> int:
     return int(cursor.fetchone()[0])
 
 
-def _snapshot(cursor) -> dict[str, int]:
+def _snapshot(cursor, attempt_id: str = ATTEMPT_ID) -> dict[str, int]:
     return {
-        "raw": _count(cursor, f"{RAW}.RAW_EVENT_RECORDS", "WHERE ATTEMPT_ID = %s", (ATTEMPT_ID,)),
-        "receipts": _count(cursor, f"{RAW}.BATCH_ATTEMPT", "WHERE ATTEMPT_ID = %s", (ATTEMPT_ID,)),
+        "raw": _count(cursor, f"{RAW}.RAW_EVENT_RECORDS", "WHERE ATTEMPT_ID = %s", (attempt_id,)),
+        "receipts": _count(cursor, f"{RAW}.BATCH_ATTEMPT", "WHERE ATTEMPT_ID = %s", (attempt_id,)),
         "staging": _count(cursor, f"{CURATED}.STG_EVENT_REVISION"),
         "revisions": _count(cursor, f"{CURATED}.FACT_EVENT_REVISION"),
         "bridges": _count(cursor, f"{CURATED}.BRIDGE_EVENT_SITE"),
@@ -72,9 +72,9 @@ def _snapshot(cursor) -> dict[str, int]:
     }
 
 
-def _audit(cursor, status: str) -> int:
+def _audit(cursor, status: str, attempt_id: str = ATTEMPT_ID) -> int:
     return _count(cursor, f"{CURATED}.BATCH_PROCESS_ATTEMPT",
-                  "WHERE ATTEMPT_ID = %s AND STATUS = %s", (ATTEMPT_ID, status))
+                  "WHERE ATTEMPT_ID = %s AND STATUS = %s", (attempt_id, status))
 
 
 def _duplicates(cursor) -> dict[str, int]:
