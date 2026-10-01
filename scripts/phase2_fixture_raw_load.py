@@ -30,10 +30,10 @@ def _hash_feature(feature: dict) -> str:
     ).encode("utf-8")).hexdigest()
 
 
-def local_plans() -> list[dict]:
+def local_plans(sequence: tuple[tuple[str, str], ...] = SEQUENCE) -> list[dict]:
     """Require exactly the reviewed fixture files and source identities."""
     plans = []
-    for attempt_id, fixture_name in SEQUENCE:
+    for attempt_id, fixture_name in sequence:
         directory = ROOT / attempt_id
         manifest, count = validate_local_batch(directory / "manifest.json")
         if (manifest.get("attempt_id") != attempt_id or count != 1
