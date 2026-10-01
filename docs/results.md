@@ -12,6 +12,14 @@ At the separate freshness query's execution time, the last successful fetch was 
 
 The first CI run for commit `12a167a` started after the approved push on 2026-10-01 and failed in the fixture-test step. GitHub's job log showed `FileNotFoundError` for ignored synthetic `data/procedure/phase2_fixture/attempts/.../manifest.json` files; all 272 tests were discovered, with 10 errors. The locked install and Python setup steps passed. These generated local fixture files were present on the Mac but absent in GitHub's fresh checkout. A clean local checkout then reproduced two further missing-artifact errors for the ignored fixture procedure ZIP. The workflow now builds both the deterministic fixture ZIP/SQL and synthetic attempts before testing. The [follow-up CI run](https://github.com/kaarthikmohaan/quakewatch/actions/runs/36831735945) for pushed commit `bc69dde` completed with `success` on 2026-10-01. The same clean-checkout sequence passed all 273 tests locally. This CI job uses no Snowflake secrets or live warehouse integration.
 
+## Phase 3 exit review
+
+The owner accepted the Phase 3 design exit on 2026-10-01: live quality counts, CI, a dated sample, and the missed predeclared latency target are documented separately from targets. This phase acceptance does not close the three USGS history gaps, the incomplete catalog-wide update sweep, or the live failed-transform/retry demonstration.
+
+## Window 73 checkpoint retry after Phase 3 exit
+
+The bounded public USGS retry on 2026-10-01, attempt `20261001T075447Z-c12460171c`, reused the same 26 validated daily checkpoints and their 1,451 features. It fetched zero new features and reached `SourceDeadlineExceeded` on child `w0001.27`, 2022-10-25 through 2022-10-26 UTC. The failed manifest retains one unresolved gap and no `events.jsonl`; no Snowflake load or watermark advancement followed. This repeated response timeout is an observed source-coverage limit, not a successful zero-count window. Further identical retries are deferred until a different bounded request strategy or source-state change can be justified.
+
 ## First Phase 3 quality deployment attempt
 
 The first approved Phase 3 quality runner attempt on 2026-10-01 stopped at its preflight because at least one of the three planned view names already existed in `QUAKEWATCH.CURATED`. The runner issued no view DDL, reconciliation query, or sample query. A subsequent read-only metadata check found all three names and visible definitions. Their SHA-256 hashes exactly match the reviewed local `CREATE VIEW` statements: batch health `9f37d2ca37e6bc570ff1de9d4b2e423fc4ce094e77384cff850ff68b0f13fca7`, reject rows `d848cce3d7b1b8aad4ea97ece3e2b3b037a7feb8ac0db74eda660300b9b71c57`, and window audit `4b79a3d15c11ea589e9fc756ec704a52f885aca89a1cc17945992757639283b1`.
