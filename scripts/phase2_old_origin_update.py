@@ -22,7 +22,20 @@ EXPECTED_AFTER = {
     "BRIDGE_EVENT_SITE": 15,
     "FACT_BATCH_RUN": 6,
     "BATCH_PROCESS_ATTEMPT": 6,
+    "DIM_DATE": 4,
 }
+
+
+def _original_process_id(cursor) -> str:
+    cursor.execute(f"""
+        SELECT PROCESS_ATTEMPT_ID, STATUS, REVISION_ROWS_MERGED
+        FROM {CURATED}.BATCH_PROCESS_ATTEMPT WHERE ATTEMPT_ID = %s
+    """, (ORIGINAL_ATTEMPT,))
+    rows = cursor.fetchall()
+    if (len(rows) != 1 or rows[0][1:] != ("complete", 1)
+            or not rows[0][0]):
+        raise RuntimeError("old-origin original processing audit differs")
+    return rows[0][0]
 
 
 def _guard_before(cursor, original_process_id: str) -> str:
@@ -96,13 +109,15 @@ def preview() -> None:
     print("Then: one procedure CALL; expect two old-origin revisions and current magnitude 1.3")
 
 
-def execute_update(original_process_id: str) -> dict:
+def execute_update(original_process_id: str | None = None) -> dict:
     """Call once after separate warehouse-cost and conditional-delete approval."""
     with connect_project() as connection:
         with connection.cursor() as cursor:
             cursor.execute("USE ROLE QUAKEWATCH_ROLE")
             cursor.execute("USE WAREHOUSE QUAKEWATCH_WH")
             cursor.execute("ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = 300")
+            if original_process_id is None:
+                original_process_id = _original_process_id(cursor)
             expected_hash = _guard_before(cursor, original_process_id)
             cursor.execute(f"CALL {CURATED}.PROCESS_LOADED_ATTEMPT(%s)", (ATTEMPT_ID,))
             outcome = json.loads(cursor.fetchone()[0])
@@ -113,11 +128,9 @@ def execute_update(original_process_id: str) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--execute", action="store_true", help="run one paid fixture procedure call")
-    parser.add_argument("--original-process-id", help="ID printed by the completed original call")
+    parser.add_argument("--original-process-id", help="optional ID printed by the original call")
     args = parser.parse_args()
     if args.execute:
-        if not args.original_process_id:
-            parser.error("--original-process-id is required with --execute")
         print(json.dumps(execute_update(args.original_process_id), indent=2, sort_keys=True))
     else:
         preview()

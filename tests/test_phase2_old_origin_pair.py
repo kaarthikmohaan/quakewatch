@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 from scripts.phase2_old_origin_pair import execute_pair, main
 from scripts.phase2_old_origin_update import (
     ATTEMPT_ID, EXPECTED_AFTER, ORIGINAL_COUNTS,
-    _guard_after, _guard_before,
+    _guard_after, _guard_before, _original_process_id, execute_update,
 )
 from scripts.phase2_fixture_namespace import TEST_DATABASE
 
@@ -31,6 +31,35 @@ class OldOriginPairTest(unittest.TestCase):
                    return_value={**ORIGINAL_COUNTS, "FACT_EVENT_REVISION": 5}):
             with self.assertRaisesRegex(RuntimeError, "old-origin original state"):
                 _guard_before(cursor, "original-process")
+
+    def test_recovery_discovers_exact_original_process_id(self):
+        cursor = MagicMock()
+        cursor.fetchall.return_value = [("original-process", "complete", 1)]
+        self.assertEqual(_original_process_id(cursor), "original-process")
+        cursor.fetchall.return_value = [("original-process", "failed", 0)]
+        with self.assertRaisesRegex(RuntimeError, "processing audit differs"):
+            _original_process_id(cursor)
+
+    def test_recovery_calls_only_update_after_discovering_original_id(self):
+        cursor = MagicMock()
+        cursor.__enter__.return_value = cursor
+        cursor.fetchone.return_value = ('{"attempt_id":"fixture-old-origin-update-v1"}',)
+        connection = MagicMock()
+        connection.__enter__.return_value = connection
+        connection.cursor.return_value = cursor
+        with patch("scripts.phase2_old_origin_update.connect_project", return_value=connection), \
+             patch("scripts.phase2_old_origin_update._original_process_id",
+                   return_value="original-process"), \
+             patch("scripts.phase2_old_origin_update._guard_before", return_value="new") as before, \
+             patch("scripts.phase2_old_origin_update._guard_after", return_value=EXPECTED_AFTER):
+            execute_update()
+        before.assert_called_once_with(cursor, "original-process")
+        calls = [call.args for call in cursor.execute.call_args_list
+                 if call.args[0].startswith("CALL ")]
+        self.assertEqual(calls, [
+            (f"CALL {TEST_DATABASE}.CURATED.PROCESS_LOADED_ATTEMPT(%s)",
+             ("fixture-old-origin-update-v1",)),
+        ])
 
     def test_update_after_requires_current_and_both_revisions(self):
         cursor = MagicMock()

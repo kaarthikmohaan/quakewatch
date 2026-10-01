@@ -53,6 +53,8 @@ The original and stale-replay attempts are also an overlapping-batch fixture: bo
 
 On 2026-10-01, the approved isolated RAW loader staged and copied `fixture-old-origin-original-v1` and `fixture-old-origin-update-v1`. It returned `loaded_rows=1` for each. Its post-check required exactly six one-row RAW attempts and receipts in the fixture database, with both new receipts complete and marked synthetic. These are local test records with a 2020-01-15 origin; no USGS source coverage is claimed. Neither new attempt has been processed by the copied Snowpark procedure yet. Warehouse and stage-storage charges were not measured.
 
+The owner then ran the guarded original old-origin procedure call. Its post-check raised `old-origin original model counts differ` after the procedure returned because the guard expected two `DIM_DATE` rows, while the terminal showed three. The three dates are expected: the existing 2026-09-28 date plus the synthetic event's 2020-01-15 origin and 2020-01-16 source-update dates. The same terminal count snapshot showed five staging rows, four revision facts, 12 site bridges, five batch facts, and five processing audits, consistent with a committed first call; the guard did not finish its current-view and history checks. A subsequent attempt to run the combined pair stopped at its initial preflight because the fixture model had already advanced. No second procedure call ran. The local guard now expects three dates after the first call and four after the later 2026-09-29 update. The update-only recovery command must verify the exact first-call state before processing the later update. No phase-exit claim is made yet.
+
 ## Phase 2 exit review (2026-10-01)
 
 | Design exit evidence | Current evidence | Status |

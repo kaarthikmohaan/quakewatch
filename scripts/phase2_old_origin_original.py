@@ -26,7 +26,7 @@ EXPECTED_AFTER = {
     "BRIDGE_EVENT_SITE": 12,
     "FACT_BATCH_RUN": 5,
     "BATCH_PROCESS_ATTEMPT": 5,
-    "DIM_DATE": 2,
+    "DIM_DATE": 3,
 }
 
 
