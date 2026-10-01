@@ -1,5 +1,9 @@
 # Results
 
+## First Phase 3 quality deployment attempt
+
+The first approved Phase 3 quality runner attempt on 2026-10-01 stopped at its preflight because at least one of the three planned view names already existed in `QUAKEWATCH.CURATED`. The runner issued no view DDL, reconciliation query, or sample query. The existing view names and definitions have not yet been independently identified, so no new quality result is claimed.
+
 ## First Phase 3 uniqueness check
 
 On 2026-10-01, the approved read-only [uniqueness runner](../scripts/phase3_uniqueness.py) executed two duplicate-group counts against `QUAKEWATCH.CURATED`. It returned `status=pass`, `revision_duplicate_groups=0`, and `bridge_duplicate_groups=0`. These checks use the full logical revision key `(CANONICAL_EVENT_ID, SOURCE_UPDATED_AT, PAYLOAD_HASH)` and the bridge key with `SITE_KEY`. This is a point-in-time check of the currently populated project tables, not a guarantee that future loads cannot introduce duplicates. Actual Snowflake credits were not measured.
