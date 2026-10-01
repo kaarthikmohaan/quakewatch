@@ -115,6 +115,8 @@ Preview the [old-origin RAW loader](../scripts/phase2_old_origin_raw_load.py) wi
 
 Preview the [old-origin original procedure guard](../scripts/phase2_old_origin_original.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_old_origin_original.py`. The preview does not connect. Its live `--execute` mode needs separate warehouse-cost and conditional-delete approval; it checks the measured fixture state before one copied-procedure call and requires a 2020-origin revision afterward. It has not run live.
 
+Preview the [combined old-origin runner](../scripts/phase2_old_origin_pair.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_old_origin_pair.py`. The preview does not connect. Its live `--execute` mode needs one approval covering two warehouse calls and conditional curated-row deletion. The original call and post-check must pass before the update call starts. If the first succeeds and the second fails, do not rerun the pair; use the separate update guard with the printed original process ID after investigation.
+
 ## Update-sweep preview
 
 `quakewatch.update_plan` prints a local plan only. Supply the catalog origin-time lower bound, a fixed origin-time cutoff, the prior committed update watermark, the sweep start, and a positive overlap in seconds. The resulting `updatedafter` is the prior watermark minus overlap; no spatial or magnitude filters are added. The proposed next watermark is the fixed sweep start. The planner does not persist or advance any watermark and does not count-size, extract, or load windows yet. Execution must verify all bounded source windows and their RAW loads before a later implementation can commit that watermark; failed or incomplete sweeps must retain the previous one.
