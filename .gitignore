@@ -16,6 +16,7 @@ htmlcov/
 
 # Local extracted data and outputs
 data/
+quakewatch-journals/
 *.log
 
 # OS and editors
