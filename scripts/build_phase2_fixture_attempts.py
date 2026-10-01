@@ -34,15 +34,19 @@ def _write_once(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def build_attempts(output_root: Path = OUTPUT_ROOT) -> list[dict]:
+def build_attempts(
+    output_root: Path = OUTPUT_ROOT,
+    sequence: tuple[tuple[str, str], ...] = SEQUENCE,
+    fetch_base: datetime = FETCH_BASE,
+) -> list[dict]:
     """Write deterministic local fixtures; make no source or Snowflake request."""
     summaries = []
-    for index, (attempt_id, fixture_name) in enumerate(SEQUENCE):
+    for index, (attempt_id, fixture_name) in enumerate(sequence):
         feature = json.loads((FIXTURES / fixture_name).read_text(encoding="utf-8"))
         payload_hash = hashlib.sha256(json.dumps(
             feature, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
         ).encode("utf-8")).hexdigest()
-        fetched_at = _iso(FETCH_BASE + timedelta(minutes=index))
+        fetched_at = _iso(fetch_base + timedelta(minutes=index))
         logical_batch_id = attempt_id
         source_day = datetime.fromtimestamp(feature["properties"]["time"] / 1000, tz=UTC)
         start = source_day.replace(hour=0, minute=0, second=0, microsecond=0)

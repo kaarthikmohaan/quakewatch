@@ -1,0 +1,17 @@
+{
+  "type": "Feature",
+  "id": "qw-old-origin-001",
+  "properties": {
+    "time": 1579089600000,
+    "updated": 1579176000000,
+    "status": "reviewed",
+    "mag": 1.1,
+    "magType": "md",
+    "place": "Synthetic location near Seattle, Washington",
+    "ids": ",qw-old-origin-001,"
+  },
+  "geometry": {
+    "type": "Point",
+    "coordinates": [-122.3321, 47.6062, 10.0]
+  }
+}
