@@ -2,7 +2,8 @@
 
 **Status:** Prepared on 1 October 2026; no analyst has been interviewed. This
 guide implements the target-user check in [the design](design.md). Do not mark
-it complete from the project owner's Cortex scan comparison.
+it complete from the project owner's Cortex scan comparison. The owner declined
+referral outreach on 1 October; recruitment and validation remain pending.
 
 ## Finding one participant
 

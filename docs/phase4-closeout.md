@@ -2,9 +2,10 @@
 
 **Date:** 1 October 2026. This page compares the optional Phase 4 plan with
 observed evidence. It does not declare the whole QuakeWatch design complete.
-The owner accepted the Phase 4 exit on 1 October 2026 with the limits below:
-Cortex was optional and not run; usage is a shared warehouse-hour snapshot,
-not a per-demo bill; the three source gaps and update sweep remain open.
+The owner accepted the original Phase 4 exit on 1 October 2026 with the limits
+below. At that point Cortex had not run; the later Cortex evaluation is recorded
+at the end of this page. Usage is a shared warehouse-hour snapshot, not a
+per-demo bill; the three source gaps and update sweep remain open.
 
 | Phase 4 item | Observed result | Limit |
 |---|---|---|
