@@ -121,6 +121,8 @@ The original old-origin procedure call committed on 2026-10-01, but its post-che
 
 The approved update-only recovery attempt stopped before its CALL because the full curated count snapshot did not match the recorded original state. Use the read-only [fixture state diagnostic](../scripts/phase2_old_origin_state.py) to print only model counts, old-origin process statuses, and current-event IDs/magnitudes before deciding the smallest correction. It has no write statements. Do not retry the update blindly.
 
+The later state diagnostic showed the old-origin update already complete: six process audits, five revision facts, and current magnitude 1.3. Do not call the procedure again. The read-only [final fixture check](../scripts/phase2_old_origin_final_check.py) verifies both process audits, exact old-origin revision hashes/history, current view, model counts, and unique fact/bridge keys before recording Phase 2 exit evidence.
+
 ## Update-sweep preview
 
 `quakewatch.update_plan` prints a local plan only. Supply the catalog origin-time lower bound, a fixed origin-time cutoff, the prior committed update watermark, the sweep start, and a positive overlap in seconds. The resulting `updatedafter` is the prior watermark minus overlap; no spatial or magnitude filters are added. The proposed next watermark is the fixed sweep start. The planner does not persist or advance any watermark and does not count-size, extract, or load windows yet. Execution must verify all bounded source windows and their RAW loads before a later implementation can commit that watermark; failed or incomplete sweeps must retain the previous one.
