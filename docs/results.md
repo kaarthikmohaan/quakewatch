@@ -51,11 +51,21 @@ On 2026-10-01, the approved copied-procedure call for `fixture-stale-replay-v1` 
 
 The original and stale-replay attempts are also an overlapping-batch fixture: both request the same 2026-09-28 UTC day and contain the same event ID, source update timestamp, and payload hash under different attempt IDs. Both were processed successfully, but the second observation did not add a duplicate logical revision or bridge key. This establishes deduplication for this one synthetic cross-attempt overlap. It does not establish behavior for every possible overlapping window or source mutation.
 
+## Phase 2 exit review (2026-10-01)
+
+| Design exit evidence | Current evidence | Status |
+|---|---|---|
+| Revision selects the later version | Synthetic copied-procedure update retained both facts and selected magnitude 1.28 | Met for the fixture |
+| Old-event update outside the initial recent origin-time window | Offline update-sweep test includes an old event, but the copied-procedure update fixture has a 2026-09-28 origin inside the recent window; no end-to-end old-origin fixture has been processed | Open |
+| Tombstone remains in history and hides current event | Synthetic copied-procedure deletion retained three facts and returned zero current rows | Met for the fixture |
+| Rerun does not create duplicate logical revisions | Main 15-row same-attempt rerun merged zero revisions; synthetic cross-attempt overlap retained three facts and unique bridge keys | Met for these fixtures |
+
+This review does not close Phase 2. A fixture with an origin outside the recent window still needs processing and verification. The broader Snowflake failure/retry integration check and live nonzero reject evidence also remain open; they should not be inferred from the successful procedure calls. The Phase 1 catalog-wide update sweep and its unresolved source gaps remain separate source-coverage work.
+
 ## Not measured yet
 
-- Overlapping-batch idempotency and procedure-level revision/tombstone behavior
 - Snowflake fetch-to-curated latency, nonzero rejects, and pending batches
-- FDSN update-sweep coverage gaps
+- Complete FDSN update-sweep coverage
 - Warehouse credit usage
 - User task completion time or usefulness
 
