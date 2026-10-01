@@ -51,6 +51,8 @@ On 2026-10-01, the approved copied-procedure call for `fixture-stale-replay-v1` 
 
 The original and stale-replay attempts are also an overlapping-batch fixture: both request the same 2026-09-28 UTC day and contain the same event ID, source update timestamp, and payload hash under different attempt IDs. Both were processed successfully, but the second observation did not add a duplicate logical revision or bridge key. This establishes deduplication for this one synthetic cross-attempt overlap. It does not establish behavior for every possible overlapping window or source mutation.
 
+On 2026-10-01, the approved isolated RAW loader staged and copied `fixture-old-origin-original-v1` and `fixture-old-origin-update-v1`. It returned `loaded_rows=1` for each. Its post-check required exactly six one-row RAW attempts and receipts in the fixture database, with both new receipts complete and marked synthetic. These are local test records with a 2020-01-15 origin; no USGS source coverage is claimed. Neither new attempt has been processed by the copied Snowpark procedure yet. Warehouse and stage-storage charges were not measured.
+
 ## Phase 2 exit review (2026-10-01)
 
 | Design exit evidence | Current evidence | Status |

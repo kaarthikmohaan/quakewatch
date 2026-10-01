@@ -111,7 +111,7 @@ Preview the [stale-replay fixture check](../scripts/phase2_fixture_stale_replay.
 
 Build the next [old-origin synthetic attempts](../scripts/build_phase2_old_origin_attempts.py) with `PYTHONPATH=src:. .venv/bin/python scripts/build_phase2_old_origin_attempts.py`. This writes two ignored local attempts only; no USGS or Snowflake request is made. They require a separately reviewed RAW loader and procedure guard before live processing.
 
-Preview the [old-origin RAW loader](../scripts/phase2_old_origin_raw_load.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_old_origin_raw_load.py`. The preview checks the two local synthetic attempts without connecting. Its live `--execute` mode needs separate warehouse-cost approval; it checks the measured fixture baseline before staging, copying, and reconciling two rows in the isolated database. It has not run live.
+Preview the [old-origin RAW loader](../scripts/phase2_old_origin_raw_load.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_old_origin_raw_load.py`. The preview checks the two local synthetic attempts without connecting. Its approved live run on 2026-10-01 staged, copied, and reconciled one row per attempt in the isolated database. The exact-baseline preflight now prevents rerunning it. The copied procedure has not processed those rows yet.
 
 ## Update-sweep preview
 
