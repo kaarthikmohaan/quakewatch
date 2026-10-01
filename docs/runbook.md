@@ -111,9 +111,9 @@ Preview the [stale-replay fixture check](../scripts/phase2_fixture_stale_replay.
 
 Build the next [old-origin synthetic attempts](../scripts/build_phase2_old_origin_attempts.py) with `PYTHONPATH=src:. .venv/bin/python scripts/build_phase2_old_origin_attempts.py`. This writes two ignored local attempts only; no USGS or Snowflake request is made. They require a separately reviewed RAW loader and procedure guard before live processing.
 
-Preview the [old-origin RAW loader](../scripts/phase2_old_origin_raw_load.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_old_origin_raw_load.py`. The preview checks the two local synthetic attempts without connecting. Its approved live run on 2026-10-01 staged, copied, and reconciled one row per attempt in the isolated database. The exact-baseline preflight now prevents rerunning it. The copied procedure has not processed those rows yet.
+Preview the [old-origin RAW loader](../scripts/phase2_old_origin_raw_load.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_old_origin_raw_load.py`. The preview checks the two local synthetic attempts without connecting. Its approved live run on 2026-10-01 staged, copied, and reconciled one row per attempt in the isolated database. The exact-baseline preflight now prevents rerunning it. Both rows were subsequently processed; see the final fixture check below.
 
-Preview the [old-origin original procedure guard](../scripts/phase2_old_origin_original.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_old_origin_original.py`. The preview does not connect. Its live `--execute` mode needs separate warehouse-cost and conditional-delete approval; it checks the measured fixture state before one copied-procedure call and requires a 2020-origin revision afterward. It has not run live.
+Preview the [old-origin original procedure guard](../scripts/phase2_old_origin_original.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_old_origin_original.py`. The preview does not connect. Its approved live run committed on 2026-10-01; the later update and final fixture check also passed. Do not rerun the original guard.
 
 Preview the [combined old-origin runner](../scripts/phase2_old_origin_pair.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_old_origin_pair.py`. The preview does not connect. Its live `--execute` mode needs one approval covering two warehouse calls and conditional curated-row deletion. The original call and post-check must pass before the update call starts. If the first succeeds and the second fails, do not rerun the pair; use the separate update guard with the printed original process ID after investigation.
 
@@ -154,7 +154,7 @@ Expect `status: preview`, `updatedafter: 2026-09-28T00:00:00.000Z`, and `waterma
 
 `PYTHONPATH=src .venv/bin/python -m quakewatch.update_extract` accepts the same five required planning arguments. Without `--execute` it only prints the plan. Adding `--execute` performs a bounded source capture: it uses the shared extractor to split origin-time windows by counts, preserves the same `updatedafter` on every child, includes deletions, and applies no spatial or magnitude filters. Every leaf compares source counts before/after against returned features. One three-minute deadline bounds the entire attempt. Split boundaries overlap deliberately; later revision processing must deduplicate observations.
 
-Each execution writes a unique attempt manifest under ignored `data/raw/`, with `batch_kind: update_sweep`. A successful extraction atomically publishes `events.jsonl` in the existing RAW-loader format. Failure records an explicit coverage gap and cannot be loaded as complete. A deadline failure may conservatively identify the whole requested range when no completed recursive audit is available. `last_committed_watermark` and `watermark_advanced: false` remain unchanged on success and failure: extraction alone does not authorize a watermark commit. The load-and-commit workflow is not implemented yet. History loading commands intentionally exclude catalog-wide sweep attempts.
+Each execution writes a unique attempt manifest under ignored `data/raw/`, with `batch_kind: update_sweep`. A successful extraction atomically publishes `events.jsonl` in the existing RAW-loader format. Failure records an explicit coverage gap and cannot be loaded as complete. A deadline failure may conservatively identify the whole requested range when no completed recursive audit is available. `last_committed_watermark` and `watermark_advanced: false` remain unchanged on success and failure: extraction alone does not authorize a watermark commit. The load-and-commit workflow below is implemented and tested offline, but no live sweep has completed or committed its watermark. History loading commands intentionally exclude catalog-wide sweep attempts.
 
 Offline verification:
 
@@ -164,7 +164,7 @@ PYTHONPATH=src .venv/bin/python -m unittest \
   tests.test_extract_batch tests.test_raw_load -q
 ```
 
-On 2026-09-30 these 38 tests passed, including mocked over-limit splitting with an old deleted record, source failure/deadline evidence, and local loader compatibility. No live update-sweep extraction or Snowflake sweep load has been demonstrated yet.
+On 2026-09-30 these 38 tests passed, including mocked over-limit splitting with an old deleted record, source failure/deadline evidence, and local loader compatibility. Live extraction retries have retained explicit gaps; no complete sweep, Snowflake sweep load, or watermark commit has been demonstrated.
 
 ## Sweep load and watermark completion
 

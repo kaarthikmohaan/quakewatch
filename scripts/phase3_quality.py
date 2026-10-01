@@ -12,7 +12,7 @@ from quakewatch.raw_load import connect_project
 
 ROOT = Path(__file__).resolve().parents[1] / "sql"
 FILES = (
-    ("phase3_health_views.sql", "2f7f66762295eb417eae0c0bfbe2cf9c7065997a123d91e6f054059569fc71c7", 3),
+    ("phase3_health_views.sql", "ba25e6344e812ee6fb052855f0121e20809f5d6fc4d4a335d58c6b18d9486320", 3),
     ("phase3_reconciliation.sql", "8d1b4f2dac5309d06f0d20b6b664f59efa4d288f2a7d88f378b98ff59b49bdf3", 3),
     ("phase3_sample_analysis.sql", "1c948e2ee5d23589e4f5e49665f28f104ad08a7d4dec1ae3e49c03572e717daa", 1),
 )

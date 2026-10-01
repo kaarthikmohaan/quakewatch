@@ -26,6 +26,8 @@ class Phase3HealthSqlTest(unittest.TestCase):
         self.assertIn("p.REJECTED_ROWS > p.PROCESSED_ROWS", VIEWS)
         self.assertNotIn("p.PROCESSED_ROWS + p.REJECTED_ROWS", VIEWS)
         self.assertIn("COALESCE(s.REJECT_ROWS, 0) <> p.REJECTED_ROWS", VIEWS)
+        self.assertIn("p.PROCESSED_ROWS IS NULL", VIEWS)
+        self.assertIn("f.REJECTED_ROWS IS NULL", VIEWS)
 
     def test_pending_and_unloaded_local_gaps_are_not_false_success(self):
         self.assertIn("'PENDING_PROCESS'", VIEWS)
