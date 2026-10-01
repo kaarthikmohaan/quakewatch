@@ -1,5 +1,14 @@
 # Results
 
+## Phase 4 exit review
+
+The owner accepted the Phase 4 optional-demo exit on 2026-10-01. The sandbox
+clone and Time Travel drill passed and was cleaned up; a read-only metering
+snapshot recorded actual shared warehouse-hour credits with latency and
+attribution limits. Cortex was left optional and not run. This acceptance
+does not close the three USGS history gaps, the incomplete catalog-wide
+update sweep, the missed Phase 3 latency target, or the target-user interview.
+
 ## Phase 4 sandbox recovery preflight
 
 The owner-approved read-only preflight on 2026-10-01 passed under
