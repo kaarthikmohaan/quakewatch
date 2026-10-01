@@ -49,6 +49,7 @@ The source returns bounded query results. QuakeWatch is a batch pipeline, not a 
 - [Phase 0 environment check](docs/environment.md)
 - [Observed results](docs/results.md)
 - [Phase 4 close-out and remaining work](docs/phase4-closeout.md)
+- [Target-analyst interview guide](docs/target-user-interview.md)
 - [Two-minute evidence-based demo](docs/demo.md)
 
 ## Source and responsible use

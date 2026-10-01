@@ -36,7 +36,8 @@ and the cloud-services/reported-credit columns.
 - Complete the catalog-wide update sweep before advancing its watermark; the
   current source timeout leaves it incomplete.
 - Ask one target analyst to compare the historical query with their manual
-  baseline and record usefulness and actual task time.
+  baseline and record usefulness and actual task time. Use the prepared
+  [interview guide](target-user-interview.md); no session has been completed.
 - Recheck final, fully posted warehouse-hour credits if a more precise cost
   comparison is needed; measure storage if accessible. Compare actual effort
   and usage with the original plan before any release claim.
