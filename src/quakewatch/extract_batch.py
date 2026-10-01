@@ -313,6 +313,20 @@ def initial_request_windows(start: datetime, end: datetime,
     return windows
 
 
+def hourly_request_windows(start: datetime, end: datetime,
+                           source_hours: int) -> list[tuple[datetime, datetime]]:
+    """Plan bounded sub-day children without changing the logical batch range."""
+    if not 1 <= source_hours <= 12:
+        raise ValueError("source-hours must be between 1 and 12")
+    windows = []
+    cursor = start
+    while cursor < end:
+        next_end = min(cursor + timedelta(hours=source_hours), end)
+        windows.append((cursor, next_end))
+        cursor = next_end
+    return windows
+
+
 def prior_child_checkpoints(output_root: Path, logical_batch_id: str,
                             source_days: int | None) -> dict[str, list[Path]]:
     """Find prior attempts for the same query and planned slice size."""
@@ -381,7 +395,9 @@ def save_child_checkpoint(path: Path, payload: dict[str, Any]) -> None:
 
 
 def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
-              source_days: int | None = None, resume_children: bool = False) -> Path:
+              source_days: int | None = None, resume_children: bool = False,
+              source_hours: int | None = None,
+              hourly_child: int | None = None) -> Path:
     if start >= end:
         raise ExtractionError("--start must be earlier than --end")
     initial_windows = initial_request_windows(start, end, source_days)
@@ -392,6 +408,13 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
     logical_batch_id = hashlib.sha256(query_fingerprint.encode("utf-8")).hexdigest()[:20]
     if resume_children and source_days is None:
         raise ValueError("resume-children requires source-days")
+    if source_hours is not None and source_days != 1:
+        raise ValueError("source-hours requires source-days 1")
+    if source_hours is not None and not 1 <= source_hours <= 12:
+        raise ValueError("source-hours must be between 1 and 12")
+    if hourly_child is not None and (source_hours is None
+                                     or not 1 <= hourly_child <= len(initial_windows)):
+        raise ValueError("hourly-child requires source-hours and a planned child number")
     checkpoints = (prior_child_checkpoints(output_root, logical_batch_id, source_days)
                    if resume_children else {})
     attempt_id = f"{datetime.now(UTC):%Y%m%dT%H%M%SZ}-{uuid.uuid4().hex[:10]}"
@@ -408,6 +431,8 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
         "requested_endtime": iso_utc(end),
         "query_parameters": source_params(site, start, end),
         "initial_source_days": source_days,
+        "initial_source_hours": source_hours,
+        "hourly_child": hourly_child,
         "resume_children": resume_children,
         "reused_child_windows": [],
         "fetched_at": fetched_at,
@@ -444,12 +469,10 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
                 timeout=REQUEST_TIMEOUT_SECONDS,
                 follow_redirects=True,
             ) as client:
-                for index, (child_start, child_end) in enumerate(initial_windows, start=1):
-                    window_id = f"w0001.{index}" if len(initial_windows) > 1 else "w0001"
+                def capture_child(child_start: datetime, child_end: datetime,
+                                  window_id: str, checkpoint: dict[str, Any] | None) -> None:
+                    nonlocal active_window
                     params = source_params(site, child_start, child_end)
-                    checkpoint = read_child_checkpoint(
-                        checkpoints.get(window_id, []), params, window_id
-                    ) if resume_children else None
                     active_window = (window_id, child_start, child_end)
                     manifest["active_window"] = {
                         "window_id": window_id, "starttime": iso_utc(child_start),
@@ -499,6 +522,33 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
                     manifest.pop("active_window", None)
                     manifest["window_audit"] = windows
                     save_manifest()
+
+                for index, (child_start, child_end) in enumerate(initial_windows, start=1):
+                    window_id = f"w0001.{index}" if len(initial_windows) > 1 else "w0001"
+                    params = source_params(site, child_start, child_end)
+                    checkpoint = read_child_checkpoint(
+                        checkpoints.get(window_id, []), params, window_id
+                    ) if resume_children else None
+                    if (checkpoint is not None or source_hours is None
+                            or (hourly_child is not None and index != hourly_child)):
+                        capture_child(child_start, child_end, window_id, checkpoint)
+                        continue
+                    hours = hourly_request_windows(child_start, child_end, source_hours)
+                    windows.append({
+                        "window_id": window_id,
+                        "starttime": iso_utc(child_start), "endtime": iso_utc(child_end),
+                        "status": "split",
+                        "reason": f"planned source slices of at most {source_hours} hours",
+                    })
+                    manifest["window_audit"] = windows
+                    save_manifest()
+                    for hour_index, (hour_start, hour_end) in enumerate(hours, start=1):
+                        hour_id = f"{window_id}.{hour_index}"
+                        hour_params = source_params(site, hour_start, hour_end)
+                        hour_checkpoint = read_child_checkpoint(
+                            checkpoints.get(hour_id, []), hour_params, hour_id
+                        ) if resume_children else None
+                        capture_child(hour_start, hour_end, hour_id, hour_checkpoint)
 
         rows_written = 0
         with events_path.open("w", encoding="utf-8") as output:

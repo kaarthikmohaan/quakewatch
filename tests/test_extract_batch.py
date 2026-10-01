@@ -11,7 +11,8 @@ from unittest.mock import patch
 import httpx
 
 from quakewatch.extract_batch import (ExtractionError, SourceDeadlineExceeded, fetch_window,
-                                      get_features, initial_request_windows, request_with_retry, run_batch,
+                                      get_features, hourly_request_windows, initial_request_windows,
+                                      request_with_retry, run_batch,
                                       source_deadline, source_params)
 from quakewatch.settings import SITES
 from quakewatch.settings import MAX_TARGET_RESULTS_PER_WINDOW
@@ -46,6 +47,70 @@ class GetFeaturesTests(unittest.TestCase):
 
 
 class FetchWindowTests(unittest.TestCase):
+    def test_hourly_children_resume_without_refetching_reconciled_slice(self) -> None:
+        start = datetime(2022, 9, 8, tzinfo=timezone.utc)
+        end = start + timedelta(days=1)
+        self.assertEqual(len(hourly_request_windows(start, end, 6)), 4)
+        calls = []
+
+        def fake_fetch(_client, _site, _start, _end, window_id):
+            calls.append(window_id)
+            if window_id == "w0001.2" and calls.count(window_id) == 1:
+                raise ExtractionError("timeout", [{"window_id": window_id,
+                                                   "status": "unresolved", "reason": "timeout"}])
+            audit = {"window_id": window_id, "status": "reconciled",
+                     "count_before": 1, "returned_rows": 1, "count_after": 1}
+            return [({"id": window_id}, window_id)], [audit]
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch("quakewatch.extract_batch.fetch_window", side_effect=fake_fetch):
+                with self.assertRaises(ExtractionError):
+                    run_batch("seattle", start, end, root, source_days=1,
+                              source_hours=6, resume_children=True)
+                first = json.loads(next(root.glob("*/manifest.json")).read_text())
+                self.assertEqual(first["coverage_gaps"][0]["window_id"], "w0001.2")
+                self.assertEqual(first["raw_rows_written"], 0)
+                second_path = run_batch("seattle", start, end, root, source_days=1,
+                                        source_hours=6, resume_children=True)
+            second = json.loads(second_path.read_text())
+            self.assertEqual(calls, ["w0001.1", "w0001.2", "w0001.2",
+                                     "w0001.3", "w0001.4"])
+            self.assertEqual(second["reused_child_windows"], ["w0001.1"])
+            self.assertEqual(second["source_rows_reused"], 1)
+            self.assertEqual(second["raw_rows_written"], 4)
+            self.assertEqual(validate_local_batch(second_path)[1], 4)
+
+    def test_hourly_mode_reuses_older_daily_checkpoint(self) -> None:
+        start = datetime(2022, 9, 8, tzinfo=timezone.utc)
+        end = start + timedelta(days=3)
+        calls = []
+
+        def fake_fetch(_client, _site, _start, _end, window_id):
+            calls.append(window_id)
+            if window_id == "w0001.2":
+                raise ExtractionError("timeout", [{"window_id": window_id,
+                                                   "status": "unresolved", "reason": "timeout"}])
+            audit = {"window_id": window_id, "status": "reconciled",
+                     "count_before": 1, "returned_rows": 1, "count_after": 1}
+            return [({"id": window_id}, window_id)], [audit]
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch("quakewatch.extract_batch.fetch_window", side_effect=fake_fetch):
+                with self.assertRaises(ExtractionError):
+                    run_batch("seattle", start, end, root, source_days=1,
+                              resume_children=True)
+                path = run_batch("seattle", start, end, root, source_days=1,
+                                 source_hours=6, hourly_child=2, resume_children=True)
+            manifest = json.loads(path.read_text())
+            self.assertEqual(manifest["reused_child_windows"], ["w0001.1"])
+            self.assertEqual(calls.count("w0001.1"), 1)
+            self.assertIn("w0001.3", calls)
+            self.assertNotIn("w0001.3.1", calls)
+            self.assertEqual(manifest["raw_rows_written"], 6)
+            self.assertEqual(validate_local_batch(path)[1], 6)
+
     def test_resume_reuses_reconciled_child_and_keeps_attempt_audit(self) -> None:
         start = datetime(2022, 9, 29, tzinfo=timezone.utc)
         end = start + timedelta(days=2)

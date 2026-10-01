@@ -138,6 +138,19 @@ class HistoryPlanTests(unittest.TestCase):
         self.assertEqual(extract.call_args.kwargs,
                          {"source_days": 1, "resume_children": True})
 
+    def test_execute_passes_hourly_child_option(self) -> None:
+        args = ["history_plan", "--cutoff", "2026-09-29", "--window", "12",
+                "--source-days", "1", "--source-hours", "3",
+                "--hourly-child", "11",
+                "--resume-children", "--execute"]
+        with patch("sys.argv", args):
+            with patch("quakewatch.history_plan.run_batch", return_value=Path("manifest.json")) as extract:
+                with redirect_stdout(io.StringIO()):
+                    main()
+        self.assertEqual(extract.call_args.kwargs,
+                         {"source_days": 1, "source_hours": 3,
+                          "hourly_child": 11, "resume_children": True})
+
     def test_child_resume_requires_source_days(self) -> None:
         args = ["history_plan", "--cutoff", "2026-09-29", "--window", "73",
                 "--resume-children", "--execute"]

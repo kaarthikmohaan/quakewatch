@@ -66,7 +66,9 @@ def captured_history_windows(cutoff: datetime, output: Path) -> dict[int, Path]:
 
 def resume_capture(cutoff: datetime, output: Path, max_windows: int, execute: bool,
                    start_window: int = 1, source_days: int | None = None,
-                   resume_children: bool = False) -> list[int]:
+                   resume_children: bool = False,
+                   source_hours: int | None = None,
+                   hourly_child: int | None = None) -> list[int]:
     """Process a bounded consecutive run, stopping at the first source gap."""
     if not 1 <= max_windows <= MAX_HISTORY_BATCH_WINDOWS:
         raise ValueError(f"max-windows must be between 1 and {MAX_HISTORY_BATCH_WINDOWS}")
@@ -75,6 +77,10 @@ def resume_capture(cutoff: datetime, output: Path, max_windows: int, execute: bo
         raise ValueError(f"start-window must be between 1 and {len(windows)}")
     if source_days is not None and not 1 <= source_days <= 7:
         raise ValueError("source-days must be between 1 and 7")
+    if source_hours is not None and (source_days != 1 or not 1 <= source_hours <= 12):
+        raise ValueError("source-hours requires source-days 1 and must be between 1 and 12")
+    if hourly_child is not None and (source_hours is None or hourly_child < 1):
+        raise ValueError("hourly-child requires source-hours and a positive child number")
     captured = captured_history_windows(cutoff, output)
     pending = [number for number in range(start_window, len(windows) + 1)
                if number not in captured]
@@ -86,11 +92,15 @@ def resume_capture(cutoff: datetime, output: Path, max_windows: int, execute: bo
             continue
         if source_days is None:
             manifest_path = run_batch(site, start, end, output)
-        elif resume_children:
-            manifest_path = run_batch(site, start, end, output, source_days=source_days,
-                                      resume_children=True)
         else:
-            manifest_path = run_batch(site, start, end, output, source_days=source_days)
+            options = {"source_days": source_days}
+            if resume_children:
+                options["resume_children"] = True
+            if source_hours is not None:
+                options["source_hours"] = source_hours
+            if hourly_child is not None:
+                options["hourly_child"] = hourly_child
+            manifest_path = run_batch(site, start, end, output, **options)
         print(f"Captured manifest: {manifest_path}")
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         if manifest.get("status") != "complete" or manifest.get("coverage_gaps"):
@@ -115,18 +125,29 @@ def main() -> None:
                         help="Explicit first eligible window; earlier gaps remain unresolved")
     parser.add_argument("--source-days", type=int,
                         help="Start with audited source slices of 1 to 7 days")
+    parser.add_argument("--source-hours", type=int,
+                        help="Split uncached daily children into audited 1 to 12 hour slices")
+    parser.add_argument("--hourly-child", type=int,
+                        help="Apply source-hours only to this 1-based daily child")
     parser.add_argument("--resume-children", action="store_true",
                         help="Reuse validated local child checkpoints from prior attempts")
     args = parser.parse_args()
     if args.resume_children and args.source_days is None:
         parser.error("--resume-children requires --source-days")
+    if args.source_hours is not None and (args.source_days != 1
+                                          or not 1 <= args.source_hours <= 12):
+        parser.error("--source-hours requires --source-days 1 and a value from 1 to 12")
+    if args.hourly_child is not None and (args.source_hours is None
+                                          or args.hourly_child < 1):
+        parser.error("--hourly-child requires --source-hours and a positive child number")
     windows = history_windows(args.cutoff)
     if args.resume:
         if args.window is not None or args.resume_preview or args.max_windows is None:
             parser.error("--resume requires --max-windows and cannot use --window or --resume-preview")
         try:
             resume_capture(args.cutoff, args.output, args.max_windows, args.execute,
-                           args.start_window, args.source_days, args.resume_children)
+                           args.start_window, args.source_days, args.resume_children,
+                           args.source_hours, args.hourly_child)
         except ValueError as exc:
             parser.error(str(exc))
         return
@@ -167,12 +188,15 @@ def main() -> None:
         return
     if args.source_days is None:
         manifest_path = run_batch(site_key, start, end, args.output)
-    elif args.resume_children:
-        manifest_path = run_batch(site_key, start, end, args.output,
-                                  source_days=args.source_days, resume_children=True)
     else:
-        manifest_path = run_batch(site_key, start, end, args.output,
-                                  source_days=args.source_days)
+        options = {"source_days": args.source_days}
+        if args.resume_children:
+            options["resume_children"] = True
+        if args.source_hours is not None:
+            options["source_hours"] = args.source_hours
+        if args.hourly_child is not None:
+            options["hourly_child"] = args.hourly_child
+        manifest_path = run_batch(site_key, start, end, args.output, **options)
     print(f"Captured manifest: {manifest_path}")
 
 
