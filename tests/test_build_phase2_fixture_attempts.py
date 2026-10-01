@@ -43,6 +43,20 @@ class FixtureAttemptsTest(unittest.TestCase):
             self.assertLess(updates[0], updates[1])
             self.assertLess(updates[1], updates[2])
             self.assertEqual(updates[0], updates[3])
+            first = root / SEQUENCE[0][0]
+            replay = root / SEQUENCE[3][0]
+            first_manifest = json.loads((first / "manifest.json").read_text())
+            replay_manifest = json.loads((replay / "manifest.json").read_text())
+            first_record = json.loads((first / "events.jsonl").read_text())
+            replay_record = json.loads((replay / "events.jsonl").read_text())
+            self.assertNotEqual(first_manifest["attempt_id"], replay_manifest["attempt_id"])
+            self.assertEqual(first_manifest["requested_starttime"],
+                             replay_manifest["requested_starttime"])
+            self.assertEqual(first_manifest["requested_endtime"],
+                             replay_manifest["requested_endtime"])
+            self.assertEqual(first_record["source_feature"], replay_record["source_feature"])
+            self.assertEqual(first_record["metadata"]["payload_hash"],
+                             replay_record["metadata"]["payload_hash"])
 
     def test_existing_different_file_is_not_overwritten(self):
         with tempfile.TemporaryDirectory() as directory:

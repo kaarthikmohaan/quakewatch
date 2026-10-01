@@ -49,6 +49,8 @@ On 2026-10-01, the approved copied-procedure call for `fixture-deletion-v1` retu
 
 On 2026-10-01, the approved copied-procedure call for `fixture-stale-replay-v1` returned `status=complete`, `loaded_rows=1`, `processed_rows=1`, `rejected_rows=0`, and `revision_rows_merged=1`, with process attempt ID `516de8b981d7486d85b27ccf1d974fb0`. Guarded post-call checks found four staging rows, three retained logical revision facts, nine event-site bridge rows, four batch facts, four processing audits, and zero rows in `EVENT_CURRENT`. The merge updated the already-known old revision rather than adding a fourth logical revision. The tombstone still wins after stale replay. This is synthetic procedure-level evidence, not proof that every old USGS update was captured. Actual credits were not measured.
 
+The original and stale-replay attempts are also an overlapping-batch fixture: both request the same 2026-09-28 UTC day and contain the same event ID, source update timestamp, and payload hash under different attempt IDs. Both were processed successfully, but the second observation did not add a duplicate logical revision or bridge key. This establishes deduplication for this one synthetic cross-attempt overlap. It does not establish behavior for every possible overlapping window or source mutation.
+
 ## Not measured yet
 
 - Overlapping-batch idempotency and procedure-level revision/tombstone behavior
