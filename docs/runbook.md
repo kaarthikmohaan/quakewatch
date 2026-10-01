@@ -101,11 +101,11 @@ Build the four ignored, synthetic RAW attempts locally with `PYTHONPATH=src:. .v
 
 Preview the [isolated fixture RAW loader](../scripts/phase2_fixture_raw_load.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_raw_load.py`. It validates all four local attempts without connecting. Its approved live run on 2026-09-30 loaded and reconciled one row in each test RAW attempt and appended synthetic receipts. The empty-table guard now prevents rerunning this loader; the original fixture was subsequently processed.
 
-Preview the [original fixture procedure check](../scripts/phase2_fixture_original.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_original.py`. Its approved live run on 2026-09-30 processed `fixture-original-v1` and checked a single active magnitude-1.08 revision plus batch/process audits. Its empty-curated guard now prevents rerunning this command. The update was subsequently processed; tombstone and stale replay remain.
+Preview the [original fixture procedure check](../scripts/phase2_fixture_original.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_original.py`. Its approved live run on 2026-09-30 processed `fixture-original-v1` and checked a single active magnitude-1.08 revision plus batch/process audits. Its empty-curated guard now prevents rerunning this command. The update and tombstone were subsequently processed; stale replay remains.
 
 Preview the [later-update fixture check](../scripts/phase2_fixture_update.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_update.py`. It does not connect. The approved live run on 2026-10-01 processed only `fixture-update-v1` and checked that the original and later revisions remained in history while the current row moved to magnitude 1.28. Its exact-original-state guard now prevents rerunning the command.
 
-Preview the [deletion fixture check](../scripts/phase2_fixture_deletion.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_deletion.py`. It does not connect. A separately approved live run will require the exact measured update result, process only `fixture-deletion-v1`, and check a retained third revision with `deleted` status while `EVENT_CURRENT` returns no row. No deletion fixture call has run yet.
+Preview the [deletion fixture check](../scripts/phase2_fixture_deletion.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase2_fixture_deletion.py`. It does not connect. Its approved live run on 2026-10-01 required the exact measured update result, processed only `fixture-deletion-v1`, and checked a retained third revision with `deleted` status while `EVENT_CURRENT` returned no row. Its exact-update-state guard now prevents rerunning the command.
 
 ## Update-sweep preview
 
