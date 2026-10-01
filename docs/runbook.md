@@ -122,6 +122,7 @@ The original old-origin procedure call committed on 2026-10-01, but its post-che
 The approved update-only recovery attempt stopped before its CALL because the full curated count snapshot did not match the recorded original state. Use the read-only [fixture state diagnostic](../scripts/phase2_old_origin_state.py) to print only model counts, old-origin process statuses, and current-event IDs/magnitudes before deciding the smallest correction. It has no write statements. Do not retry the update blindly.
 
 The later state diagnostic showed the old-origin update already complete: six process audits, five revision facts, and current magnitude 1.3. Do not call the procedure again. The read-only [final fixture check](../scripts/phase2_old_origin_final_check.py) verifies both process audits, exact old-origin revision hashes/history, current view, model counts, and unique fact/bridge keys before recording Phase 2 exit evidence.
+The approved final read-only check passed on 2026-10-01: two old-origin revisions remain, the current magnitude is 1.3, and the fixture has six processing audits. The four Phase 2 exit fixtures now have measured evidence in [results](results.md). Keep the isolated fixture database until deletion is separately approved.
 
 ## Update-sweep preview
 
