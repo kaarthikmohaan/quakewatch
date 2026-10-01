@@ -32,6 +32,21 @@ def _raw_hash(cursor) -> str:
     return rows[0][0]
 
 
+def _retry_counts_match(retry: dict, loaded_snapshot: dict[str, int],
+                        after_retry: dict[str, int]) -> bool:
+    """A MERGE update may count as merged without adding a logical fact row."""
+    expected_after = {**loaded_snapshot,
+                      "staging": loaded_snapshot["staging"] + 1,
+                      "batches": loaded_snapshot["batches"] + 1}
+    merged = retry.get("revision_rows_merged")
+    return (retry.get("status") == "complete"
+            and retry.get("loaded_rows") == 1
+            and retry.get("processed_rows") == 1
+            and retry.get("rejected_rows") == 0
+            and isinstance(merged, int) and merged >= 0
+            and after_retry == expected_after)
+
+
 def execute() -> dict:
     """Run only after new approval for paid COPY, calls, and conditional deletes."""
     plan = _plan()
@@ -96,13 +111,8 @@ def execute() -> dict:
             cursor.execute(f"CALL {CURATED}.PROCESS_LOADED_ATTEMPT(%s)", (ATTEMPT_ID,))
             retry = json.loads(cursor.fetchone()[0])
             after_retry = _snapshot(cursor, ATTEMPT_ID)
-            expected_after = {**loaded_snapshot,
-                              "staging": loaded_snapshot["staging"] + 1,
-                              "batches": loaded_snapshot["batches"] + 1}
-            if (retry.get("status") != "complete" or retry.get("loaded_rows") != 1
-                    or retry.get("processed_rows") != 1
-                    or retry.get("revision_rows_merged") != 0
-                    or after_retry != expected_after or _raw_hash(cursor) != expected_hash
+            if (not _retry_counts_match(retry, loaded_snapshot, after_retry)
+                    or _raw_hash(cursor) != expected_hash
                     or _audit(cursor, "failed", ATTEMPT_ID) != 1
                     or _audit(cursor, "complete", ATTEMPT_ID) != 1
                     or any(_duplicates(cursor).values())):

@@ -5,10 +5,21 @@ import io
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.phase2_first_failure_demo import ATTEMPT_ID, _plan, execute, main
+from scripts.phase2_first_failure_demo import (
+    ATTEMPT_ID, _plan, _retry_counts_match, execute, main,
+)
 
 
 class FirstFailureDemoTest(unittest.TestCase):
+    def test_merge_update_is_allowed_when_logical_counts_stay_unique(self):
+        loaded = {"raw": 1, "receipts": 1, "staging": 6, "batches": 6,
+                  "revisions": 5, "bridges": 15}
+        after = {**loaded, "staging": 7, "batches": 7}
+        retry = {"status": "complete", "loaded_rows": 1, "processed_rows": 1,
+                 "rejected_rows": 0, "revision_rows_merged": 1}
+        self.assertTrue(_retry_counts_match(retry, loaded, after))
+        self.assertFalse(_retry_counts_match(retry, loaded, {**after, "revisions": 6}))
+
     def test_preview_builds_only_local_fixture(self):
         output = io.StringIO()
         with patch("scripts.phase2_first_failure_demo.connect_project",
