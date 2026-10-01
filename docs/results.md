@@ -14,7 +14,13 @@ The first CI run for commit `12a167a` started after the approved push on 2026-10
 
 ## Phase 3 exit review
 
-The owner accepted the Phase 3 design exit on 2026-10-01: live quality counts, CI, a dated sample, and the missed predeclared latency target are documented separately from targets. This phase acceptance does not close the three USGS history gaps, the incomplete catalog-wide update sweep, or the live failed-transform/retry demonstration.
+The owner accepted the Phase 3 design exit on 2026-10-01: live quality counts, CI, a dated sample, and the missed predeclared latency target are documented separately from targets. This phase acceptance did not close the three USGS history gaps, the incomplete catalog-wide update sweep, or the then-pending live failed-transform/retry demonstration.
+
+## Isolated failed-transform and retry drill
+
+The approved live fixture drill on 2026-10-01 returned `status=pass` for the already loaded `fixture-original-v1` attempt in `QUAKEWATCH_PHASE2_FIXTURE`. A test-only procedure deliberately raised after model writes; the coordinator rolled back those writes and appended one failed processing audit. The same RAW attempt was then passed to the normal procedure without source refetch or RAW reload. Before failure, after failure, and after retry, the snapshot was identical: one RAW row and receipt, six staging rows, five revision facts, 15 site bridges, six batch facts, three sites, four dates, two event statuses, one magnitude type, and one current event. The retry reported process attempt `806e9e2d47c04680a7bfbd4cabd68b6c`; both revision and bridge duplicate-group counts were zero.
+
+This demonstrates rollback, append-only failure audit, and a convergent retry for a **later processing invocation of a batch that had already succeeded**. It does not demonstrate a first-ever transform failure for a newly loaded batch. The test-only failure procedure remains in the fixture database. Snowflake credits and storage use were not measured. The three USGS history gaps and incomplete catalog-wide update sweep remain open.
 
 ## Window 73 checkpoint retry after Phase 3 exit
 
