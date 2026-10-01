@@ -6,7 +6,7 @@ This is a retrospective data project. It is not an earthquake warning, risk scor
 
 ## Status
 
-The Python 3.12 environment and bounded USGS extractor are in place. The loader has reported 177 of 180 planned history windows loaded and reconciled into Snowflake RAW, totaling 216,361 history rows; three history windows remain explicit USGS source gaps. A separate 15-row Seattle sample was also loaded. The catalog-wide update sweep remains incomplete because a bounded source request times out; its watermark has not advanced. Warehouse models and CI are not implemented yet. See [observed results](docs/results.md) for the evidence and its limits.
+The Python 3.12 environment and bounded USGS extractor are in place. The loader reported 177 of 180 planned history windows loaded and reconciled into Snowflake RAW, totaling 216,361 history rows; three history windows remain explicit USGS source gaps. A separate 15-row Seattle sample was loaded and processed by the Snowpark warehouse procedure. Phase 2 revision, old-event update, tombstone, and rerun fixtures passed in an isolated database. Phase 3 uniqueness checks found zero duplicate revision or bridge-key groups in the currently populated project tables. The catalog-wide update sweep remains incomplete because a bounded source request times out; its watermark has not advanced. CI and broader quality evidence are in progress. See [observed results](docs/results.md) for the evidence and its limits.
 
 ## Quickstart
 
@@ -29,7 +29,7 @@ USGS FDSN GeoJSON
   -> Python bounded batch extractor
   -> JSON Lines + query-count manifest
   -> Snowflake internal stage and COPY INTO (177 history windows loader-reported complete)
-  -> raw VARIANT records (loaded) -> Snowpark warehouse models (planned)
+  -> raw VARIANT records (loaded) -> Snowpark warehouse models (15-row pilot and isolated fixtures verified)
 ```
 
 The source returns bounded query results. QuakeWatch is a batch pipeline, not a streaming pipeline. USGS does not promise a transactionally consistent catalog snapshot, so the project will report unreconciled windows as coverage gaps rather than claim complete history.
