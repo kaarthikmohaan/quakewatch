@@ -193,3 +193,23 @@ Live retries narrowed the timeout to origin year 2023. Set `--recent-years-per-w
 For future live update-sweep attempts, add `--resume-children` and keep the same frozen `--cutoff`, `--sweep-started-at`, catalog lower bound, prior watermark, and overlap on retries. Each completed initial child saves its reconciled feature rows, audit, source fetch time, and checksum under the ignored attempt directory. A retry reuses a child only when its window ID and full bounded query parameters match, its saved checksum and row counts validate, and the frozen sweep start matches. A changed or damaged child is fetched again. Reused rows retain their original source fetch time; failed attempts still have no `events.jsonl` and cannot load or advance the watermark. Attempts made before this option existed saved audits but no feature checkpoints, so their nonzero windows cannot be reconstructed from those audits. The reuse path passed offline tests and a live retry reused 71 validated children; see `docs/results.md`.
 
 For the measured October 2023 timeout, add `--daily-month 2023-10` to split that calendar month into one-day initial windows. Earlier initial window IDs and query bounds stay the same, so a retry of the frozen `2026-09-30T09:59:00.481Z` sweep reused its 71 saved children. Any October day that fails still leaves an explicit gap and prevents a completed sweep or watermark commit. The live retry saved October 1–8 and timed out on October 9; see `docs/results.md`.
+
+## Phase 4 optional recovery demo
+
+The [recovery plan](phase4-recovery-plan.md) and its
+[read-only preflight](../scripts/phase4_recovery_preflight.py) govern the
+isolated fixture drill. The owner-approved preflight passed with five fact
+rows, one-day retention, and no demo clone. The separately approved
+[clone/Time Travel runner](../scripts/phase4_clone_recovery.py) passed on
+2026-10-01: one clone-only `MERGE` changed a magnitude, the source stayed
+unchanged, and `BEFORE (STATEMENT => ...)` returned the earlier clone value.
+See [results](results.md) for query IDs and limits. **Do not rerun the
+one-shot clone runner:** the fixed demo clone now exists and must be inspected
+or dropped only after separate owner approval. Never run its DDL against the
+main `QUAKEWATCH` database.
+The [cleanup runner](../scripts/phase4_clone_cleanup.py) previews locally by
+default. Its approved `--execute` run on 2026-10-01 checked the five-row
+source and clone state, dropped only `QW_PHASE4_REVISION_DEMO`, and confirmed
+the source still had five rows. The clone is no longer present; do not rerun
+the one-shot clone or cleanup commands. See [results](results.md) for the drop
+query ID and cost measurement limit.

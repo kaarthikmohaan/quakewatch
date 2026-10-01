@@ -1,5 +1,45 @@
 # Results
 
+## Phase 4 sandbox recovery preflight
+
+The owner-approved read-only preflight on 2026-10-01 passed under
+`QUAKEWATCH_ROLE` with `QUAKEWATCH_WH`. The isolated fixture
+`QUAKEWATCH_PHASE2_FIXTURE.CURATED.FACT_EVENT_REVISION` had five exact rows,
+five metadata rows, one day of Time Travel retention, and zero duplicate
+logical revision-key groups. The proposed
+`QUAKEWATCH_PHASE2_FIXTURE.CURATED.QW_PHASE4_REVISION_DEMO` clone name was
+absent. The final preflight query ID was
+`01c76f7e-0002-b136-000e-fef2000380fa`. This preflight read no main
+`QUAKEWATCH` fact data and did not create, mutate, or delete a table. It does
+not establish that any clone or Time Travel recovery has succeeded. Actual
+warehouse credits for the preflight were not measured.
+
+## Phase 4 clone isolation and Time Travel drill
+
+The separately approved live drill on 2026-10-01 returned `status=pass` for
+the isolated fixture. It created only
+`QUAKEWATCH_PHASE2_FIXTURE.CURATED.QW_PHASE4_REVISION_DEMO` as a clone of the
+five-row fixture revision fact (clone query ID
+`01c76f83-0002-b136-000e-fef20003810a`). A deliberate `MERGE` then changed
+one clone revision for `qw-old-origin-001` from magnitude 1.1 to 1001.1
+(MERGE query ID `01c76f83-0002-afd6-000e-fef20003390e`). The source table
+still had five rows and magnitude 1.1 for that exact revision key; the clone
+still had five rows and magnitude 1001.1. A `BEFORE (STATEMENT => ...)` read
+against the clone returned five rows and the original 1.1 value for the key;
+the pre-merge magnitude range was 1.08–1.3. The observed result demonstrates
+clone isolation and statement-ID Time Travel for this sandbox case. The
+one-day retention window limits how long the historical read can be repeated.
+
+The owner separately approved cleanup, and the guarded run on 2026-10-01
+returned `status=pass`: it dropped only the demo clone (DROP query ID
+`01c76f8f-0002-b113-000e-fef200035cf2`), confirmed the clone was absent
+from fixture metadata, and found the fixture source still had five rows.
+No main `QUAKEWATCH` fact table was modified. The earlier durable-RAW retry
+drill is separate evidence; this result does not close the three source gaps,
+the unfinished update sweep, or the missed first-backfill latency target.
+Actual warehouse credits and clone divergence/history storage were not
+measured; no dollar cost is claimed.
+
 ## Phase 3 first-backfill measurement plan (set before live query)
 
 Sample: all complete origin-time attempts in `FACT_BATCH_RUN` whose requested UTC windows fall within 2021-09-29 through 2026-09-29, across the three public example sites. This includes one overlapping 15-row Seattle pilot; the unit is a batch attempt, not a unique earthquake. Measure the count, request/fetch/curation date range, and min/p50/p95/max `FETCH_TO_CURATED_SECONDS`. Target: at least 30 attempts and p95 no more than 86,400 seconds (24 hours) for this first manually run backfill. Also report last successful fetch age and newest accepted source-update age separately. This is a project acceptance target, not a production SLO; the three source gaps and incomplete update sweep are excluded from this latency sample and must remain visible in coverage reporting. The [reviewed SQL](../sql/phase3_metrics.sql) and target were committed before running the measurement.
