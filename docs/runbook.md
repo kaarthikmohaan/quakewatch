@@ -125,6 +125,7 @@ The later state diagnostic showed the old-origin update already complete: six pr
 The approved final read-only check passed on 2026-10-01: two old-origin revisions remain, the current magnitude is 1.3, and the fixture has six processing audits. The four Phase 2 exit fixtures now have measured evidence in [results](results.md). Keep the isolated fixture database until deletion is separately approved.
 
 Phase 3 begins with the read-only [revision and bridge uniqueness checks](../sql/phase3_uniqueness.sql). Each query should return zero rows when the model grains are unique. Review the SQL locally before a separately approved warehouse run; no Phase 3 live quality query has run yet.
+Preview the [guarded uniqueness runner](../scripts/phase3_uniqueness.py) with `PYTHONPATH=src:. .venv/bin/python scripts/phase3_uniqueness.py`. The preview verifies the reviewed SQL hash without connecting. Its `--execute` mode requires separate Snowflake warehouse-cost approval, runs two read-only duplicate-group counts against `QUAKEWATCH.CURATED`, and prints `status: pass` only if both counts are zero. No live Phase 3 quality query has run yet.
 
 ## Update-sweep preview
 
