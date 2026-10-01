@@ -19,6 +19,19 @@ FILES = (
 VIEW_NAMES = ("V_BATCH_HEALTH", "V_RECEIPT_WINDOW_AUDIT", "V_EVENT_REJECTS")
 
 
+def view_action(rows: list[tuple[str, str | None]], views: tuple[str, ...]) -> str:
+    """Create absent views, or reuse only a complete exact-definition set."""
+    if not rows:
+        return "create"
+    expected = {name: hashlib.sha256(statement.encode()).hexdigest()
+                for name, statement in zip(VIEW_NAMES, views)}
+    observed = {name: hashlib.sha256((definition or "").encode()).hexdigest()
+                for name, definition in rows}
+    if observed != expected:
+        raise RuntimeError("Phase 3 views are partial or differ from reviewed SQL; inspect before changing them")
+    return "reuse"
+
+
 def reviewed_sql() -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...]]:
     groups = []
     for name, expected_hash, expected_count in FILES:
@@ -47,15 +60,16 @@ def execute_quality() -> dict:
             cursor.execute("USE WAREHOUSE QUAKEWATCH_WH")
             cursor.execute("ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = 300")
             cursor.execute("""
-                SELECT COUNT(*) FROM QUAKEWATCH.INFORMATION_SCHEMA.VIEWS
+                SELECT TABLE_NAME, VIEW_DEFINITION
+                FROM QUAKEWATCH.INFORMATION_SCHEMA.VIEWS
                 WHERE TABLE_SCHEMA = 'CURATED'
                   AND TABLE_NAME IN ('V_BATCH_HEALTH', 'V_RECEIPT_WINDOW_AUDIT',
                                      'V_EVENT_REJECTS')
             """)
-            if cursor.fetchone()[0] != 0:
-                raise RuntimeError("Phase 3 view name already exists; inspect before changing it")
-            for statement in views:
-                cursor.execute(statement)
+            action = view_action(cursor.fetchall(), views)
+            if action == "create":
+                for statement in views:
+                    cursor.execute(statement)
             cursor.execute(reconciliation[0])
             health_summary = [tuple(row) for row in cursor.fetchall()]
             counts = []
@@ -64,7 +78,9 @@ def execute_quality() -> dict:
                 counts.append(int(cursor.fetchone()[0]))
             cursor.execute(sample[0])
             sample_rows = [tuple(row) for row in cursor.fetchall()]
-    return {"views_created": list(VIEW_NAMES), "health_summary": health_summary,
+    return {"views_created": list(VIEW_NAMES) if action == "create" else [],
+            "views_reused": list(VIEW_NAMES) if action == "reuse" else [],
+            "health_summary": health_summary,
             "batch_anomaly_rows": counts[0], "window_anomaly_rows": counts[1],
             "sample_rows": sample_rows,
             "status": "pass" if counts == [0, 0] else "review"}
@@ -83,7 +99,7 @@ def main() -> None:
         reviewed_sql()
         print("Phase 3 quality: preview only; no Snowflake connection")
         print("Three new health views, three reconciliation queries, one bounded sample query")
-        print("New-view name guard prevents replacing any existing view")
+        print("Existing views are reused only when all three definitions match exactly")
 
 
 if __name__ == "__main__":

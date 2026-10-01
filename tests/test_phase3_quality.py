@@ -5,7 +5,7 @@ import io
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.phase3_quality import VIEW_NAMES, execute_quality, main, reviewed_sql
+from scripts.phase3_quality import VIEW_NAMES, execute_quality, main, reviewed_sql, view_action
 
 
 class Phase3QualityTest(unittest.TestCase):
@@ -27,15 +27,15 @@ class Phase3QualityTest(unittest.TestCase):
                 execute_quality()
         connect.assert_not_called()
 
-    def test_existing_view_stops_before_ddl(self):
+    def test_partial_existing_view_stops_before_ddl(self):
         cursor = MagicMock()
         cursor.__enter__.return_value = cursor
-        cursor.fetchone.return_value = (1,)
+        cursor.fetchall.return_value = [("V_BATCH_HEALTH", "different")]
         connection = MagicMock()
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
         with patch("scripts.phase3_quality.connect_project", return_value=connection):
-            with self.assertRaisesRegex(RuntimeError, "already exists"):
+            with self.assertRaisesRegex(RuntimeError, "partial or differ"):
                 execute_quality()
         self.assertFalse(any(call.args[0].startswith("CREATE VIEW")
                              for call in cursor.execute.call_args_list))
@@ -43,8 +43,9 @@ class Phase3QualityTest(unittest.TestCase):
     def test_runs_three_new_views_then_bounded_quality_reads(self):
         cursor = MagicMock()
         cursor.__enter__.return_value = cursor
-        cursor.fetchone.side_effect = [(0,), (0,), (0,)]
+        cursor.fetchone.side_effect = [(0,), (0,)]
         cursor.fetchall.side_effect = [
+            [],
             [("PENDING_PROCESS", 177, 216361, 216361, 0, 0, 0)],
             [("seattle", 15, 0.1, 2.0, "start", "end")],
         ]
@@ -60,6 +61,27 @@ class Phase3QualityTest(unittest.TestCase):
         self.assertEqual(sum(item.startswith("CREATE VIEW ") for item in sql), 3)
         self.assertEqual(sum(item.startswith("SELECT COUNT(*) FROM (") for item in sql), 2)
         self.assertFalse(any(item.startswith("DROP ") for item in sql))
+
+    def test_exact_existing_views_are_reused_without_ddl(self):
+        views = reviewed_sql()[0]
+        self.assertEqual(view_action(list(zip(VIEW_NAMES, views)), views), "reuse")
+        cursor = MagicMock()
+        cursor.__enter__.return_value = cursor
+        cursor.fetchone.side_effect = [(0,), (0,)]
+        cursor.fetchall.side_effect = [
+            list(zip(VIEW_NAMES, views)),
+            [("RECONCILED", 1, 15, 15, 15, 15, 0)],
+            [("seattle", 15, 0.1, 2.0, "start", "end")],
+        ]
+        connection = MagicMock()
+        connection.__enter__.return_value = connection
+        connection.cursor.return_value = cursor
+        with patch("scripts.phase3_quality.connect_project", return_value=connection):
+            report = execute_quality()
+        self.assertEqual(report["views_created"], [])
+        self.assertEqual(report["views_reused"], list(VIEW_NAMES))
+        self.assertFalse(any(call.args[0].startswith("CREATE VIEW")
+                             for call in cursor.execute.call_args_list))
 
 
 if __name__ == "__main__":
