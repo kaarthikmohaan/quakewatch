@@ -2,7 +2,7 @@
 
 ## First GitHub Actions fixture run
 
-The first CI run for commit `12a167a` started after the approved push on 2026-10-01 and failed in the fixture-test step. GitHub's job log showed `FileNotFoundError` for ignored synthetic `data/procedure/phase2_fixture/attempts/.../manifest.json` files; all 272 tests were discovered, with 10 errors. The locked install and Python setup steps passed. These generated local fixture files were present on the Mac but absent in GitHub's fresh checkout. A clean local checkout then reproduced two further missing-artifact errors for the ignored fixture procedure ZIP. The workflow now builds both the deterministic fixture ZIP/SQL and synthetic attempts before testing; a new GitHub run is required to verify the correction.
+The first CI run for commit `12a167a` started after the approved push on 2026-10-01 and failed in the fixture-test step. GitHub's job log showed `FileNotFoundError` for ignored synthetic `data/procedure/phase2_fixture/attempts/.../manifest.json` files; all 272 tests were discovered, with 10 errors. The locked install and Python setup steps passed. These generated local fixture files were present on the Mac but absent in GitHub's fresh checkout. A clean local checkout then reproduced two further missing-artifact errors for the ignored fixture procedure ZIP. The workflow now builds both the deterministic fixture ZIP/SQL and synthetic attempts before testing. The [follow-up CI run](https://github.com/kaarthikmohaan/quakewatch/actions/runs/36831735945) for pushed commit `bc69dde` completed with `success` on 2026-10-01. The same clean-checkout sequence passed all 273 tests locally. This CI job uses no Snowflake secrets or live warehouse integration.
 
 ## First Phase 3 quality deployment attempt
 

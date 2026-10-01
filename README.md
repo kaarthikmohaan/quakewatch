@@ -1,5 +1,7 @@
 # QuakeWatch
 
+[![CI](https://github.com/kaarthikmohaan/quakewatch/actions/workflows/ci.yml/badge.svg)](https://github.com/kaarthikmohaan/quakewatch/actions/workflows/ci.yml)
+
 QuakeWatch is a compact Snowflake batch warehouse for studying historical USGS earthquake records near public example locations. It preserves source revisions and records the time each batch was fetched so results can be audited and replayed.
 
 This is a retrospective data project. It is not an earthquake warning, risk score, shaking estimate, or damage assessment. Distance and magnitude alone do not estimate impact.
