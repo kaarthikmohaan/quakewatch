@@ -38,7 +38,25 @@ No main `QUAKEWATCH` fact table was modified. The earlier durable-RAW retry
 drill is separate evidence; this result does not close the three source gaps,
 the unfinished update sweep, or the missed first-backfill latency target.
 Actual warehouse credits and clone divergence/history storage were not
-measured; no dollar cost is claimed.
+measured at the time of the drill; no dollar cost is claimed. A later hourly
+metering snapshot is recorded below, but it cannot isolate the drill's cost.
+
+## Phase 4 warehouse metering snapshot
+
+The owner-approved read-only Account Usage query on 2026-10-01 at 09:56:08 UTC
+(query ID `01c76fb4-0002-b136-000e-fef20003822e`) returned these rows for
+the shared `QUAKEWATCH_WH` warehouse:
+
+| UTC warehouse hour | Compute credits | Cloud-services credits | Reported credits |
+|---|---:|---:|---:|
+| 08:00–09:00 | 0.088875 | 0.004816942 | 0.093691942 |
+| 09:00–10:00 | 0.0705 | 0.000996943 | 0.071496943 |
+
+The second hour was still in progress at query time, and Account Usage may
+lag. The rows include all activity on this warehouse in those hours, not only
+the clone demo. They are actual observed warehouse-hour figures, **not** a
+per-drill bill or a dollar amount. Clone divergence/history storage and any
+account-level billing adjustments were not measured.
 
 ## Phase 3 first-backfill measurement plan (set before live query)
 

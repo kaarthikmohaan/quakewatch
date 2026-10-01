@@ -8,7 +8,10 @@ This is a retrospective data project. It is not an earthquake warning, risk scor
 
 ## Status
 
-The Python 3.12 environment and bounded USGS extractor are in place. The loader reported 177 of 180 planned history windows loaded and reconciled into Snowflake RAW, totaling 216,361 history rows; three history windows remain explicit USGS source gaps. All 177 loaded history attempts passed guarded Snowpark processing; 216,361 RAW rows were processed and 485 were rejected as `invalid_origin_time`. A separate overlapping 15-row Seattle sample was also processed. Phase 2 revision, old-event update, tombstone, and rerun fixtures passed in an isolated database. Phase 3's post-run checks found all 178 receipts reconciled, with zero loaded-window anomalies or duplicate revision/bridge keys. Its 178-attempt first-backfill sample missed the predeclared 24-hour p95 fetch-to-curated target (35.9 hours observed). The catalog-wide update sweep remains incomplete because a bounded source request times out; its watermark has not advanced. Secret-free GitHub CI passed at `bc69dde`. See [observed results](docs/results.md) for the evidence and its limits.
+The Python 3.12 environment and bounded USGS extractor are in place. The loader reported 177 of 180 planned history windows loaded and reconciled into Snowflake RAW, totaling 216,361 history rows; three history windows remain explicit USGS source gaps. All 177 loaded history attempts passed guarded Snowpark processing; 216,361 RAW rows were processed and 485 were rejected as `invalid_origin_time`. A separate overlapping 15-row Seattle sample was also processed. Phase 2 revision, old-event update, tombstone, rerun, and failed-transform/retry fixtures passed in an isolated database. Phase 3's post-run checks found all 178 receipts reconciled, with zero loaded-window anomalies or duplicate revision/bridge keys. Its 178-attempt first-backfill sample missed the predeclared 24-hour p95 fetch-to-curated target (35.9 hours observed). An optional Phase 4 fixture-table clone and Time Travel drill passed and its demo clone was dropped; Cortex was not run. The catalog-wide update sweep remains incomplete because a bounded source request times out; its watermark has not advanced. Secret-free GitHub CI passed at pushed commit `bc69dde`; newer local commits have not been pushed or checked by GitHub Actions. See [observed results](docs/results.md) and the [Phase 4 close-out](docs/phase4-closeout.md) for evidence and limits.
+
+The Phase 4 metering snapshot reports actual shared warehouse-hour credits,
+with lag and attribution limits; it is not a per-demo bill.
 
 ## Quickstart
 
@@ -31,7 +34,7 @@ USGS FDSN GeoJSON
   -> Python bounded batch extractor
   -> JSON Lines + query-count manifest
   -> Snowflake internal stage and COPY INTO (177 history windows loader-reported complete)
-  -> raw VARIANT records (loaded) -> Snowpark warehouse models (15-row pilot and isolated fixtures verified)
+  -> raw VARIANT records (loaded) -> Snowpark warehouse models (177 history attempts processed)
 ```
 
 The source returns bounded query results. QuakeWatch is a batch pipeline, not a streaming pipeline. USGS does not promise a transactionally consistent catalog snapshot, so the project will report unreconciled windows as coverage gaps rather than claim complete history.
@@ -43,6 +46,8 @@ The source returns bounded query results. QuakeWatch is a batch pipeline, not a 
 - [Runbook](docs/runbook.md)
 - [Phase 0 environment check](docs/environment.md)
 - [Observed results](docs/results.md)
+- [Phase 4 close-out and remaining work](docs/phase4-closeout.md)
+- [Two-minute evidence-based demo](docs/demo.md)
 
 ## Source and responsible use
 

@@ -204,12 +204,15 @@ rows, one-day retention, and no demo clone. The separately approved
 2026-10-01: one clone-only `MERGE` changed a magnitude, the source stayed
 unchanged, and `BEFORE (STATEMENT => ...)` returned the earlier clone value.
 See [results](results.md) for query IDs and limits. **Do not rerun the
-one-shot clone runner:** the fixed demo clone now exists and must be inspected
-or dropped only after separate owner approval. Never run its DDL against the
-main `QUAKEWATCH` database.
+one-shot clone runner:** its fixed name was used for the completed drill.
+Never run its DDL against the main `QUAKEWATCH` database.
 The [cleanup runner](../scripts/phase4_clone_cleanup.py) previews locally by
 default. Its approved `--execute` run on 2026-10-01 checked the five-row
 source and clone state, dropped only `QW_PHASE4_REVISION_DEMO`, and confirmed
 the source still had five rows. The clone is no longer present; do not rerun
 the one-shot clone or cleanup commands. See [results](results.md) for the drop
 query ID and cost measurement limit.
+The separately approved [metering runner](../scripts/phase4_usage.py) read
+`QUAKEWATCH_WH` Account Usage hours on 2026-10-01. It uses the locally stored
+admin billing profile for a read-only account view, not for pipeline writes.
+The snapshot and its lag/shared-warehouse limits are in [results](results.md).
