@@ -1,5 +1,9 @@
 # Results
 
+## First GitHub Actions fixture run
+
+The first CI run for commit `12a167a` started after the approved push on 2026-10-01 and failed in the fixture-test step. GitHub's job log showed `FileNotFoundError` for ignored synthetic `data/procedure/phase2_fixture/attempts/.../manifest.json` files; all 272 tests were discovered, with 10 errors. The locked install and Python setup steps passed. These generated local fixture files were present on the Mac but absent in GitHub's fresh checkout. A clean local checkout then reproduced two further missing-artifact errors for the ignored fixture procedure ZIP. The workflow now builds both the deterministic fixture ZIP/SQL and synthetic attempts before testing; a new GitHub run is required to verify the correction.
+
 ## First Phase 3 quality deployment attempt
 
 The first approved Phase 3 quality runner attempt on 2026-10-01 stopped at its preflight because at least one of the three planned view names already existed in `QUAKEWATCH.CURATED`. The runner issued no view DDL, reconciliation query, or sample query. A subsequent read-only metadata check found all three names and visible definitions. Their SHA-256 hashes exactly match the reviewed local `CREATE VIEW` statements: batch health `9f37d2ca37e6bc570ff1de9d4b2e423fc4ce094e77384cff850ff68b0f13fca7`, reject rows `d848cce3d7b1b8aad4ea97ece3e2b3b037a7feb8ac0db74eda660300b9b71c57`, and window audit `4b79a3d15c11ea589e9fc756ec704a52f885aca89a1cc17945992757639283b1`.
