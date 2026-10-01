@@ -1,5 +1,9 @@
 # Results
 
+## Phase 3 first-backfill measurement plan (set before live query)
+
+Sample: all complete origin-time attempts in `FACT_BATCH_RUN` whose requested UTC windows fall within 2021-09-29 through 2026-09-29, across the three public example sites. This includes one overlapping 15-row Seattle pilot; the unit is a batch attempt, not a unique earthquake. Measure the count, request/fetch/curation date range, and min/p50/p95/max `FETCH_TO_CURATED_SECONDS`. Target: at least 30 attempts and p95 no more than 86,400 seconds (24 hours) for this first manually run backfill. Also report last successful fetch age and newest accepted source-update age separately. This is a project acceptance target, not a production SLO; the three source gaps and incomplete update sweep are excluded from this latency sample and must remain visible in coverage reporting. The [reviewed SQL](../sql/phase3_metrics.sql) and target were committed before running the measurement.
+
 ## First GitHub Actions fixture run
 
 The first CI run for commit `12a167a` started after the approved push on 2026-10-01 and failed in the fixture-test step. GitHub's job log showed `FileNotFoundError` for ignored synthetic `data/procedure/phase2_fixture/attempts/.../manifest.json` files; all 272 tests were discovered, with 10 errors. The locked install and Python setup steps passed. These generated local fixture files were present on the Mac but absent in GitHub's fresh checkout. A clean local checkout then reproduced two further missing-artifact errors for the ignored fixture procedure ZIP. The workflow now builds both the deterministic fixture ZIP/SQL and synthetic attempts before testing. The [follow-up CI run](https://github.com/kaarthikmohaan/quakewatch/actions/runs/36831735945) for pushed commit `bc69dde` completed with `success` on 2026-10-01. The same clean-checkout sequence passed all 273 tests locally. This CI job uses no Snowflake secrets or live warehouse integration.
