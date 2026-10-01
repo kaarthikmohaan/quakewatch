@@ -62,7 +62,7 @@ class Phase3ProcessHistoryTest(unittest.TestCase):
 
     def test_batch_limit(self):
         with self.assertRaises(ValueError):
-            process_history(51)
+            process_history(201)
 
 
 if __name__ == "__main__":

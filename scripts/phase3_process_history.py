@@ -28,8 +28,8 @@ WHERE ATTEMPT_ID = %s
 
 
 def process_history(max_attempts: int) -> dict:
-    if not 1 <= max_attempts <= 50:
-        raise ValueError("max_attempts must be between 1 and 50")
+    if not 1 <= max_attempts <= 200:
+        raise ValueError("max_attempts must be between 1 and 200")
     completed = []
     with connect_project() as connection:
         with connection.cursor() as cursor:
@@ -75,8 +75,8 @@ def main() -> None:
     parser.add_argument("--max-attempts", type=int, default=5)
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
-    if not 1 <= args.max_attempts <= 50:
-        parser.error("--max-attempts must be between 1 and 50")
+    if not 1 <= args.max_attempts <= 200:
+        parser.error("--max-attempts must be between 1 and 200")
     if args.execute:
         print(json.dumps(process_history(args.max_attempts), sort_keys=True), flush=True)
     else:
