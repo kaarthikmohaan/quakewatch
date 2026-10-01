@@ -66,7 +66,7 @@ A later read-only diagnostic showed that both old-origin attempts had complete p
 | Tombstone remains in history and hides current event | Synthetic copied-procedure deletion retained three facts and returned zero current rows | Met for the fixture |
 | Rerun does not create duplicate logical revisions | Main 15-row same-attempt rerun merged zero revisions; synthetic cross-attempt overlap retained three facts and unique bridge keys | Met for these fixtures |
 
-The stated Phase 2 exit fixtures now have measured evidence; owner phase-end review is pending before moving to Phase 3. The broader Snowflake failure/retry integration check and live nonzero reject evidence remain open and should not be inferred from these successful procedure calls. The Phase 1 catalog-wide update sweep and its unresolved source gaps remain separate source-coverage work.
+The stated Phase 2 exit fixtures now have measured evidence. The owner confirmed the phase-end checklist on 2026-10-01, so Phase 3 quality and evidence work may begin. The broader Snowflake failure/retry integration check and live nonzero reject evidence remain open and should not be inferred from these successful procedure calls. The Phase 1 catalog-wide update sweep and its unresolved source gaps remain separate source-coverage work.
 
 ## Not measured yet
 
