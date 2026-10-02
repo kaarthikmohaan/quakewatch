@@ -6,9 +6,6 @@
 2. From the repository root, run `uv sync --locked --no-editable`.
 3. Run a small, explicit time range before requesting a multi-year history.
 
-This follows one newly fetched Seattle batch from USGS through Snowflake analysis, one Cortex call, and an isolated recovery
-exercise. It is a record of what ran, with the exact observed results. The one-time demo drivers below contain fixed names and dates.
-
 This records the terminal output for an existing Seattle batch, one Cortex call, an isolated recovery
 exercise, warehouse checks, and local tests. The batch was already loaded and
 processed when these commands ran. The demo drivers below contain fixed names and dates.
