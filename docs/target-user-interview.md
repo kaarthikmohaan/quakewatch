@@ -12,7 +12,7 @@ facilities or preparedness work. This is a recruitment lead, not a confirmed
 participant, and no membership or purchase is needed to review the public
 page. The project team has not contacted the council or any individual.
 
-Suggested short invitation for the owner to send if they choose:
+Suggested short invitation to send:
 
 > I am building a small educational batch warehouse that compares historical
 > USGS earthquake records near three public example cities. Would a facilities
@@ -34,8 +34,7 @@ Before the session, prepare the same dates, site radius, magnitude threshold,
 and question for both methods. Check that the QuakeWatch result covers the
 chosen intervals; history windows 12, 42, and 73 are missing, so show those
 gaps explicitly. The catalog-wide update sweep is incomplete. Do not present
-the warehouse as a complete or current USGS catalog. Any new Snowflake query
-requires the owner's compute-cost approval first. Do not restart USGS source
+the warehouse as a complete or current USGS catalog. Do not restart USGS source
 retries for this interview.
 
 ## Session script
