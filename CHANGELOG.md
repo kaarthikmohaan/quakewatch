@@ -10,6 +10,7 @@ are in the [results summary](docs/results.md).
 ### Changed
 
 - README next steps now link to the v0.2.0 milestone issues.
+- README shows a real Cortex summary next to the SQL facts it was built from, and a rejected example.
 
 ## [0.1.0] - 2026-10-02
 

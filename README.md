@@ -119,6 +119,32 @@ Output of the 2 October 2026 verification run (chart drawn from these values):
 These are currently modeled records, not official USGS totals. Three source
 gaps and the incomplete update sweep mean coverage is not guaranteed complete.
 
+### Optional Cortex summary
+
+Snowflake Cortex can turn one SQL result row into a plain-English sentence. The
+model only sees the facts in that row, and every sentence is checked against
+them before use; if any fact is wrong, the SQL row is shown instead.
+
+**SQL facts (Seattle, 2024):**
+
+| Window (UTC) | Radius | Events | Nearest event | Distance from site | Magnitude | Status | Record age |
+|---|---:|---:|---|---:|---:|---|---:|
+| 2024-01-01 to 2025-01-01 | 250 km | 3,514 | `uw61978781` | 5.1 km | 1.87 | reviewed | 24,031.1 h |
+
+**Cortex output** (`claude-haiku-4-5`, 1 October 2026, 202 prompt and 100
+completion tokens; passed automatic validation and human fact review):
+
+> In the modeled Seattle sample for 2024-01-01T00:00:00Z to
+> 2025-01-01T00:00:00Z, 3514 events were within 250 km; the nearest event
+> uw61978781 was 5.1 km from Seattle, magnitude 1.87, source status reviewed,
+> and its source record was 24031.1 hours old at the SQL check time.
+
+**Why the check matters:** an earlier brief for the Seattle-day sample said the
+nearest event was *"42.1 km away from uw714111042"*, measuring the distance from
+the event's own ID instead of from the site. Validation rejected it and the SQL
+row was used. Across 13 calls, 9 of 9 evaluated briefs passed and 4 others were
+rejected this way ([evaluation](docs/evidence/phase4-cortex-evaluation.md)).
+
 ## Design decisions
 
 - **Batch, not streaming.** The USGS FDSN API answers bounded queries and offers
