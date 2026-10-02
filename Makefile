@@ -1,7 +1,8 @@
 # QuakeWatch commands. Run from the repository root.
 #
-# Targets that touch USGS or Snowflake only preview by default. Add EXECUTE=1
-# to run them for real; Snowflake runs use warehouse credits.
+# Targets marked [EXECUTE=1] only preview by default; add EXECUTE=1 to run them
+# for real. Snowflake runs use warehouse credits. `make extract` has no preview:
+# it fetches the one bounded window you ask for, like quakewatch-extract.
 #   make load-history CUTOFF=2026-09-29T00:00:00Z            # preview
 #   make load-history CUTOFF=2026-09-29T00:00:00Z EXECUTE=1  # run
 

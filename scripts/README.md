@@ -13,8 +13,9 @@ PYTHONPATH=src:. .venv/bin/python scripts/<folder>/<script>.py
 ```
 
 The repository [`Makefile`](../Makefile) wraps the common steps: run
-`make help` to list them. Targets that reach USGS or Snowflake only preview
-unless you add `EXECUTE=1`.
+`make help` to list them. Targets marked `[EXECUTE=1]` only preview
+unless you add `EXECUTE=1`; `make extract` fetches the bounded window you ask
+for straight away.
 
 ## Pipeline order
 

@@ -51,7 +51,7 @@ Measured on live Snowflake runs between 29 September and 2 October 2026. Full ev
 | Batch receipts reconciled (RAW = staged = processed + rejected) | **All 179** |
 | Failed-transform retry from RAW, with no refetch | **Passed**, with identical counts after rollback and retry |
 | Clone and Time Travel recovery drill | **Passed** on an isolated fixture table |
-| Secret-free unit and fixture tests in CI | **303** |
+| Secret-free unit and fixture tests, run in CI with lint and type checks | **328** |
 | Cortex summaries passing human fact review | **9 of 9** in the evaluation; 4 other briefs rejected and replaced by SQL facts. **0.0039** AI credits measured for the first 11 calls |
 | First-backfill fetch-to-curated p95 | **35.9 h, missing the 24 h target** set before measuring |
 

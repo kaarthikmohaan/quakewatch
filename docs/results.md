@@ -24,7 +24,7 @@ official USGS totals.
 | Cortex briefs passing human fact review | **9 of 9** in the evaluation; **4 other briefs rejected** by fact checks (2 before it, 2 in the [2 October demo](evidence/results-log.md#live-end-to-end-seattle-demo-2026-10-02)), with SQL used instead | [Cortex evaluation](evidence/results-log.md#phase-4-nine-case-cortex-evaluation) |
 | Measured Cortex cost | **0.003948756** AI credits for the first 11 completed calls, separate from warehouse compute; the 2 October calls are unmeasured | [Cortex evaluation](evidence/results-log.md#phase-4-nine-case-cortex-evaluation) |
 | Warehouse usage snapshot | **0.088875** credits for one fully reported hour (shared warehouse; not a per-demo bill) | [Metering snapshot](evidence/results-log.md#phase-4-warehouse-metering-snapshot) |
-| Secret-free tests in GitHub Actions | **303** passing | [First CI run](evidence/results-log.md#first-github-actions-fixture-run) |
+| Secret-free tests | **328**, run in GitHub Actions with ruff and mypy on every push (303 at the published Phase 4 run) | [CI workflow](../.github/workflows/ci.yml), [first CI run](evidence/results-log.md#first-github-actions-fixture-run) |
 
 ## Design targets and status
 

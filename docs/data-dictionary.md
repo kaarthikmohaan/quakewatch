@@ -26,6 +26,8 @@ Key columns only; the full column lists are in the linked DDL below. `PK` marks
 each table's grain, which is enforced by SQL uniqueness checks rather than by
 Snowflake constraints. Dimensions join on natural values, and `DIM_DATE` is
 role-played by the dates of `ORIGIN_TIME` and `SOURCE_UPDATED_AT`.
+`UPDATE_WATERMARK` stands alone: it records how far the update sweep has
+committed and is read and advanced only by the update loader.
 `EVENT_CURRENT` is a view over `FACT_EVENT_REVISION` that keeps each event's
 latest revision and hides it when that revision is a deleted tombstone.
 
@@ -104,6 +106,11 @@ erDiagram
     }
     DIM_EVENT_STATUS {
         VARCHAR SOURCE_STATUS PK
+    }
+    UPDATE_WATERMARK {
+        VARCHAR SWEEP_NAME PK "one row per sweep"
+        TIMESTAMP_TZ COMMITTED_WATERMARK "compare-and-set"
+        VARCHAR ATTEMPT_ID "sweep receipt"
     }
 ```
 
