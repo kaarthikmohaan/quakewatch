@@ -4,8 +4,10 @@ import argparse
 import getpass
 import json
 import logging
+import os
 import re
 import tomllib
+from collections.abc import Mapping
 from contextlib import closing
 from pathlib import Path
 from typing import Any
@@ -45,13 +47,51 @@ def project_connection_params(config_path: Path, passphrase: str) -> dict[str, s
     }
 
 
+# Non-interactive connection for CI. All four must be set together; locally,
+# leave them unset to use ~/.snowflake/config.toml and the passphrase prompt.
+CI_ENV = {
+    "account": "QUAKEWATCH_SNOWFLAKE_ACCOUNT",
+    "user": "QUAKEWATCH_SNOWFLAKE_USER",
+    "private_key_file": "QUAKEWATCH_SNOWFLAKE_PRIVATE_KEY_FILE",
+    "passphrase": "QUAKEWATCH_SNOWFLAKE_PRIVATE_KEY_PASSPHRASE",
+}
+
+
+def env_connection_params(environ: Mapping[str, str]) -> dict[str, str] | None:
+    """Build key-pair parameters from CI environment variables, or None if unset."""
+    values = {key: environ.get(name, "") for key, name in CI_ENV.items()}
+    if not any(values.values()):
+        return None
+    missing = [CI_ENV[key] for key, value in values.items() if not value]
+    if missing:
+        raise LoadReconciliationError(f"incomplete CI connection settings: {', '.join(missing)}")
+    return {
+        "account": values["account"],
+        "user": values["user"],
+        "role": "QUAKEWATCH_ROLE",
+        "authenticator": "SNOWFLAKE_JWT",
+        "private_key_file": values["private_key_file"],
+        "private_key_file_pwd": values["passphrase"],
+        "warehouse": "QUAKEWATCH_WH",
+        "database": "QUAKEWATCH",
+        "schema": "RAW",
+    }
+
+
 def connect_project():
-    """Connect on an explicitly approved live run; prompt locally for the key."""
+    """Connect on an explicitly approved live run.
+
+    CI supplies key-pair settings through environment variables; locally the
+    project profile is read and the key passphrase is prompted for.
+    """
     import snowflake.connector
 
-    config_path = Path.home() / ".snowflake" / "config.toml"
-    passphrase = getpass.getpass("QuakeWatch key passphrase: ")
-    return snowflake.connector.connect(**project_connection_params(config_path, passphrase))
+    params = env_connection_params(os.environ)
+    if params is None:
+        config_path = Path.home() / ".snowflake" / "config.toml"
+        passphrase = getpass.getpass("QuakeWatch key passphrase: ")
+        params = project_connection_params(config_path, passphrase)
+    return snowflake.connector.connect(**params)
 
 
 def validate_local_batch(manifest_path: Path) -> tuple[dict[str, Any], int]:
@@ -74,8 +114,12 @@ def validate_local_batch(manifest_path: Path) -> tuple[dict[str, Any], int]:
                 continue
             window_id = audit.get("window_id")
             fetched_at = audit.get("source_fetched_at")
-            if (not window_id or not isinstance(fetched_at, str) or not fetched_at
-                    or window_id in child_fetch_times):
+            if (
+                not window_id
+                or not isinstance(fetched_at, str)
+                or not fetched_at
+                or window_id in child_fetch_times
+            ):
                 raise LoadReconciliationError("invalid resumed child audit")
             child_fetch_times[window_id] = fetched_at
         if not child_fetch_times:
@@ -93,9 +137,11 @@ def validate_local_batch(manifest_path: Path) -> tuple[dict[str, Any], int]:
                     for field in ("logical_batch_id", "attempt_id")
                 ):
                     raise ValueError("record does not match manifest")
-                expected_fetch_time = (child_fetch_times.get(metadata["window_id"])
-                                       if manifest.get("resume_children")
-                                       else manifest["fetched_at"])
+                expected_fetch_time = (
+                    child_fetch_times.get(metadata["window_id"])
+                    if manifest.get("resume_children")
+                    else manifest["fetched_at"]
+                )
                 if not expected_fetch_time or metadata["fetched_at"] != expected_fetch_time:
                     raise ValueError("row fetch time does not match its window audit")
                 for field in ("window_id", "payload_hash", "parser_version"):
@@ -152,23 +198,39 @@ SELECT %s, %s, %s, %s,
 """
 
 
-def append_receipt(cursor: Any, plan: dict[str, Any], status: str, loaded: int,
-                   copy_results: list[dict[str, Any]], error: Exception | None = None) -> None:
+def append_receipt(
+    cursor: Any,
+    plan: dict[str, Any],
+    status: str,
+    loaded: int,
+    copy_results: list[dict[str, Any]],
+    error: Exception | None = None,
+) -> None:
     """Append one immutable outcome for this attempt."""
     manifest = plan["manifest"]
     site_name = manifest.get("site", {}).get("name", "")
     site_key = site_name.lower().replace(" ", "-") or None
     values = (
-        manifest["attempt_id"], manifest["logical_batch_id"],
-        manifest.get("batch_kind", "origin"), site_key,
-        manifest["requested_starttime"], manifest["requested_endtime"],
-        json.dumps(manifest["query_parameters"]), json.dumps(manifest["window_audit"]),
-        json.dumps(manifest.get("coverage_gaps", [])), manifest["fetched_at"],
-        manifest["status"], status, manifest["source_rows_returned"],
-        manifest["raw_rows_written"], loaded,
+        manifest["attempt_id"],
+        manifest["logical_batch_id"],
+        manifest.get("batch_kind", "origin"),
+        site_key,
+        manifest["requested_starttime"],
+        manifest["requested_endtime"],
+        json.dumps(manifest["query_parameters"]),
+        json.dumps(manifest["window_audit"]),
+        json.dumps(manifest.get("coverage_gaps", [])),
+        manifest["fetched_at"],
+        manifest["status"],
+        status,
+        manifest["source_rows_returned"],
+        manifest["raw_rows_written"],
+        loaded,
         json.dumps([plan["stage_path"] + "/events.jsonl"]),
-        json.dumps(copy_results), type(error).__name__ if error else None,
-        str(error) if error else None, json.dumps(manifest),
+        json.dumps(copy_results),
+        type(error).__name__ if error else None,
+        str(error) if error else None,
+        json.dumps(manifest),
     )
     cursor.execute(RECEIPT_SQL, values)
 
@@ -201,7 +263,9 @@ def execute_raw_load(plan: dict[str, Any], connection: Any) -> int:
             cursor.execute(plan["put_sql"])
             put_results = _result_dicts(cursor)
             if len(put_results) != 1 or put_results[0].get("status", "").upper() != "UPLOADED":
-                raise LoadReconciliationError(f"stage upload did not upload one new file: {put_results}")
+                raise LoadReconciliationError(
+                    f"stage upload did not upload one new file: {put_results}"
+                )
             cursor.execute(plan["copy_sql"])
             copy_results = _result_dicts(cursor)
             if len(copy_results) != 1 or copy_results[0].get("status", "").upper() != "LOADED":
@@ -226,7 +290,9 @@ def execute_raw_load(plan: dict[str, Any], connection: Any) -> int:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Inspect a RAW load plan from the repository root")
     parser.add_argument("manifest", type=Path)
-    parser.add_argument("--execute", action="store_true", help="Connect and run PUT/COPY (warehouse cost)")
+    parser.add_argument(
+        "--execute", action="store_true", help="Connect and run PUT/COPY (warehouse cost)"
+    )
     args = parser.parse_args()
     configure_logging()
     plan = plan_raw_load(args.manifest)

@@ -31,10 +31,13 @@ EXPECTED = (
 
 def setup_statements() -> tuple[str, ...]:
     """Stop if the reviewed setup file changes before execution."""
-    parsed = tuple(statement.strip().rstrip(";").strip()
-                   for statement, _ in split_statements(
-                       StringIO(SETUP_FILE.read_text(encoding="utf-8")), remove_comments=True)
-                   if statement.strip())
+    parsed = tuple(
+        statement.strip().rstrip(";").strip()
+        for statement, _ in split_statements(
+            StringIO(SETUP_FILE.read_text(encoding="utf-8")), remove_comments=True
+        )
+        if statement.strip()
+    )
     if parsed != EXPECTED:
         raise ValueError("fixture setup SQL differs from the reviewed statement list")
     return parsed
@@ -60,8 +63,11 @@ def execute_setup(config_path: Path) -> dict:
                 cursor.execute(statement)
             if not name_occupied(cursor) or not {"RAW", "CURATED"} <= _schema_names(cursor):
                 raise RuntimeError("setup ran but fixture database/schema verification failed")
-    return {"database": TEST_DATABASE, "schemas": ["RAW", "CURATED"],
-            "statements_executed": len(statements)}
+    return {
+        "database": TEST_DATABASE,
+        "schemas": ["RAW", "CURATED"],
+        "statements_executed": len(statements),
+    }
 
 
 def main() -> None:

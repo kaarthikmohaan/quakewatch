@@ -9,8 +9,9 @@ from quakewatch.raw_load import connect_project
 from scripts.evidence.phase4.clone_recovery import CLONE, SOURCE
 
 
-def validate_cleanup(source_rows: int, clone_rows: int,
-                     source_original: int, clone_changed: int) -> None:
+def validate_cleanup(
+    source_rows: int, clone_rows: int, source_original: int, clone_changed: int
+) -> None:
     if (source_rows, clone_rows, source_original, clone_changed) != (5, 5, 1, 1):
         raise RuntimeError("demo clone state differs from recorded result; do not drop")
 
@@ -55,8 +56,12 @@ def execute() -> dict:
             """)
             if int(cursor.fetchone()[0]) != 0:
                 raise RuntimeError("demo clone still appears in metadata")
-            return {"status": "pass", "dropped_clone": CLONE,
-                    "source_rows_unchanged": source_rows, "drop_query_id": drop_query_id}
+            return {
+                "status": "pass",
+                "dropped_clone": CLONE,
+                "source_rows_unchanged": source_rows,
+                "drop_query_id": drop_query_id,
+            }
 
 
 def main() -> None:

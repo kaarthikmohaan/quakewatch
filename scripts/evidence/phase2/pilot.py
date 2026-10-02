@@ -31,9 +31,11 @@ def ddl_statements() -> list[str]:
     statements = []
     for name in DDL_FILES:
         sql = (ROOT / "sql" / name).read_text()
-        statements.extend(statement.strip() for statement, _ in
-                          split_statements(StringIO(sql), remove_comments=True)
-                          if statement.strip())
+        statements.extend(
+            statement.strip()
+            for statement, _ in split_statements(StringIO(sql), remove_comments=True)
+            if statement.strip()
+        )
     return statements
 
 
@@ -63,27 +65,34 @@ def _guard_empty_curated(cursor) -> None:
         if rows:
             columns = [column[0].lower() for column in cursor.description]
             name_index = columns.index("name") if "name" in columns else None
-            names = [str(row[name_index]) for row in rows] if name_index is not None else [
-                f"{len(rows)} object(s)"
-            ]
+            names = (
+                [str(row[name_index]) for row in rows]
+                if name_index is not None
+                else [f"{len(rows)} object(s)"]
+            )
             raise RuntimeError(
                 f"CURATED already has {kind.lower()}: {', '.join(names)}; stop for schema review"
             )
 
 
 def _guard_receipt(cursor) -> None:
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT EXTRACT_STATUS, LOAD_STATUS, SOURCE_ROWS_RETURNED,
                RAW_ROWS_WRITTEN, LOADED_ROWS,
                COALESCE(ARRAY_SIZE(COVERAGE_GAPS), 0)
         FROM QUAKEWATCH.RAW.BATCH_ATTEMPT WHERE ATTEMPT_ID = %s
-    """, (ATTEMPT_ID,))
+    """,
+        (ATTEMPT_ID,),
+    )
     rows = cursor.fetchall()
     if rows != [("complete", "complete", 15, 15, 15, 0)]:
         raise RuntimeError("pilot receipt is absent, duplicated, incomplete, or mismatched")
-    raw = _count(cursor,
-                 "SELECT COUNT(*) FROM QUAKEWATCH.RAW.RAW_EVENT_RECORDS WHERE ATTEMPT_ID = %s",
-                 (ATTEMPT_ID,))
+    raw = _count(
+        cursor,
+        "SELECT COUNT(*) FROM QUAKEWATCH.RAW.RAW_EVENT_RECORDS WHERE ATTEMPT_ID = %s",
+        (ATTEMPT_ID,),
+    )
     if raw != EXPECTED_RAW_ROWS:
         raise RuntimeError("pilot RAW row count differs from the complete receipt")
 
@@ -99,33 +108,35 @@ def execute_pilot() -> dict:
             cursor.execute("ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = 300")
             _guard_empty_curated(cursor)
             _guard_receipt(cursor)
-            cursor.execute(
-                f"PUT '{BUNDLE.as_uri()}' {STAGE} AUTO_COMPRESS=FALSE OVERWRITE=FALSE"
-            )
+            cursor.execute(f"PUT '{BUNDLE.as_uri()}' {STAGE} AUTO_COMPRESS=FALSE OVERWRITE=FALSE")
             columns = [column[0].lower() for column in cursor.description]
             upload = dict(zip(columns, cursor.fetchone(), strict=True))
             if upload.get("status") != "UPLOADED":
                 raise RuntimeError("procedure ZIP was not newly uploaded; stop for stage review")
             for statement in ddl_statements():
                 cursor.execute(statement)
-            cursor.execute(
-                "CALL QUAKEWATCH.CURATED.PROCESS_LOADED_ATTEMPT(%s)", (ATTEMPT_ID,)
-            )
+            cursor.execute("CALL QUAKEWATCH.CURATED.PROCESS_LOADED_ATTEMPT(%s)", (ATTEMPT_ID,))
             outcome = json.loads(cursor.fetchone()[0])
             if outcome.get("status") != "complete" or outcome.get("loaded_rows") != 15:
                 raise RuntimeError("pilot procedure did not return a complete 15-row outcome")
             counts = {}
             for name in (
-                "STG_EVENT_REVISION", "FACT_EVENT_REVISION", "BRIDGE_EVENT_SITE",
-                "FACT_BATCH_RUN", "BATCH_PROCESS_ATTEMPT", "DIM_SITE",
+                "STG_EVENT_REVISION",
+                "FACT_EVENT_REVISION",
+                "BRIDGE_EVENT_SITE",
+                "FACT_BATCH_RUN",
+                "BATCH_PROCESS_ATTEMPT",
+                "DIM_SITE",
             ):
                 counts[name] = _count(cursor, f"SELECT COUNT(*) FROM QUAKEWATCH.CURATED.{name}")
-            if (counts["STG_EVENT_REVISION"] != 15
-                    or not 0 <= counts["FACT_EVENT_REVISION"] <= 15
-                    or counts["BRIDGE_EVENT_SITE"] != 3 * counts["FACT_EVENT_REVISION"]
-                    or counts["FACT_BATCH_RUN"] != 1
-                    or counts["BATCH_PROCESS_ATTEMPT"] != 1
-                    or counts["DIM_SITE"] != 3):
+            if (
+                counts["STG_EVENT_REVISION"] != 15
+                or not 0 <= counts["FACT_EVENT_REVISION"] <= 15
+                or counts["BRIDGE_EVENT_SITE"] != 3 * counts["FACT_EVENT_REVISION"]
+                or counts["FACT_BATCH_RUN"] != 1
+                or counts["BATCH_PROCESS_ATTEMPT"] != 1
+                or counts["DIM_SITE"] != 3
+            ):
                 raise RuntimeError(f"pilot model counts require investigation: {counts}")
             return {"outcome": outcome, "counts": counts}
 

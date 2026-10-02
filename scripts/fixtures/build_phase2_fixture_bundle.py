@@ -15,8 +15,7 @@ DEFAULT_OUTPUT = REPO_ROOT / "data" / "procedure" / "phase2_fixture"
 
 def build_fixture_copy(output_dir: Path) -> tuple[str, int]:
     """Write only under the requested output directory after all inputs pass."""
-    rewritten = {path: validate_and_rewrite(path, source)[0]
-                 for path, source in inputs().items()}
+    rewritten = {path: validate_and_rewrite(path, source)[0] for path, source in inputs().items()}
     output_dir.mkdir(parents=True, exist_ok=True)
     bundle_path = output_dir / "quakewatch_procedure.zip"
     with ZipFile(bundle_path, "w") as archive:

@@ -112,10 +112,16 @@ def selected_revision_observations(
             raise ValueError("canonical ID missing for a validated source event")
         raw = item.raw
         by_source[raw.source_key] = item
-        candidates.append(RevisionCandidate(
-            canonical_id, item.fields["source_updated_at"], raw.payload_hash,
-            raw.fetched_at, raw.stage_file_name, raw.stage_file_row_number,
-        ))
+        candidates.append(
+            RevisionCandidate(
+                canonical_id,
+                item.fields["source_updated_at"],
+                raw.payload_hash,
+                raw.fetched_at,
+                raw.stage_file_name,
+                raw.stage_file_row_number,
+            )
+        )
     return [
         (candidate.canonical_event_id, by_source[candidate.source_key])
         for candidate in deduplicate_revision_candidates(candidates)
@@ -133,34 +139,36 @@ def write_revision_fact(
     selected = selected_revision_observations(projection, canonical_ids)
     affected_canonical = {canonical_id for canonical_id, _ in selected}
     affected_ids = sorted(
-        source_id for source_id, canonical_id in canonical_ids.items()
+        source_id
+        for source_id, canonical_id in canonical_ids.items()
         if canonical_id in affected_canonical
     )
     for start in range(0, len(affected_ids), MAX_ROWS_PER_MERGE):
-        ids = affected_ids[start:start + MAX_ROWS_PER_MERGE]
-        for result in session.sql(
-            ALIAS_REKEY_CHECK_SQL, params=[json.dumps(ids)]
-        ).collect():
+        ids = affected_ids[start : start + MAX_ROWS_PER_MERGE]
+        for result in session.sql(ALIAS_REKEY_CHECK_SQL, params=[json.dumps(ids)]).collect():
             stored = result.as_dict()
             if canonical_ids[stored["SOURCE_EVENT_ID"]] != stored["CANONICAL_EVENT_ID"]:
                 raise ValueError("alias rekey required before revision MERGE")
     changed = 0
     for start in range(0, len(selected), MAX_ROWS_PER_MERGE):
-        chunk = selected[start:start + MAX_ROWS_PER_MERGE]
-        body = json.dumps([
-            _wire_row(item, canonical_id) for canonical_id, item in chunk
-        ], separators=(",", ":"), allow_nan=False)
+        chunk = selected[start : start + MAX_ROWS_PER_MERGE]
+        body = json.dumps(
+            [_wire_row(item, canonical_id) for canonical_id, item in chunk],
+            separators=(",", ":"),
+            allow_nan=False,
+        )
         rows = session.sql(MERGE_SQL, params=[body]).collect()
         if len(rows) != 1:
             raise ValueError("revision MERGE did not return one result row")
         counts = {key.lower(): value for key, value in rows[0].as_dict().items()}
-        inserted, updated = counts.get("number of rows inserted"), counts.get("number of rows updated")
+        inserted, updated = (
+            counts.get("number of rows inserted"),
+            counts.get("number of rows updated"),
+        )
         if not isinstance(inserted, int) or not isinstance(updated, int):
             raise ValueError("revision MERGE result lacks inserted/updated counts")
         changed += inserted + updated
     canonical_set = sorted(affected_canonical)
-    if canonical_set and session.sql(
-        KEY_CHECK_SQL, params=[json.dumps(canonical_set)]
-    ).collect():
+    if canonical_set and session.sql(KEY_CHECK_SQL, params=[json.dumps(canonical_set)]).collect():
         raise ValueError("duplicate canonical revision keys exist after MERGE")
     return changed

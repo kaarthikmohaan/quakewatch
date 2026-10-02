@@ -48,12 +48,17 @@ def _original_key(row: dict[str, Any]) -> tuple[Any, ...]:
 
 
 def _rank(row: dict[str, Any]) -> tuple[Any, ...]:
-    return (row["FETCHED_AT"], row["STAGE_FILE_NAME"],
-            row["STAGE_FILE_ROW_NUMBER"], row["CANONICAL_EVENT_ID"])
+    return (
+        row["FETCHED_AT"],
+        row["STAGE_FILE_NAME"],
+        row["STAGE_FILE_ROW_NUMBER"],
+        row["CANONICAL_EVENT_ID"],
+    )
 
 
-def _require_affected(session: Any, sql: str, params: list[Any], expected: int,
-                      operation: str) -> None:
+def _require_affected(
+    session: Any, sql: str, params: list[Any], expected: int, operation: str
+) -> None:
     results = session.sql(sql, params=params).collect()
     if len(results) != 1:
         raise ValueError(f"alias rekey {operation} returned no reliable row count")
@@ -86,7 +91,9 @@ def rekey_existing_aliases(session: Any, canonical_ids: dict[str, str]) -> int:
         if original in original_facts:
             raise ValueError("duplicate existing revision key before alias rekey")
         original_facts.add(original)
-        target_groups.setdefault((new, row["SOURCE_UPDATED_AT"], row["PAYLOAD_HASH"]), []).append(row)
+        target_groups.setdefault((new, row["SOURCE_UPDATED_AT"], row["PAYLOAD_HASH"]), []).append(
+            row
+        )
 
     moves = {old: new for old, new in old_to_new.items() if old != new}
     if not moves:
@@ -118,8 +125,7 @@ def rekey_existing_aliases(session: Any, canonical_ids: dict[str, str]) -> int:
             continue
         if original in winner_sites:
             winner_sites[original].add(row["SITE_KEY"])
-        key = (old_to_new[old], row["SOURCE_UPDATED_AT"], row["PAYLOAD_HASH"],
-               row["SITE_KEY"])
+        key = (old_to_new[old], row["SOURCE_UPDATED_AT"], row["PAYLOAD_HASH"], row["SITE_KEY"])
         if key in target_bridges:
             raise ValueError("alias rekey would collide with an existing bridge key")
         target_bridges.add(key)
@@ -132,15 +138,24 @@ def rekey_existing_aliases(session: Any, canonical_ids: dict[str, str]) -> int:
         if original not in losers:
             old = row["CANONICAL_EVENT_ID"]
             fact_update_counts[old] = fact_update_counts.get(old, 0) + 1
-            bridge_update_counts[old] = bridge_update_counts.get(old, 0) + bridge_counts.get(original, 0)
+            bridge_update_counts[old] = bridge_update_counts.get(old, 0) + bridge_counts.get(
+                original, 0
+            )
     for old, updated_at, payload_hash in sorted(losers):
         params = [old, updated_at.astimezone(UTC).isoformat(), payload_hash]
-        _require_affected(session, DELETE_BRIDGE_SQL, params,
-                          bridge_counts.get((old, updated_at, payload_hash), 0), "deleted")
+        _require_affected(
+            session,
+            DELETE_BRIDGE_SQL,
+            params,
+            bridge_counts.get((old, updated_at, payload_hash), 0),
+            "deleted",
+        )
         _require_affected(session, DELETE_FACT_SQL, params, 1, "deleted")
     for old, new in sorted(moves.items()):
-        _require_affected(session, UPDATE_FACT_SQL, [new, old],
-                          fact_update_counts.get(old, 0), "updated")
-        _require_affected(session, UPDATE_BRIDGE_SQL, [new, old],
-                          bridge_update_counts.get(old, 0), "updated")
+        _require_affected(
+            session, UPDATE_FACT_SQL, [new, old], fact_update_counts.get(old, 0), "updated"
+        )
+        _require_affected(
+            session, UPDATE_BRIDGE_SQL, [new, old], bridge_update_counts.get(old, 0), "updated"
+        )
     return len(moves)

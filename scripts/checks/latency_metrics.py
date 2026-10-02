@@ -18,8 +18,9 @@ def reviewed_statements() -> tuple[str, str]:
     content = SQL_PATH.read_bytes()
     if hashlib.sha256(content).hexdigest() != EXPECTED_SHA256:
         raise ValueError("Phase 3 metrics SQL changed; review before a live run")
-    body = "\n".join(line for line in content.decode().splitlines()
-                     if not line.lstrip().startswith("--"))
+    body = "\n".join(
+        line for line in content.decode().splitlines() if not line.lstrip().startswith("--")
+    )
     statements = tuple(item.strip() for item in body.split(";") if item.strip())
     if len(statements) != 2 or any(not item.startswith("SELECT ") for item in statements):
         raise ValueError("Phase 3 metrics statement count or type differs")
@@ -44,14 +45,21 @@ def measure() -> dict:
         "sample_attempts": latency[0],
         "requested_range": [latency[1], latency[2]],
         "fetch_to_curated_range": [latency[3], latency[4]],
-        "latency_seconds": {"min": latency[5], "p50": latency[6],
-                            "p95": latency[7], "max": latency[8]},
-        "target_met": latency[0] >= 30 and latency[7] is not None
-                      and latency[7] <= TARGET_P95_SECONDS,
-        "freshness": {"last_successful_fetch": freshness[0],
-                      "last_successful_fetch_age_seconds": freshness[1],
-                      "newest_accepted_source_update": freshness[2],
-                      "newest_accepted_source_age_seconds": freshness[3]},
+        "latency_seconds": {
+            "min": latency[5],
+            "p50": latency[6],
+            "p95": latency[7],
+            "max": latency[8],
+        },
+        "target_met": latency[0] >= 30
+        and latency[7] is not None
+        and latency[7] <= TARGET_P95_SECONDS,
+        "freshness": {
+            "last_successful_fetch": freshness[0],
+            "last_successful_fetch_age_seconds": freshness[1],
+            "newest_accepted_source_update": freshness[2],
+            "newest_accepted_source_age_seconds": freshness[3],
+        },
         "query_ids": [latency_query_id, freshness_query_id],
     }
 

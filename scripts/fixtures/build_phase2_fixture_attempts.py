@@ -42,9 +42,14 @@ def build_attempts(
     summaries = []
     for index, (attempt_id, fixture_name) in enumerate(sequence):
         feature = json.loads((FIXTURES / fixture_name).read_text(encoding="utf-8"))
-        payload_hash = hashlib.sha256(json.dumps(
-            feature, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
-        ).encode("utf-8")).hexdigest()
+        payload_hash = hashlib.sha256(
+            json.dumps(
+                feature,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ).encode("utf-8")
+        ).hexdigest()
         fetched_at = _iso(fetch_base + timedelta(minutes=index))
         logical_batch_id = attempt_id
         source_day = datetime.fromtimestamp(feature["properties"]["time"] / 1000, tz=UTC)
@@ -56,14 +61,19 @@ def build_attempts(
             "batch_kind": "synthetic_fixture",
             "fixture_only": True,
             "fixture_source": fixture_name,
-            "site": {"name": "Seattle", "latitude": 47.6062,
-                     "longitude": -122.3321, "radius_km": 250.0},
+            "site": {
+                "name": "Seattle",
+                "latitude": 47.6062,
+                "longitude": -122.3321,
+                "radius_km": 250.0,
+            },
             "requested_starttime": _iso(start),
             "requested_endtime": _iso(end),
             "query_parameters": {"source": "local_synthetic_fixture", "fixture": fixture_name},
             "fetched_at": fetched_at,
-            "window_audit": [{"window_id": "w0001", "status": "synthetic_fixture",
-                              "fixture_rows": 1}],
+            "window_audit": [
+                {"window_id": "w0001", "status": "synthetic_fixture", "fixture_rows": 1}
+            ],
             "coverage_gaps": [],
             "source_rows_returned": 1,
             "raw_rows_written": 1,
@@ -87,8 +97,14 @@ def build_attempts(
         _write_once(directory / "manifest.json", json.dumps(manifest, indent=2) + "\n")
         _write_once(directory / "events.jsonl", json.dumps(record, separators=(",", ":")) + "\n")
         validate_local_batch(directory / "manifest.json")
-        summaries.append({"attempt_id": attempt_id, "fixture": fixture_name,
-                          "rows": 1, "payload_hash": payload_hash})
+        summaries.append(
+            {
+                "attempt_id": attempt_id,
+                "fixture": fixture_name,
+                "rows": 1,
+                "payload_hash": payload_hash,
+            }
+        )
     return summaries
 
 

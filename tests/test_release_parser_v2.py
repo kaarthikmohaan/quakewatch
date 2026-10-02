@@ -11,8 +11,14 @@ from scripts.migrations import parser_v2 as release
 class FakeCursor:
     """Answers the migration's queries from a small in-memory state."""
 
-    def __init__(self, state, facts, stubs=release.EXPECTED_STUB_ROWS, placeholders=0,
-                 relabel_rows=release.EXPECTED_STUB_ROWS):
+    def __init__(
+        self,
+        state,
+        facts,
+        stubs=release.EXPECTED_STUB_ROWS,
+        placeholders=0,
+        relabel_rows=release.EXPECTED_STUB_ROWS,
+    ):
         self.state, self.facts = dict(state), dict(facts)
         self.stubs, self.placeholders, self.relabel_rows = stubs, placeholders, relabel_rows
         self.statements, self.rowcount, self._result = [], -1, []
@@ -93,8 +99,10 @@ class MigrationTest(unittest.TestCase):
             self.assertIn(f"IS_NULL_VALUE(r.PAYLOAD:properties:{key})", release.STUB_CONDITION)
 
     def test_preview_does_not_connect(self):
-        with patch.object(release, "connect_project") as connect, \
-                contextlib.redirect_stdout(io.StringIO()) as out:
+        with (
+            patch.object(release, "connect_project") as connect,
+            contextlib.redirect_stdout(io.StringIO()) as out,
+        ):
             release.preview()
         connect.assert_not_called()
         self.assertIn("preview only", out.getvalue())

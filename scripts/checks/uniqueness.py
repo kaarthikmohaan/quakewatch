@@ -12,20 +12,22 @@ from quakewatch.raw_load import connect_project
 SQL_PATH = Path(__file__).resolve().parents[2] / "sql" / "checks/uniqueness.sql"
 EXPECTED_SHA256 = "fedad6f0cff3da90f86e974bd3bc939552da4a540ccd4786a8e632a12821eb45"
 CHECKS = ("revision_duplicate_groups", "bridge_duplicate_groups")
-TABLES = ("QUAKEWATCH.CURATED.FACT_EVENT_REVISION",
-          "QUAKEWATCH.CURATED.BRIDGE_EVENT_SITE")
+TABLES = ("QUAKEWATCH.CURATED.FACT_EVENT_REVISION", "QUAKEWATCH.CURATED.BRIDGE_EVENT_SITE")
 
 
 def reviewed_statements() -> tuple[str, str]:
     content = SQL_PATH.read_bytes()
     if hashlib.sha256(content).hexdigest() != EXPECTED_SHA256:
         raise ValueError("Phase 3 uniqueness SQL changed; review it before a live run")
-    sql = "\n".join(line for line in content.decode("utf-8").splitlines()
-                    if not line.lstrip().startswith("--"))
+    sql = "\n".join(
+        line for line in content.decode("utf-8").splitlines() if not line.lstrip().startswith("--")
+    )
     statements = tuple(item.strip() for item in sql.split(";") if item.strip())
-    if (len(statements) != 2
-            or any(not item.startswith("SELECT ") for item in statements)
-            or any(table not in statement for table, statement in zip(TABLES, statements))):
+    if (
+        len(statements) != 2
+        or any(not item.startswith("SELECT ") for item in statements)
+        or any(table not in statement for table, statement in zip(TABLES, statements))
+    ):
         raise ValueError("reviewed uniqueness statements differ")
     return statements
 
@@ -41,8 +43,10 @@ def execute_checks() -> dict:
             for name, statement in zip(CHECKS, statements):
                 cursor.execute(f"SELECT COUNT(*) FROM ({statement}) AS DUPLICATE_GROUPS")
                 counts[name] = int(cursor.fetchone()[0])
-    return {"status": "pass" if all(value == 0 for value in counts.values()) else "fail",
-            "counts": counts}
+    return {
+        "status": "pass" if all(value == 0 for value in counts.values()) else "fail",
+        "counts": counts,
+    }
 
 
 def main() -> None:

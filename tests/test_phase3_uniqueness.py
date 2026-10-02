@@ -16,17 +16,22 @@ from scripts.checks.uniqueness import (
 class Phase3UniquenessRunnerTest(unittest.TestCase):
     def test_preview_does_not_connect(self):
         output = io.StringIO()
-        with patch("sys.argv", ["phase3_uniqueness.py"]), \
-             patch("scripts.checks.uniqueness.connect_project",
-                   side_effect=AssertionError("connected")), \
-             contextlib.redirect_stdout(output):
+        with (
+            patch("sys.argv", ["phase3_uniqueness.py"]),
+            patch(
+                "scripts.checks.uniqueness.connect_project", side_effect=AssertionError("connected")
+            ),
+            contextlib.redirect_stdout(output),
+        ):
             main()
         self.assertIn("no Snowflake connection", output.getvalue())
         self.assertEqual(len(reviewed_statements()), 2)
 
     def test_changed_sql_stops_before_connection(self):
-        with patch("scripts.checks.uniqueness.EXPECTED_SHA256", "wrong"), \
-             patch("scripts.checks.uniqueness.connect_project") as connect:
+        with (
+            patch("scripts.checks.uniqueness.EXPECTED_SHA256", "wrong"),
+            patch("scripts.checks.uniqueness.connect_project") as connect,
+        ):
             with self.assertRaisesRegex(ValueError, "SQL changed"):
                 execute_checks()
         connect.assert_not_called()
@@ -43,8 +48,9 @@ class Phase3UniquenessRunnerTest(unittest.TestCase):
         self.assertEqual(result, {"status": "pass", "counts": dict.fromkeys(CHECKS, 0)})
         sql = [call.args[0] for call in cursor.execute.call_args_list]
         self.assertEqual(sum(item.startswith("SELECT COUNT(*) FROM (") for item in sql), 2)
-        self.assertFalse(any(item.lstrip().startswith(("CALL ", "DELETE ", "MERGE "))
-                             for item in sql))
+        self.assertFalse(
+            any(item.lstrip().startswith(("CALL ", "DELETE ", "MERGE ")) for item in sql)
+        )
 
     def test_duplicate_groups_fail(self):
         cursor = MagicMock()

@@ -16,12 +16,15 @@ def main() -> None:
             cursor.execute("USE ROLE QUAKEWATCH_ROLE")
             cursor.execute("USE WAREHOUSE QUAKEWATCH_WH")
             counts = _counts(cursor)
-            cursor.execute(f"""
+            cursor.execute(
+                f"""
                 SELECT ATTEMPT_ID, STATUS, REVISION_ROWS_MERGED
                 FROM {CURATED}.BATCH_PROCESS_ATTEMPT
                 WHERE ATTEMPT_ID IN (%s, %s)
                 ORDER BY ATTEMPT_ID
-            """, tuple(sorted(attempt for attempt, _ in SEQUENCE)))
+            """,
+                tuple(sorted(attempt for attempt, _ in SEQUENCE)),
+            )
             audits = cursor.fetchall()
             cursor.execute(f"""
                 SELECT CANONICAL_EVENT_ID, MAGNITUDE,
@@ -30,14 +33,22 @@ def main() -> None:
                 ORDER BY CANONICAL_EVENT_ID
             """)
             current = cursor.fetchall()
-    print(json.dumps({"counts": counts,
-                      "differences_from_original": {
-                          name: {"expected": EXPECTED_AFTER[name], "actual": value}
-                          for name, value in counts.items()
-                          if value != EXPECTED_AFTER[name]
-                      },
-                      "old_origin_audits": audits, "current": current},
-                     indent=2, sort_keys=True))
+    print(
+        json.dumps(
+            {
+                "counts": counts,
+                "differences_from_original": {
+                    name: {"expected": EXPECTED_AFTER[name], "actual": value}
+                    for name, value in counts.items()
+                    if value != EXPECTED_AFTER[name]
+                },
+                "old_origin_audits": audits,
+                "current": current,
+            },
+            indent=2,
+            sort_keys=True,
+        )
+    )
 
 
 if __name__ == "__main__":

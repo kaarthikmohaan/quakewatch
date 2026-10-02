@@ -37,20 +37,38 @@ class FakeSession:
     def sql(self, query, params):
         self.calls.append((query, params))
         if "MERGE INTO" in query:
-            return FakeFrame([{"number of rows inserted": len(json.loads(params[0])),
-                               "number of rows updated": 0}])
+            return FakeFrame(
+                [
+                    {
+                        "number of rows inserted": len(json.loads(params[0])),
+                        "number of rows updated": 0,
+                    }
+                ]
+            )
         if "SELECT DISTINCT SOURCE_EVENT_ID" in query:
             return FakeFrame([self.prior_alias] if self.prior_alias else [])
         return FakeFrame([{"DUPLICATES": 2}] if self.duplicates else [])
 
 
 def projection(*features):
-    base = RawObservation("attempt-1", "w0001", "attempt-1/events.jsonl", 1,
-                          datetime(2026, 9, 30, tzinfo=UTC), "a" * 64, "1", FEATURE)
-    return project_raw_attempt([
-        replace(base, stage_file_row_number=i + 1, payload=feature)
-        for i, feature in enumerate(features)
-    ], "attempt-1", len(features))
+    base = RawObservation(
+        "attempt-1",
+        "w0001",
+        "attempt-1/events.jsonl",
+        1,
+        datetime(2026, 9, 30, tzinfo=UTC),
+        "a" * 64,
+        "1",
+        FEATURE,
+    )
+    return project_raw_attempt(
+        [
+            replace(base, stage_file_row_number=i + 1, payload=feature)
+            for i, feature in enumerate(features)
+        ],
+        "attempt-1",
+        len(features),
+    )
 
 
 class RevisionWriteTest(unittest.TestCase):
@@ -79,16 +97,19 @@ class RevisionWriteTest(unittest.TestCase):
 
     def test_duplicate_target_key_fails_transaction(self):
         with self.assertRaisesRegex(ValueError, "duplicate canonical"):
-            write_revision_fact(FakeSession(duplicates=True), projection(FEATURE),
-                                {FEATURE["id"]: "canonical-1"})
+            write_revision_fact(
+                FakeSession(duplicates=True), projection(FEATURE), {FEATURE["id"]: "canonical-1"}
+            )
 
     def test_new_alias_requires_rekey_before_merge(self):
-        session = FakeSession(prior_alias={
-            "SOURCE_EVENT_ID": FEATURE["id"], "CANONICAL_EVENT_ID": "old-canonical",
-        })
+        session = FakeSession(
+            prior_alias={
+                "SOURCE_EVENT_ID": FEATURE["id"],
+                "CANONICAL_EVENT_ID": "old-canonical",
+            }
+        )
         with self.assertRaisesRegex(ValueError, "alias rekey required"):
-            write_revision_fact(session, projection(FEATURE),
-                                {FEATURE["id"]: "new-canonical"})
+            write_revision_fact(session, projection(FEATURE), {FEATURE["id"]: "new-canonical"})
         self.assertFalse(any("MERGE INTO" in sql for sql, _ in session.calls))
 
 

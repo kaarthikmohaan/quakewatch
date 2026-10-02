@@ -63,10 +63,12 @@ class ProcessTransactionTest(unittest.TestCase):
         outcome = process_loaded_attempt(
             session, "attempt-1", writer, make_id=lambda: "process-1", now=lambda: TIME
         )
-        self.assertEqual(session.events,
-                         ["BEGIN TRANSACTION", "write_models", "record_success", "COMMIT"])
-        self.assertEqual((outcome.loaded_rows, outcome.processed_rows, outcome.rejected_rows),
-                         (2, 2, 1))
+        self.assertEqual(
+            session.events, ["BEGIN TRANSACTION", "write_models", "record_success", "COMMIT"]
+        )
+        self.assertEqual(
+            (outcome.loaded_rows, outcome.processed_rows, outcome.rejected_rows), (2, 2, 1)
+        )
         self.assertEqual(outcome.process_attempt_id, "process-1")
         self.assertEqual(len(writer.successes), 1)
         self.assertEqual(writer.failures, [])
@@ -76,12 +78,16 @@ class ProcessTransactionTest(unittest.TestCase):
         session, writer = FakeSession(), FakeWriter(fail=True)
         with self.assertRaisesRegex(ValueError, "model merge failed"):
             process_loaded_attempt(session, "attempt-1", writer)
-        self.assertEqual(session.events,
-                         ["BEGIN TRANSACTION", "write_models", "ROLLBACK", "record_failure"])
+        self.assertEqual(
+            session.events, ["BEGIN TRANSACTION", "write_models", "ROLLBACK", "record_failure"]
+        )
         self.assertEqual(writer.failures[0].status, "failed")
         self.assertEqual(writer.successes, [])
 
-    @patch("quakewatch.process_transaction.read_and_project_attempt", side_effect=ValueError("bad receipt"))
+    @patch(
+        "quakewatch.process_transaction.read_and_project_attempt",
+        side_effect=ValueError("bad receipt"),
+    )
     def test_read_failure_is_logged_without_starting_transaction(self, read):
         session, writer = FakeSession(), FakeWriter()
         with self.assertRaisesRegex(ValueError, "bad receipt"):

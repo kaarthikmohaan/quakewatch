@@ -72,8 +72,12 @@ def _snapshot(cursor, attempt_id: str = ATTEMPT_ID) -> dict[str, int]:
 
 
 def _audit(cursor, status: str, attempt_id: str = ATTEMPT_ID) -> int:
-    return _count(cursor, f"{CURATED}.BATCH_PROCESS_ATTEMPT",
-                  "WHERE ATTEMPT_ID = %s AND STATUS = %s", (attempt_id, status))
+    return _count(
+        cursor,
+        f"{CURATED}.BATCH_PROCESS_ATTEMPT",
+        "WHERE ATTEMPT_ID = %s AND STATUS = %s",
+        (attempt_id, status),
+    )
 
 
 def _duplicates(cursor) -> dict[str, int]:
@@ -82,8 +86,10 @@ def _duplicates(cursor) -> dict[str, int]:
         ("FACT_EVENT_REVISION", "CANONICAL_EVENT_ID, SOURCE_UPDATED_AT, PAYLOAD_HASH"),
         ("BRIDGE_EVENT_SITE", "CANONICAL_EVENT_ID, SOURCE_UPDATED_AT, PAYLOAD_HASH, SITE_KEY"),
     ):
-        cursor.execute(f"SELECT COUNT(*) FROM (SELECT {columns} FROM {CURATED}.{table} "
-                       f"GROUP BY {columns} HAVING COUNT(*) > 1)")
+        cursor.execute(
+            f"SELECT COUNT(*) FROM (SELECT {columns} FROM {CURATED}.{table} "
+            f"GROUP BY {columns} HAVING COUNT(*) > 1)"
+        )
         result[table] = int(cursor.fetchone()[0])
     return result
 
@@ -95,8 +101,10 @@ def execute() -> dict:
             cursor.execute("USE ROLE QUAKEWATCH_ROLE")
             cursor.execute("USE WAREHOUSE QUAKEWATCH_WH")
             cursor.execute("ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = 300")
-            cursor.execute(f"SHOW USER PROCEDURES LIKE 'PROCESS_LOADED_ATTEMPT_FAILURE_DEMO' "
-                           f"IN SCHEMA {CURATED}")
+            cursor.execute(
+                f"SHOW USER PROCEDURES LIKE 'PROCESS_LOADED_ATTEMPT_FAILURE_DEMO' "
+                f"IN SCHEMA {CURATED}"
+            )
             if cursor.fetchall():
                 raise RuntimeError("failure demo procedure already exists; inspect before retry")
             before = _snapshot(cursor)
@@ -116,19 +124,31 @@ def execute() -> dict:
                 raise RuntimeError(f"unexpected failure demo result: {failed_result}")
             after_failure = _snapshot(cursor)
             if after_failure != before or _audit(cursor, "failed") != failed_before + 1:
-                raise RuntimeError("failed transform did not preserve models and append failure audit")
+                raise RuntimeError(
+                    "failed transform did not preserve models and append failure audit"
+                )
 
             cursor.execute(f"CALL {CURATED}.PROCESS_LOADED_ATTEMPT(%s)", (ATTEMPT_ID,))
             retry = json.loads(cursor.fetchone()[0])
             after_retry = _snapshot(cursor)
-            if (retry.get("status") != "complete" or retry.get("revision_rows_merged") != 0
-                    or after_retry != before or _audit(cursor, "complete") != complete_before + 1
-                    or any(_duplicates(cursor).values())):
+            if (
+                retry.get("status") != "complete"
+                or retry.get("revision_rows_merged") != 0
+                or after_retry != before
+                or _audit(cursor, "complete") != complete_before + 1
+                or any(_duplicates(cursor).values())
+            ):
                 raise RuntimeError("retry did not converge without duplicate logical keys")
-            return {"status": "pass", "before": before,
-                    "after_failure": after_failure, "after_retry": after_retry,
-                    "failure_audits_added": 1, "retry_process_id": retry["process_attempt_id"],
-                    "revision_duplicate_groups": 0, "bridge_duplicate_groups": 0}
+            return {
+                "status": "pass",
+                "before": before,
+                "after_failure": after_failure,
+                "after_retry": after_retry,
+                "failure_audits_added": 1,
+                "retry_process_id": retry["process_attempt_id"],
+                "revision_duplicate_groups": 0,
+                "bridge_duplicate_groups": 0,
+            }
 
 
 def main() -> None:
@@ -140,8 +160,10 @@ def main() -> None:
     else:
         print("Recovery drill preview only; no Snowflake connection")
         print(f"Database: {TEST_DATABASE}; loaded attempt: {ATTEMPT_ID}")
-        print("Plan: guard RAW/model state; create isolated failure procedure; "
-              "fail after writes; verify rollback/audit; retry from RAW; check keys")
+        print(
+            "Plan: guard RAW/model state; create isolated failure procedure; "
+            "fail after writes; verify rollback/audit; retry from RAW; check keys"
+        )
         print("Live execution needs separate warehouse-cost and conditional-delete approval")
 
 

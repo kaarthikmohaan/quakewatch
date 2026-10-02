@@ -92,8 +92,9 @@ HAVING COUNT(*) > 1
 
 def _merge_chunks(session: Any, sql: str, rows: list[Any]) -> None:
     for start in range(0, len(rows), MAX_ROWS_PER_MERGE):
-        body = json.dumps(rows[start:start + MAX_ROWS_PER_MERGE],
-                          separators=(",", ":"), allow_nan=False)
+        body = json.dumps(
+            rows[start : start + MAX_ROWS_PER_MERGE], separators=(",", ":"), allow_nan=False
+        )
         session.sql(sql, params=[body]).collect()
 
 
@@ -114,31 +115,44 @@ def write_dimensions_and_bridge(
             magnitude_types.add(fields["magnitude_type"])
         statuses.add(fields["source_status"])
         for site in distances_to_public_sites(fields["longitude"], fields["latitude"]):
-            bridge.append({
-                "canonical_event_id": canonical_id,
-                "source_updated_at": fields["source_updated_at"].astimezone(UTC).isoformat(),
-                "payload_hash": item.raw.payload_hash,
-                "site_key": site.site_key,
-                "epicentral_distance_km": site.epicentral_distance_km,
-                "within_radius": site.within_radius,
-            })
-    _merge_chunks(session, DATE_SQL, [
-        {"date_key": day.isoformat(), "calendar_year": day.year,
-         "calendar_month": day.month} for day in sorted(dates)
-    ])
-    _merge_chunks(session, SITE_SQL, [
-        {"site_key": key, "site_name": site.name, "latitude": site.latitude,
-         "longitude": site.longitude, "radius_km": site.radius_km}
-        for key, site in sorted(SITES.items())
-    ])
+            bridge.append(
+                {
+                    "canonical_event_id": canonical_id,
+                    "source_updated_at": fields["source_updated_at"].astimezone(UTC).isoformat(),
+                    "payload_hash": item.raw.payload_hash,
+                    "site_key": site.site_key,
+                    "epicentral_distance_km": site.epicentral_distance_km,
+                    "within_radius": site.within_radius,
+                }
+            )
+    _merge_chunks(
+        session,
+        DATE_SQL,
+        [
+            {"date_key": day.isoformat(), "calendar_year": day.year, "calendar_month": day.month}
+            for day in sorted(dates)
+        ],
+    )
+    _merge_chunks(
+        session,
+        SITE_SQL,
+        [
+            {
+                "site_key": key,
+                "site_name": site.name,
+                "latitude": site.latitude,
+                "longitude": site.longitude,
+                "radius_km": site.radius_km,
+            }
+            for key, site in sorted(SITES.items())
+        ],
+    )
     _merge_chunks(session, MAGNITUDE_TYPE_SQL, sorted(magnitude_types))
     _merge_chunks(session, STATUS_SQL, sorted(statuses))
     _merge_chunks(session, BRIDGE_SQL, bridge)
     canonical_set = sorted({canonical_id for canonical_id, _ in selected})
     for start in range(0, len(canonical_set), MAX_ROWS_PER_MERGE):
-        canonical_chunk = canonical_set[start:start + MAX_ROWS_PER_MERGE]
-        if session.sql(
-            BRIDGE_KEY_CHECK_SQL, params=[json.dumps(canonical_chunk)]
-        ).collect():
+        canonical_chunk = canonical_set[start : start + MAX_ROWS_PER_MERGE]
+        if session.sql(BRIDGE_KEY_CHECK_SQL, params=[json.dumps(canonical_chunk)]).collect():
             raise ValueError("duplicate event-site bridge keys exist after MERGE")
     return len(bridge)

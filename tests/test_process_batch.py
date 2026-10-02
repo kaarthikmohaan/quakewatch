@@ -33,7 +33,9 @@ class BatchProjectionTest(unittest.TestCase):
         invalid_payload["id"] = ""
         invalid = replace(valid, stage_file_row_number=2, payload=invalid_payload)
         result = project_raw_attempt([valid, invalid], "attempt-1", 2)
-        self.assertEqual((result.loaded_rows, result.processed_rows, result.rejected_rows), (2, 2, 1))
+        self.assertEqual(
+            (result.loaded_rows, result.processed_rows, result.rejected_rows), (2, 2, 1)
+        )
         self.assertEqual(result.observations[1].raw.source_key, invalid.source_key)
         self.assertEqual(result.observations[1].fields["reject_reason"], "invalid_source_event_id")
 

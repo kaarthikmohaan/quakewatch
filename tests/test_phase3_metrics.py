@@ -10,10 +10,14 @@ from scripts.checks.latency_metrics import TARGET_P95_SECONDS, main, measure, re
 
 class Phase3MetricsTest(unittest.TestCase):
     def test_preview_is_offline_and_target_is_fixed(self):
-        with patch("sys.argv", ["phase3_metrics.py"]), \
-             patch("scripts.checks.latency_metrics.connect_project",
-                   side_effect=AssertionError("connected")), \
-             contextlib.redirect_stdout(io.StringIO()):
+        with (
+            patch("sys.argv", ["phase3_metrics.py"]),
+            patch(
+                "scripts.checks.latency_metrics.connect_project",
+                side_effect=AssertionError("connected"),
+            ),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             main()
         self.assertEqual(TARGET_P95_SECONDS, 86_400)
         statements = reviewed_statements()
@@ -38,8 +42,12 @@ class Phase3MetricsTest(unittest.TestCase):
         self.assertTrue(report["target_met"])
         self.assertEqual(report["sample_attempts"], 178)
         self.assertEqual(report["query_ids"], ["query-id", "query-id"])
-        self.assertFalse(any(call.args[0].startswith(("CREATE ", "DELETE ", "DROP "))
-                             for call in cursor.execute.call_args_list))
+        self.assertFalse(
+            any(
+                call.args[0].startswith(("CREATE ", "DELETE ", "DROP "))
+                for call in cursor.execute.call_args_list
+            )
+        )
 
 
 if __name__ == "__main__":

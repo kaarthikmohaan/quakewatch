@@ -35,8 +35,7 @@ def resolve_durable_aliases(session: Any, projection: BatchProjection) -> dict[s
     transaction. Prior batches and current valid observations both contribute.
     """
     observations = [
-        AliasObservation(row.as_dict()["SOURCE_EVENT_ID"],
-                         _ids(row.as_dict()["ASSOCIATED_IDS"]))
+        AliasObservation(row.as_dict()["SOURCE_EVENT_ID"], _ids(row.as_dict()["ASSOCIATED_IDS"]))
         for row in session.sql(ALIAS_OBSERVATIONS_SQL).collect()
     ]
     mapping = canonical_id_map(observations)

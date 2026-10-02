@@ -82,7 +82,9 @@ def _iso(value: datetime | None) -> str | None:
 
 
 def write_successful_batch_fact(
-    session: Any, projection: BatchProjection, process_attempt_id: str,
+    session: Any,
+    projection: BatchProjection,
+    process_attempt_id: str,
     curated_at: datetime,
 ) -> None:
     """Use the immutable RAW receipt to record one completed batch attempt.
@@ -96,20 +98,29 @@ def write_successful_batch_fact(
     if len(receipts) != 1:
         raise ValueError("expected exactly one immutable RAW load receipt")
     receipt = receipts[0].as_dict()
-    counts = (receipt["SOURCE_ROWS_RETURNED"], receipt["RAW_ROWS_WRITTEN"],
-              receipt["LOADED_ROWS"], projection.loaded_rows, projection.processed_rows)
+    counts = (
+        receipt["SOURCE_ROWS_RETURNED"],
+        receipt["RAW_ROWS_WRITTEN"],
+        receipt["LOADED_ROWS"],
+        projection.loaded_rows,
+        projection.processed_rows,
+    )
     gaps = receipt["COVERAGE_GAPS"]
     if isinstance(gaps, str):
         gaps = json.loads(gaps)
-    if (receipt["EXTRACT_STATUS"], receipt["LOAD_STATUS"]) != ("complete", "complete") \
-            or len(set(counts)) != 1 or gaps not in (None, []):
+    if (
+        (receipt["EXTRACT_STATUS"], receipt["LOAD_STATUS"]) != ("complete", "complete")
+        or len(set(counts)) != 1
+        or gaps not in (None, [])
+    ):
         raise ValueError("RAW receipt is not complete and reconciled")
     fetched_at = receipt["FETCHED_AT"]
     if fetched_at is not None and (fetched_at.tzinfo is None or curated_at < fetched_at):
         raise ValueError("invalid fetch-to-curation time")
     prior = session.sql(EXISTING_SQL, params=[projection.attempt_id]).collect()
-    if len(prior) > 1 or (prior and prior[0].as_dict()["LOGICAL_BATCH_ID"] !=
-                           receipt["LOGICAL_BATCH_ID"]):
+    if len(prior) > 1 or (
+        prior and prior[0].as_dict()["LOGICAL_BATCH_ID"] != receipt["LOGICAL_BATCH_ID"]
+    ):
         raise ValueError("existing batch fact key conflicts with RAW receipt")
     row = {
         "attempt_id": projection.attempt_id,
@@ -127,7 +138,8 @@ def write_successful_batch_fact(
         "processed_rows": projection.processed_rows,
         "rejected_rows": projection.rejected_rows,
         "fetch_to_curated_seconds": round((curated_at - fetched_at).total_seconds(), 3)
-        if fetched_at is not None else None,
+        if fetched_at is not None
+        else None,
         "extract_status": receipt["EXTRACT_STATUS"],
         "load_status": receipt["LOAD_STATUS"],
         "process_status": "complete",

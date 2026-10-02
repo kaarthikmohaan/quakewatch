@@ -49,11 +49,11 @@ Measured on live Snowflake runs between 29 September and 2 October 2026. Full ev
 | Rows rejected with a recorded reason | **485**, all traced to USGS placeholder ("stub") records whose events exist as full records under another ID ([analysis](docs/results.md#reject-analysis)) |
 | Duplicate revision or site-bridge keys | **0** |
 | Batch receipts reconciled (RAW = staged = processed + rejected) | **All 179** |
-| Failed-transform retry from RAW, with no refetch | **Passed**, with identical counts after rollback and retry |
+| Failed-transform retry from RAW, with no refetch | **Passed** in a recorded live drill, with identical counts after rollback and retry; the logic is also covered by offline tests |
 | Clone and Time Travel recovery drill | **Passed** on an isolated fixture table |
-| Secret-free unit and fixture tests, run in CI with lint and type checks | **328** |
+| Secret-free unit and fixture tests, run in CI with lint, format, and type checks | **340**, covering 86% of `src/` |
 | Cortex summaries passing human fact review | **9 of 9** in the evaluation; 4 other briefs rejected and replaced by SQL facts. **0.0039** AI credits measured for the first 11 calls |
-| First-backfill fetch-to-curated p95 | **35.9 h, missing the 24 h target** set before measuring |
+| First-backfill fetch-to-curated p95 | **35.9 h, missing the 24 h target** set before measuring; a single batch processed as it landed took 293 s |
 
 ## Architecture
 
@@ -144,7 +144,7 @@ From the repository root, use Python 3.12 and [uv](https://docs.astral.sh/uv/):
 
 ```sh
 uv sync --locked --no-editable
-uv run quakewatch-extract \
+.venv/bin/quakewatch-extract \
   --site seattle \
   --start 2026-09-28T00:00:00Z \
   --end 2026-09-29T00:00:00Z
@@ -179,8 +179,18 @@ To run the warehouse path you need your own Snowflake account:
    explains the order.
 
 Live runs use warehouse credits. Command output goes to stdout; operational
-logs go to stderr, and `QUAKEWATCH_LOG_LEVEL=DEBUG` shows more detail. See the
-[operations reference](docs/operations-reference.md) for every command.
+logs go to stderr with UTC timestamps, and `QUAKEWATCH_LOG_LEVEL=DEBUG` shows
+more detail. There is no `.env` file: credentials stay in your
+`~/.snowflake/config.toml` ([ADR 0009](docs/adr/0009-local-secret-config.md)).
+See the [operations reference](docs/operations-reference.md) for every command.
+
+`make check` runs everything CI runs: ruff lint and format check, mypy, and the
+tests under coverage (minimum 80%). `make integration EXECUTE=1` is the live,
+read-only check: it compiles every SQL statement the procedure and checks use
+against Snowflake with `EXPLAIN`, then runs the post-run and uniqueness checks
+([ADR 0010](docs/adr/0010-live-integration-check.md)). On GitHub the same check
+runs from the manually triggered **Snowflake integration** workflow once its
+secrets are set (see [CONTRIBUTING](CONTRIBUTING.md#live-integration-check)).
 
 ## Known limitations
 
@@ -237,7 +247,8 @@ does.
    first backfill.
 4. Run the target-analyst session and compare task time with their manual
    baseline.
-5. Add a gated Snowflake integration job to CI alongside the fixture tests.
+5. Extend the live integration check to run the procedure end to end in a
+   disposable copy of the warehouse, not only compile its SQL.
 
 ## Repository layout
 

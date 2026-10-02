@@ -41,10 +41,12 @@ class StagingProjectionTest(unittest.TestCase):
         revised = project_feature(fixture("synthetic_revision_event.json"))
         deleted = project_feature(fixture("synthetic_tombstone_event.json"))
         self.assertTrue(all(row["reject_reason"] is None for row in (original, revised, deleted)))
-        self.assertEqual({row["source_event_id"] for row in (original, revised, deleted)},
-                         {"uw714110682"})
-        self.assertEqual({row["origin_time"] for row in (original, revised, deleted)},
-                         {original["origin_time"]})
+        self.assertEqual(
+            {row["source_event_id"] for row in (original, revised, deleted)}, {"uw714110682"}
+        )
+        self.assertEqual(
+            {row["origin_time"] for row in (original, revised, deleted)}, {original["origin_time"]}
+        )
         self.assertLess(original["source_updated_at"], revised["source_updated_at"])
         self.assertLess(revised["source_updated_at"], deleted["source_updated_at"])
         self.assertEqual(deleted["source_status"], "deleted")
@@ -78,7 +80,6 @@ class StagingProjectionTest(unittest.TestCase):
         feature["properties"]["mag"] = float("nan")
         self.assertEqual(project_feature(feature)["reject_reason"], "invalid_magnitude")
 
-
     def test_source_stub_record_has_its_own_reason(self) -> None:
         row = project_feature(fixture("source_stub_event.json"))
         self.assertEqual(row["reject_reason"], "source_stub_record")
@@ -103,6 +104,7 @@ class StagingProjectionTest(unittest.TestCase):
         self.assertEqual(row["source_status"], "deleted")
         self.assertIsNone(row["longitude"])
         self.assertIsNone(row["latitude"])
+
 
 if __name__ == "__main__":
     unittest.main()

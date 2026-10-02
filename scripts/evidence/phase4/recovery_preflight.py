@@ -15,9 +15,16 @@ def validate(metadata: list[tuple], exact_count: int, duplicate_groups: int) -> 
     """Stop if the sandbox differs from the reviewed five-row fixture."""
     by_name = {row[0]: row for row in metadata}
     source = by_name.get("FACT_EVENT_REVISION")
-    if (len(metadata) != 1 or source is None or source[1] != "BASE TABLE"
-            or source[2] != "QUAKEWATCH_ROLE" or source[4] is None
-            or int(source[4]) < 1 or exact_count != 5 or duplicate_groups != 0):
+    if (
+        len(metadata) != 1
+        or source is None
+        or source[1] != "BASE TABLE"
+        or source[2] != "QUAKEWATCH_ROLE"
+        or source[4] is None
+        or int(source[4]) < 1
+        or exact_count != 5
+        or duplicate_groups != 0
+    ):
         raise RuntimeError("fixture preflight differs from reviewed state; stop before clone")
     return {
         "status": "pass",
@@ -77,8 +84,10 @@ def main() -> None:
     else:
         print("Phase 4 fixture preflight preview only; no Snowflake connection")
         print(f"Read-only source: {SOURCE}; absent clone required: {CLONE_NAME}")
-        print("Expected: role QUAKEWATCH_ROLE, warehouse QUAKEWATCH_WH, "
-              "five source rows, retention >=1 day, zero duplicate groups")
+        print(
+            "Expected: role QUAKEWATCH_ROLE, warehouse QUAKEWATCH_WH, "
+            "five source rows, retention >=1 day, zero duplicate groups"
+        )
 
 
 if __name__ == "__main__":

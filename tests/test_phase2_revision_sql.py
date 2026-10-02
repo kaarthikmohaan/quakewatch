@@ -10,10 +10,17 @@ class RevisionSqlContractTest(unittest.TestCase):
     def test_fact_contains_full_revision_key_and_source_clocks(self) -> None:
         self.assertIn("QUAKEWATCH.CURATED.FACT_EVENT_REVISION", SQL)
         for column in (
-            "CANONICAL_EVENT_ID", "SOURCE_UPDATED_AT", "PAYLOAD_HASH",
-            "SOURCE_EVENT_ID", "ASSOCIATED_IDS", "ORIGIN_TIME",
-            "FETCHED_AT", "CURATED_AT", "SOURCE_STATUS",
-            "STAGE_FILE_NAME", "STAGE_FILE_ROW_NUMBER",
+            "CANONICAL_EVENT_ID",
+            "SOURCE_UPDATED_AT",
+            "PAYLOAD_HASH",
+            "SOURCE_EVENT_ID",
+            "ASSOCIATED_IDS",
+            "ORIGIN_TIME",
+            "FETCHED_AT",
+            "CURATED_AT",
+            "SOURCE_STATUS",
+            "STAGE_FILE_NAME",
+            "STAGE_FILE_ROW_NUMBER",
         ):
             with self.subTest(column=column):
                 self.assertRegex(SQL, rf"(?m)^\s*{column}\s+")

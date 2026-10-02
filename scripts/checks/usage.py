@@ -35,7 +35,8 @@ def execute() -> dict:
             role, warehouse, checked_at = cursor.fetchone()
             if role != "ACCOUNTADMIN" or warehouse != WAREHOUSE:
                 raise RuntimeError("unexpected billing role or warehouse")
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT START_TIME, END_TIME, CREDITS_USED_COMPUTE,
                        CREDITS_USED_CLOUD_SERVICES, CREDITS_USED
                 FROM SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY
@@ -43,24 +44,36 @@ def execute() -> dict:
                   AND START_TIME >= TO_TIMESTAMP_TZ(%s)
                   AND START_TIME < TO_TIMESTAMP_TZ(%s)
                 ORDER BY START_TIME
-            """, (START_UTC, END_UTC))
+            """,
+                (START_UTC, END_UTC),
+            )
             query_id = cursor.sfqid
             hours = [
-                {"start_utc": str(start), "end_utc": str(end),
-                 "compute_credits": float(compute),
-                 "cloud_services_credits": float(cloud),
-                 "reported_credits": float(total)}
+                {
+                    "start_utc": str(start),
+                    "end_utc": str(end),
+                    "compute_credits": float(compute),
+                    "cloud_services_credits": float(cloud),
+                    "reported_credits": float(total),
+                }
                 for start, end, compute, cloud, total in cursor.fetchall()
             ]
-            return {"checked_at_utc": str(checked_at), "warehouse": WAREHOUSE,
-                    "window_start_utc": START_UTC, "window_end_utc": END_UTC,
-                    "metering_query_id": query_id, "hours": hours,
-                    "note": "Account Usage can lag; warehouse hours include any other activity and are not a per-drill bill."}
+            return {
+                "checked_at_utc": str(checked_at),
+                "warehouse": WAREHOUSE,
+                "window_start_utc": START_UTC,
+                "window_end_utc": END_UTC,
+                "metering_query_id": query_id,
+                "hours": hours,
+                "note": "Account Usage can lag; warehouse hours include any other activity and are not a per-drill bill.",
+            }
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--execute", action="store_true", help="run approved paid account-usage query")
+    parser.add_argument(
+        "--execute", action="store_true", help="run approved paid account-usage query"
+    )
     args = parser.parse_args()
     if args.execute:
         print(json.dumps(execute(), indent=2, sort_keys=True))

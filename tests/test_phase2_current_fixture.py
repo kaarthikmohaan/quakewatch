@@ -34,8 +34,13 @@ class FakeCursor:
 class CurrentFixtureTest(unittest.TestCase):
     def test_preview_does_not_connect(self):
         output = io.StringIO()
-        with patch("scripts.evidence.phase2.current_fixture.connect_project",
-                   side_effect=AssertionError("connected")), contextlib.redirect_stdout(output):
+        with (
+            patch(
+                "scripts.evidence.phase2.current_fixture.connect_project",
+                side_effect=AssertionError("connected"),
+            ),
+            contextlib.redirect_stdout(output),
+        ):
             preview()
         self.assertIn("no Snowflake connection", output.getvalue())
 
@@ -55,8 +60,9 @@ class CurrentFixtureTest(unittest.TestCase):
         self.assertEqual({row[4] for row in (first, updated, deleted)}, {first[4]})
         self.assertLess(first[1], updated[1])
         self.assertLess(updated[1], deleted[1])
-        self.assertEqual([row[7] for row in (first, updated, deleted)],
-                         ["reviewed", "reviewed", "deleted"])
+        self.assertEqual(
+            [row[7] for row in (first, updated, deleted)], ["reviewed", "reviewed", "deleted"]
+        )
 
     def test_assert_state_checks_current_and_history(self):
         query = view_select_sql(TABLE)

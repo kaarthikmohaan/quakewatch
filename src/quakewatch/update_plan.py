@@ -8,9 +8,13 @@ from quakewatch.extract_batch import iso_utc, parse_utc
 from quakewatch.logs import configure_logging
 
 
-def plan_update_sweep(catalog_start: datetime, cutoff: datetime,
-                      last_watermark: datetime, sweep_started_at: datetime,
-                      overlap_seconds: int) -> dict:
+def plan_update_sweep(
+    catalog_start: datetime,
+    cutoff: datetime,
+    last_watermark: datetime,
+    sweep_started_at: datetime,
+    overlap_seconds: int,
+) -> dict:
     """Keep origin-time bounds separate from the source-update watermark."""
     dates = (catalog_start, cutoff, last_watermark, sweep_started_at)
     if any(value.tzinfo is None or value.utcoffset() is None for value in dates):
@@ -22,7 +26,11 @@ def plan_update_sweep(catalog_start: datetime, cutoff: datetime,
         raise ValueError("require catalog-start < cutoff <= sweep-started-at")
     if last_watermark > sweep_started_at:
         raise ValueError("last-watermark cannot be later than sweep-started-at")
-    if isinstance(overlap_seconds, bool) or not isinstance(overlap_seconds, int) or overlap_seconds <= 0:
+    if (
+        isinstance(overlap_seconds, bool)
+        or not isinstance(overlap_seconds, int)
+        or overlap_seconds <= 0
+    ):
         raise ValueError("overlap-seconds must be a positive integer")
     try:
         updated_after = last_watermark - timedelta(seconds=overlap_seconds)
@@ -47,8 +55,8 @@ def plan_update_sweep(catalog_start: datetime, cutoff: datetime,
         },
         "count_sizing_pending": True,
         "note": "Preview only; no source requests, Snowflake calls, or watermark writes. "
-                "Execution must count-size and reconcile every window and RAW load before committing "
-                "the proposed watermark. Source results are not a consistent catalog snapshot.",
+        "Execution must count-size and reconcile every window and RAW load before committing "
+        "the proposed watermark. Source results are not a consistent catalog snapshot.",
     }
 
 
@@ -62,8 +70,13 @@ def main() -> None:
     args = parser.parse_args()
     configure_logging()
     try:
-        plan = plan_update_sweep(args.catalog_start, args.cutoff, args.last_watermark,
-                                 args.sweep_started_at, args.overlap_seconds)
+        plan = plan_update_sweep(
+            args.catalog_start,
+            args.cutoff,
+            args.last_watermark,
+            args.sweep_started_at,
+            args.overlap_seconds,
+        )
     except ValueError as exc:
         parser.error(str(exc))
     print(json.dumps(plan, indent=2))

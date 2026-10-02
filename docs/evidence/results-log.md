@@ -16,6 +16,40 @@ Each entry keeps its query IDs, counts, and limits as originally recorded.
   complete USGS coverage. History windows 12, 42, and 73 remain source gaps, and
   no update-sweep watermark has been committed.
 
+## Verification audit (2026-10-02)
+
+A pre-interview audit ran the repository from a fresh clone of commit
+`7f11ab0` on macOS (arm64). With the package cache disabled,
+`uv sync --locked --no-editable` took 185.5 seconds and selected Python 3.12.13
+automatically; the README Quickstart extract then fetched one Seattle day
+(15 before, 15 returned, 15 after), so the first successful run took 3 minutes
+15 seconds from clone. Lint, type checks, and all 328 tests passed in two
+separate fresh clones, and coverage of `src/` measured 85%.
+
+Running the package's own transformation functions locally on that batch gave
+15 RAW rows, 15 staged, 15 revisions, 15 current events, and 45 site-bridge
+rows, with identical output on a second run, all timestamps in UTC, and
+magnitudes 0.66 to 2.56. With the network blocked, the extractor retried three
+times with backoff, recorded the window as an unresolved gap, wrote a `failed`
+manifest with zero rows, and exited 1. A hard kill (`SIGTERM`) at that time left
+the manifest at `running`; this was then fixed so a terminated capture is
+recorded as `failed` and exits 130. The RAW loader refused both the failed and
+the killed manifests. A full-history secrets scan found only placeholder values.
+
+Read-only live checks then gave:
+
+| Check | Result |
+|---|---|
+| `make postrun EXECUTE=1` | `status: pass`; 179 `RECONCILED` receipts; 216,391 loaded, RAW, staged, and processed rows; 485 rejects, all `source_stub_record`; zero anomalies and duplicate groups |
+| `make uniqueness EXECUTE=1` | `status: pass`; zero revision and bridge duplicate groups |
+| `make metrics EXECUTE=1` | 179 attempts; fetch-to-curated min 293.303, p50 90,512.8, p95 129,167.9, max 135,791.254 seconds; target not met. Query IDs `01c77678-0002-b3cf-000e-fef20004128e` and `01c77678-0002-b2f7-000e-fef200040256` |
+| `make analysis EXECUTE=1` | All nine site-by-year counts and the Seattle-day sample (15 events, magnitudes 0.66 to 2.56) matched the recorded values |
+| `make integration EXECUTE=1` | First live run: 35 statements compiled with `EXPLAIN` and no failures, procedure found, post-run and uniqueness checks passed |
+
+The audit's fixes (HTTP request logs quietened, UTC log timestamps, SIGTERM
+handling, a direct Quickstart command, enforced formatting, coverage in CI, and
+the integration check) brought the suite to 340 tests and coverage to 86%.
+
 ## Parser version 2 release (2026-10-02)
 
 `make release-parser-v2 EXECUTE=1` ([runner](../../scripts/migrations/parser_v2.py))

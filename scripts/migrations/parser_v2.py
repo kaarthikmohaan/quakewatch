@@ -48,25 +48,37 @@ STUB_CONDITION = " AND ".join(
     f"(r.PAYLOAD:properties:{key} IS NULL OR IS_NULL_VALUE(r.PAYLOAD:properties:{key}))"
     for key in ("time", "mag", "status")
 )
-RAW_JOIN = ("r.ATTEMPT_ID = s.ATTEMPT_ID AND r.STAGE_FILE_NAME = s.STAGE_FILE_NAME "
-            "AND r.STAGE_FILE_ROW_NUMBER = s.STAGE_FILE_ROW_NUMBER")
+RAW_JOIN = (
+    "r.ATTEMPT_ID = s.ATTEMPT_ID AND r.STAGE_FILE_NAME = s.STAGE_FILE_NAME "
+    "AND r.STAGE_FILE_ROW_NUMBER = s.STAGE_FILE_ROW_NUMBER"
+)
 
-STATE_SQL = (f"SELECT STAGING_PARSER_VERSION, REJECT_REASON, COUNT(*) FROM {STG} "
-             "GROUP BY 1, 2 ORDER BY 1, 2")
-STUB_SQL = (f"SELECT COUNT(*) FROM {STG} s JOIN {RAW} r ON {RAW_JOIN} "
-            f"WHERE s.REJECT_REASON = %s AND {STUB_CONDITION}")
-PLACEHOLDER_SQL = (f"SELECT COUNT(*) FROM {STG} WHERE REJECT_REASON IS NULL "
-                   "AND LONGITUDE = 0 AND LATITUDE = 0")
+STATE_SQL = (
+    f"SELECT STAGING_PARSER_VERSION, REJECT_REASON, COUNT(*) FROM {STG} GROUP BY 1, 2 ORDER BY 1, 2"
+)
+STUB_SQL = (
+    f"SELECT COUNT(*) FROM {STG} s JOIN {RAW} r ON {RAW_JOIN} "
+    f"WHERE s.REJECT_REASON = %s AND {STUB_CONDITION}"
+)
+PLACEHOLDER_SQL = (
+    f"SELECT COUNT(*) FROM {STG} WHERE REJECT_REASON IS NULL AND LONGITUDE = 0 AND LATITUDE = 0"
+)
 FACT_STATE_SQL = f"SELECT STAGING_PARSER_VERSION, COUNT(*) FROM {FACT} GROUP BY 1 ORDER BY 1"
-RELABEL_SQL = (f"UPDATE {STG} s SET REJECT_REASON = %s FROM {RAW} r "
-               f"WHERE {RAW_JOIN} AND s.REJECT_REASON = %s AND {STUB_CONDITION}")
+RELABEL_SQL = (
+    f"UPDATE {STG} s SET REJECT_REASON = %s FROM {RAW} r "
+    f"WHERE {RAW_JOIN} AND s.REJECT_REASON = %s AND {STUB_CONDITION}"
+)
 STG_VERSION_SQL = f"UPDATE {STG} SET STAGING_PARSER_VERSION = %s WHERE STAGING_PARSER_VERSION = %s"
-FACT_VERSION_SQL = f"UPDATE {FACT} SET STAGING_PARSER_VERSION = %s WHERE STAGING_PARSER_VERSION = %s"
+FACT_VERSION_SQL = (
+    f"UPDATE {FACT} SET STAGING_PARSER_VERSION = %s WHERE STAGING_PARSER_VERSION = %s"
+)
 
 
 def expected_state(version: str, reason: str) -> dict:
-    return {(version, None): EXPECTED_STAGING_ROWS - EXPECTED_STUB_ROWS,
-            (version, reason): EXPECTED_STUB_ROWS}
+    return {
+        (version, None): EXPECTED_STAGING_ROWS - EXPECTED_STUB_ROWS,
+        (version, reason): EXPECTED_STUB_ROWS,
+    }
 
 
 def _scalar(cursor, sql: str, params: tuple = ()) -> int:
@@ -87,7 +99,9 @@ def _fact_state(cursor) -> dict:
 def migrate(cursor) -> str:
     """Relabel stub rejects and mark rows as version 2; return what happened."""
     state = _state(cursor)
-    if state == expected_state(NEW_VERSION, NEW_REASON) and set(_fact_state(cursor)) == {NEW_VERSION}:
+    if state == expected_state(NEW_VERSION, NEW_REASON) and set(_fact_state(cursor)) == {
+        NEW_VERSION
+    }:
         return "already migrated"
     if state != expected_state(OLD_VERSION, OLD_REASON):
         raise RuntimeError(f"staging state differs from the offline replay: {state}")
@@ -106,7 +120,9 @@ def migrate(cursor) -> str:
             raise RuntimeError(f"relabelled {cursor.rowcount} rows, expected {EXPECTED_STUB_ROWS}")
         cursor.execute(STG_VERSION_SQL, (NEW_VERSION, OLD_VERSION))
         if cursor.rowcount != EXPECTED_STAGING_ROWS:
-            raise RuntimeError(f"versioned {cursor.rowcount} staging rows, expected {EXPECTED_STAGING_ROWS}")
+            raise RuntimeError(
+                f"versioned {cursor.rowcount} staging rows, expected {EXPECTED_STAGING_ROWS}"
+            )
         cursor.execute(FACT_VERSION_SQL, (NEW_VERSION, OLD_VERSION))
         if cursor.rowcount != facts[OLD_VERSION]:
             raise RuntimeError(f"versioned {cursor.rowcount} facts, expected {facts[OLD_VERSION]}")
@@ -127,8 +143,10 @@ def deploy(cursor, bundle: Path) -> None:
 def preview() -> None:
     print("Parser version 2 release: preview only; no Snowflake connection or changes")
     print(f"Local parser version: {STAGING_PARSER_VERSION}")
-    print(f"Expects {EXPECTED_STAGING_ROWS:,} staging rows, {EXPECTED_STUB_ROWS} of them "
-          f"'{OLD_REASON}' rejects that are USGS stub payloads")
+    print(
+        f"Expects {EXPECTED_STAGING_ROWS:,} staging rows, {EXPECTED_STUB_ROWS} of them "
+        f"'{OLD_REASON}' rejects that are USGS stub payloads"
+    )
     print(f"Then: relabel to '{NEW_REASON}' and mark rows version {NEW_VERSION} in one transaction")
     print(f"Then: upload {DEFAULT_OUTPUT.name} to {STAGE} and replace the procedure")
     print("Then: create QUAKEWATCH.RAW.UPDATE_WATERMARK if absent")
@@ -145,13 +163,17 @@ def execute() -> dict:
             cursor.execute("ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = 300")
             migration = migrate(cursor)
             deploy(cursor, DEFAULT_OUTPUT)
-            state = {f"{version}/{reason}": count for (version, reason), count in _state(cursor).items()}
+            state = {
+                f"{version}/{reason}": count for (version, reason), count in _state(cursor).items()
+            }
     return {"migration": migration, "bundle_sha256": digest, "staging_state": state}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Deploy parser version 2 and relabel stub rejects")
-    parser.add_argument("--execute", action="store_true", help="connect and run (uses warehouse credits)")
+    parser.add_argument(
+        "--execute", action="store_true", help="connect and run (uses warehouse credits)"
+    )
     args = parser.parse_args()
     if args.execute:
         print(json.dumps(execute(), indent=2, sort_keys=True))

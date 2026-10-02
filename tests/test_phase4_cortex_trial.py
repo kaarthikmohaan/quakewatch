@@ -7,14 +7,16 @@ from scripts.evidence.phase4.cortex_trial import prompt_for, validate_brief
 
 class CortexTrialTests(unittest.TestCase):
     def test_prompt_contains_sql_facts_without_coordinates(self) -> None:
-        prompt = prompt_for({
-            "event_count": 15,
-            "nearest_event_id": "us-test-1",
-            "nearest_distance_km": 12.3,
-            "nearest_magnitude": 1.2,
-            "nearest_source_status": "reviewed",
-            "nearest_age_hours": 48.0,
-        })
+        prompt = prompt_for(
+            {
+                "event_count": 15,
+                "nearest_event_id": "us-test-1",
+                "nearest_distance_km": 12.3,
+                "nearest_magnitude": 1.2,
+                "nearest_source_status": "reviewed",
+                "nearest_age_hours": 48.0,
+            }
+        )
 
         self.assertIn("count=15", prompt)
         self.assertIn("nearest ID=us-test-1", prompt)
@@ -39,11 +41,14 @@ class CortexTrialTests(unittest.TestCase):
             "Time Since Last Update: "
         )
 
-        self.assertEqual(validate_brief(message, facts), [
-            "missing nearest_age_hours",
-            "unsupported radius size",
-            "incomplete ending",
-        ])
+        self.assertEqual(
+            validate_brief(message, facts),
+            [
+                "missing nearest_age_hours",
+                "unsupported radius size",
+                "incomplete ending",
+            ],
+        )
 
     def test_rejects_distance_from_own_event_id(self) -> None:
         facts = {
@@ -59,5 +64,6 @@ class CortexTrialTests(unittest.TestCase):
             "uw714111042, magnitude 1.23, reviewed, age 59.8 hours."
         )
 
-        self.assertEqual(validate_brief(message, facts),
-                         ["distance incorrectly anchored to event ID"])
+        self.assertEqual(
+            validate_brief(message, facts), ["distance incorrectly anchored to event ID"]
+        )

@@ -11,7 +11,9 @@ from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 
 def admin_params(config_path: Path) -> dict[str, str]:
     """Load only the existing admin profile; never print its password."""
-    profile = tomllib.loads(config_path.read_text(encoding="utf-8"))["connections"]["quakewatch_admin"]
+    profile = tomllib.loads(config_path.read_text(encoding="utf-8"))["connections"][
+        "quakewatch_admin"
+    ]
     if profile.get("role") != "ACCOUNTADMIN":
         raise ValueError("quakewatch_admin profile must use ACCOUNTADMIN")
     required = ("account", "user", "password")
@@ -48,7 +50,9 @@ def main() -> None:
         print("Only an exact name match blocks setup; LIKE underscores may match other names")
         return
     occupied = check_name(Path.home() / ".snowflake" / "config.toml")
-    print(f"Fixture database name: {'occupied; stop and inspect' if occupied else 'available for setup review'}")
+    print(
+        f"Fixture database name: {'occupied; stop and inspect' if occupied else 'available for setup review'}"
+    )
 
 
 if __name__ == "__main__":

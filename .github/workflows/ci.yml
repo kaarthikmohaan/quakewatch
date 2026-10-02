@@ -19,8 +19,10 @@ jobs:
           python-version: "3.12"
       - name: Install locked dependencies
         run: uv sync --locked --no-editable
-      - name: Lint
-        run: .venv/bin/ruff check src scripts tests
+      - name: Lint and format check
+        run: |
+          .venv/bin/ruff check src scripts tests
+          .venv/bin/ruff format --check src scripts tests
       - name: Type check
         run: .venv/bin/mypy
       - name: Build local synthetic fixtures
@@ -28,5 +30,7 @@ jobs:
           PYTHONPATH=src:. .venv/bin/python scripts/fixtures/build_phase2_fixture_bundle.py
           PYTHONPATH=src:. .venv/bin/python scripts/fixtures/build_phase2_fixture_attempts.py
           PYTHONPATH=src:. .venv/bin/python scripts/fixtures/build_phase2_old_origin_attempts.py
-      - name: Run secret-free fixture tests
-        run: PYTHONPATH=src:. .venv/bin/python -m unittest discover -s tests
+      - name: Run secret-free fixture tests with coverage
+        run: |
+          PYTHONPATH=src:. .venv/bin/python -m coverage run -m unittest discover -s tests
+          PYTHONPATH=src:. .venv/bin/python -m coverage report

@@ -18,8 +18,9 @@ def load_candidates(cutoff, output: Path) -> list[tuple[int, dict]]:
     return candidates
 
 
-def classify_loads(candidates: list[tuple[int, dict]], receipts: list[tuple],
-                   raw_counts: list[tuple]) -> list[tuple[int, dict, str]]:
+def classify_loads(
+    candidates: list[tuple[int, dict]], receipts: list[tuple], raw_counts: list[tuple]
+) -> list[tuple[int, dict, str]]:
     """Require one matching complete receipt and RAW count before calling an attempt loaded."""
     by_attempt: dict[str, list[tuple]] = {}
     for attempt_id, status, loaded_rows in receipts:
@@ -32,9 +33,12 @@ def classify_loads(candidates: list[tuple[int, dict]], receipts: list[tuple],
         raw_rows = int(raw_by_attempt.get(attempt_id, 0))
         if not matching and raw_rows == 0:
             state = "ready"
-        elif (len(matching) == 1 and matching[0][0] == "complete"
-              and matching[0][1] is not None
-              and int(matching[0][1]) == raw_rows == plan["expected_rows"]):
+        elif (
+            len(matching) == 1
+            and matching[0][0] == "complete"
+            and matching[0][1] is not None
+            and int(matching[0][1]) == raw_rows == plan["expected_rows"]
+        ):
             state = "loaded"
         else:
             state = "investigate"
@@ -51,12 +55,14 @@ def check_snowflake(candidates: list[tuple[int, dict]], connection) -> list[tupl
     with closing(connection.cursor()) as cursor:
         cursor.execute(
             f"SELECT ATTEMPT_ID, LOAD_STATUS, LOADED_ROWS FROM QUAKEWATCH.RAW.BATCH_ATTEMPT "
-            f"WHERE ATTEMPT_ID IN ({placeholders})", tuple(ids)
+            f"WHERE ATTEMPT_ID IN ({placeholders})",
+            tuple(ids),
         )
         receipts = cursor.fetchall()
         cursor.execute(
             f"SELECT ATTEMPT_ID, COUNT(*) FROM QUAKEWATCH.RAW.RAW_EVENT_RECORDS "
-            f"WHERE ATTEMPT_ID IN ({placeholders}) GROUP BY ATTEMPT_ID", tuple(ids)
+            f"WHERE ATTEMPT_ID IN ({placeholders}) GROUP BY ATTEMPT_ID",
+            tuple(ids),
         )
         raw_counts = cursor.fetchall()
     return classify_loads(candidates, receipts, raw_counts)
@@ -66,8 +72,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Preview local RAW load candidates only")
     parser.add_argument("--cutoff", required=True, type=parse_utc)
     parser.add_argument("--output", type=Path, default=Path("data/raw"))
-    parser.add_argument("--check-snowflake", action="store_true",
-                        help="Read warehouse receipts and RAW counts (may incur cost)")
+    parser.add_argument(
+        "--check-snowflake",
+        action="store_true",
+        help="Read warehouse receipts and RAW counts (may incur cost)",
+    )
     args = parser.parse_args()
     configure_logging()
     candidates = load_candidates(args.cutoff, args.output)
@@ -76,8 +85,13 @@ def main() -> None:
             statuses = check_snowflake(candidates, connection)
         for number, plan, state in statuses:
             print(f"Window {number}: {plan['attempt_id']} ({plan['expected_rows']} rows) {state}")
-        print("Counts:", ", ".join(f"{state}={sum(row[2] == state for row in statuses)}"
-                                    for state in ("loaded", "ready", "investigate")))
+        print(
+            "Counts:",
+            ", ".join(
+                f"{state}={sum(row[2] == state for row in statuses)}"
+                for state in ("loaded", "ready", "investigate")
+            ),
+        )
         print("Read-only Snowflake check; no PUT or COPY performed.")
     else:
         for number, plan in candidates:

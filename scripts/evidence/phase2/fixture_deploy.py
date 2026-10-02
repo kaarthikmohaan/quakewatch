@@ -19,7 +19,7 @@ from scripts.fixtures.phase2_fixture_namespace import (
 )
 
 BUNDLE = DEFAULT_OUTPUT / "quakewatch_procedure.zip"
-BUNDLE_SHA256 = "08a1f63bad29390ac6ed967e295417d96f9f7450e9f5bfc3dafca5365f6e4260"
+BUNDLE_SHA256 = "4139966c9938702f341a72793d3da01cb931c8aad4d999fc75760a2741f00b15"
 STAGE = f"@{TEST_DATABASE}.RAW.USGS_JSON_STAGE/procedure"
 PACKAGE_CHECK_SQL = f"""
 SELECT COUNT(*) FROM {TEST_DATABASE}.INFORMATION_SCHEMA.PACKAGES
@@ -33,9 +33,10 @@ def ddl_statements() -> tuple[str, ...]:
     if not BUNDLE.is_file() or hashlib.sha256(BUNDLE.read_bytes()).hexdigest() != BUNDLE_SHA256:
         raise ValueError("test-only procedure ZIP missing or differs from reviewed SHA-256")
     with ZipFile(BUNDLE) as archive:
-        if any(b"QUAKEWATCH.RAW." in archive.read(name)
-               or b"QUAKEWATCH.CURATED." in archive.read(name)
-               for name in archive.namelist()):
+        if any(
+            b"QUAKEWATCH.RAW." in archive.read(name) or b"QUAKEWATCH.CURATED." in archive.read(name)
+            for name in archive.namelist()
+        ):
             raise ValueError("production database reference in fixture ZIP")
     sources = inputs()
     statements = []
@@ -45,9 +46,11 @@ def ddl_statements() -> tuple[str, ...]:
         path = DEFAULT_OUTPUT / relative
         if not path.is_file() or path.read_text(encoding="utf-8") != expected:
             raise ValueError(f"generated fixture SQL missing or stale: {relative}")
-        statements.extend(statement.strip() for statement, _ in
-                          split_statements(StringIO(expected), remove_comments=True)
-                          if statement.strip())
+        statements.extend(
+            statement.strip()
+            for statement, _ in split_statements(StringIO(expected), remove_comments=True)
+            if statement.strip()
+        )
     return tuple(statements)
 
 
@@ -88,7 +91,9 @@ def execute_deploy() -> dict:
             cursor.execute("ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = 300")
             _guard_empty(cursor)
             _guard_package(cursor)
-            cursor.execute(f"CREATE STAGE {TEST_DATABASE}.RAW.USGS_JSON_STAGE FILE_FORMAT = (TYPE = JSON)")
+            cursor.execute(
+                f"CREATE STAGE {TEST_DATABASE}.RAW.USGS_JSON_STAGE FILE_FORMAT = (TYPE = JSON)"
+            )
             cursor.execute(f"PUT '{BUNDLE.as_uri()}' {STAGE} AUTO_COMPRESS=FALSE OVERWRITE=FALSE")
             columns = [column[0].lower() for column in cursor.description]
             upload = dict(zip(columns, cursor.fetchone(), strict=True))
@@ -96,8 +101,11 @@ def execute_deploy() -> dict:
                 raise RuntimeError("fixture ZIP was not newly uploaded; inspect stage")
             for statement in statements:
                 cursor.execute(statement)
-    return {"database": TEST_DATABASE, "stage_upload": "UPLOADED",
-            "ddl_statements_executed": len(statements)}
+    return {
+        "database": TEST_DATABASE,
+        "stage_upload": "UPLOADED",
+        "ddl_statements_executed": len(statements),
+    }
 
 
 def main() -> None:

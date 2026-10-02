@@ -81,8 +81,10 @@ def _wire_row(item: ProjectedObservation) -> dict[str, Any]:
         "fetched_at": _iso(raw.fetched_at),
         "payload_hash": raw.payload_hash,
         "raw_parser_version": raw.raw_parser_version,
-        **{key: _iso(value) if isinstance(value, datetime) else value
-           for key, value in fields.items()},
+        **{
+            key: _iso(value) if isinstance(value, datetime) else value
+            for key, value in fields.items()
+        },
     }
 
 
@@ -94,29 +96,36 @@ def write_staging(session: Any, projection: BatchProjection) -> int:
     """
     expected = {item.raw.source_key: item for item in projection.observations}
     existing_rows = session.sql(EXISTING_SQL, params=[projection.attempt_id]).collect()
-    if len(existing_rows) != len({
-        (row.as_dict()["STAGE_FILE_NAME"], row.as_dict()["STAGE_FILE_ROW_NUMBER"])
-        for row in existing_rows
-    }):
+    if len(existing_rows) != len(
+        {
+            (row.as_dict()["STAGE_FILE_NAME"], row.as_dict()["STAGE_FILE_ROW_NUMBER"])
+            for row in existing_rows
+        }
+    ):
         raise ValueError("duplicate staged file-row key already exists")
     for row in existing_rows:
         stored = row.as_dict()
         key = (stored["STAGE_FILE_NAME"], stored["STAGE_FILE_ROW_NUMBER"])
         item = expected.get(key)
         if item is None or (
-            stored["ATTEMPT_ID"], stored["PAYLOAD_HASH"], stored["RAW_PARSER_VERSION"],
+            stored["ATTEMPT_ID"],
+            stored["PAYLOAD_HASH"],
+            stored["RAW_PARSER_VERSION"],
             stored["STAGING_PARSER_VERSION"],
         ) != (
-            projection.attempt_id, item.raw.payload_hash, item.raw.raw_parser_version,
+            projection.attempt_id,
+            item.raw.payload_hash,
+            item.raw.raw_parser_version,
             item.fields["staging_parser_version"],
         ):
             raise ValueError("existing staging row conflicts with RAW projection")
 
     observations = projection.observations
     for start in range(0, len(observations), MAX_ROWS_PER_MERGE):
-        chunk = observations[start:start + MAX_ROWS_PER_MERGE]
-        body = json.dumps([_wire_row(item) for item in chunk], separators=(",", ":"),
-                          allow_nan=False)
+        chunk = observations[start : start + MAX_ROWS_PER_MERGE]
+        body = json.dumps(
+            [_wire_row(item) for item in chunk], separators=(",", ":"), allow_nan=False
+        )
         session.sql(MERGE_SQL, params=[body]).collect()
     count_rows = session.sql(COUNT_SQL, params=[projection.attempt_id]).collect()
     if len(count_rows) != 1 or count_rows[0].as_dict()["ROW_COUNT"] != projection.processed_rows:

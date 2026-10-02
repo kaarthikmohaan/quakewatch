@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from quakewatch.extract_batch import iso_utc, parse_utc, run_batch
+from quakewatch.extract_batch import install_termination_handler, iso_utc, parse_utc, run_batch
 from quakewatch.logs import configure_logging
 from quakewatch.settings import EVENT_HORIZON_YEARS, MAX_HISTORY_BATCH_WINDOWS, SITES
 
@@ -56,8 +56,11 @@ def captured_history_windows(cutoff: datetime, output: Path) -> dict[int, Path]:
                 continue
             site_name = manifest["site"]["name"]
             site = next(key for key, config in SITES.items() if config.name == site_name)
-            key = (site, iso_utc(parse_utc(manifest["requested_starttime"])),
-                   iso_utc(parse_utc(manifest["requested_endtime"])))
+            key = (
+                site,
+                iso_utc(parse_utc(manifest["requested_starttime"])),
+                iso_utc(parse_utc(manifest["requested_endtime"])),
+            )
             number = expected.get(key)
             if number and (path.parent / manifest["events_file"]).is_file():
                 captured[number] = path
@@ -66,11 +69,17 @@ def captured_history_windows(cutoff: datetime, output: Path) -> dict[int, Path]:
     return captured
 
 
-def resume_capture(cutoff: datetime, output: Path, max_windows: int, execute: bool,
-                   start_window: int = 1, source_days: int | None = None,
-                   resume_children: bool = False,
-                   source_hours: int | None = None,
-                   hourly_child: int | None = None) -> list[int]:
+def resume_capture(
+    cutoff: datetime,
+    output: Path,
+    max_windows: int,
+    execute: bool,
+    start_window: int = 1,
+    source_days: int | None = None,
+    resume_children: bool = False,
+    source_hours: int | None = None,
+    hourly_child: int | None = None,
+) -> list[int]:
     """Process a bounded consecutive run, stopping at the first source gap."""
     if not 1 <= max_windows <= MAX_HISTORY_BATCH_WINDOWS:
         raise ValueError(f"max-windows must be between 1 and {MAX_HISTORY_BATCH_WINDOWS}")
@@ -84,8 +93,7 @@ def resume_capture(cutoff: datetime, output: Path, max_windows: int, execute: bo
     if hourly_child is not None and (source_hours is None or hourly_child < 1):
         raise ValueError("hourly-child requires source-hours and a positive child number")
     captured = captured_history_windows(cutoff, output)
-    pending = [number for number in range(start_window, len(windows) + 1)
-               if number not in captured]
+    pending = [number for number in range(start_window, len(windows) + 1) if number not in captured]
     selected = pending[:max_windows]
     for number in selected:
         site, start, end = windows[number - 1]
@@ -118,39 +126,68 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Preview or extract one five-year history window")
     parser.add_argument("--cutoff", required=True, type=parse_utc)
     parser.add_argument("--window", type=int, help="1-based window number; required to execute")
-    parser.add_argument("--execute", action="store_true", help="Fetch only the selected window from USGS")
+    parser.add_argument(
+        "--execute", action="store_true", help="Fetch only the selected window from USGS"
+    )
     parser.add_argument("--output", type=Path, default=Path("data/raw"))
-    parser.add_argument("--resume-preview", action="store_true", help="Show next uncaptured local window")
-    parser.add_argument("--resume", action="store_true", help="Process consecutive uncaptured windows")
+    parser.add_argument(
+        "--resume-preview", action="store_true", help="Show next uncaptured local window"
+    )
+    parser.add_argument(
+        "--resume", action="store_true", help="Process consecutive uncaptured windows"
+    )
     parser.add_argument("--max-windows", type=int, help="Resume limit, 1 to 50")
-    parser.add_argument("--start-window", type=int, default=1,
-                        help="Explicit first eligible window; earlier gaps remain unresolved")
-    parser.add_argument("--source-days", type=int,
-                        help="Start with audited source slices of 1 to 7 days")
-    parser.add_argument("--source-hours", type=int,
-                        help="Split uncached daily children into audited 1 to 12 hour slices")
-    parser.add_argument("--hourly-child", type=int,
-                        help="Apply source-hours only to this 1-based daily child")
-    parser.add_argument("--resume-children", action="store_true",
-                        help="Reuse validated local child checkpoints from prior attempts")
+    parser.add_argument(
+        "--start-window",
+        type=int,
+        default=1,
+        help="Explicit first eligible window; earlier gaps remain unresolved",
+    )
+    parser.add_argument(
+        "--source-days", type=int, help="Start with audited source slices of 1 to 7 days"
+    )
+    parser.add_argument(
+        "--source-hours",
+        type=int,
+        help="Split uncached daily children into audited 1 to 12 hour slices",
+    )
+    parser.add_argument(
+        "--hourly-child", type=int, help="Apply source-hours only to this 1-based daily child"
+    )
+    parser.add_argument(
+        "--resume-children",
+        action="store_true",
+        help="Reuse validated local child checkpoints from prior attempts",
+    )
     args = parser.parse_args()
     configure_logging()
+    install_termination_handler()
     if args.resume_children and args.source_days is None:
         parser.error("--resume-children requires --source-days")
-    if args.source_hours is not None and (args.source_days != 1
-                                          or not 1 <= args.source_hours <= 12):
+    if args.source_hours is not None and (
+        args.source_days != 1 or not 1 <= args.source_hours <= 12
+    ):
         parser.error("--source-hours requires --source-days 1 and a value from 1 to 12")
-    if args.hourly_child is not None and (args.source_hours is None
-                                          or args.hourly_child < 1):
+    if args.hourly_child is not None and (args.source_hours is None or args.hourly_child < 1):
         parser.error("--hourly-child requires --source-hours and a positive child number")
     windows = history_windows(args.cutoff)
     if args.resume:
         if args.window is not None or args.resume_preview or args.max_windows is None:
-            parser.error("--resume requires --max-windows and cannot use --window or --resume-preview")
+            parser.error(
+                "--resume requires --max-windows and cannot use --window or --resume-preview"
+            )
         try:
-            resume_capture(args.cutoff, args.output, args.max_windows, args.execute,
-                           args.start_window, args.source_days, args.resume_children,
-                           args.source_hours, args.hourly_child)
+            resume_capture(
+                args.cutoff,
+                args.output,
+                args.max_windows,
+                args.execute,
+                args.start_window,
+                args.source_days,
+                args.resume_children,
+                args.source_hours,
+                args.hourly_child,
+            )
         except ValueError as exc:
             parser.error(str(exc))
         return
@@ -164,8 +201,9 @@ def main() -> None:
         if args.window is not None or args.execute:
             parser.error("--resume-preview cannot be combined with --window or --execute")
         captured = captured_history_windows(args.cutoff, args.output)
-        next_number = next((number for number in range(1, len(windows) + 1)
-                            if number not in captured), None)
+        next_number = next(
+            (number for number in range(1, len(windows) + 1) if number not in captured), None
+        )
         print(f"Locally captured windows: {len(captured)} of {len(windows)}")
         if next_number is None:
             print("All windows captured locally; Snowflake load status not checked.")

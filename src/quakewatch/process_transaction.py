@@ -62,16 +62,26 @@ def process_loaded_attempt(
         if not isinstance(merged, int) or merged < 0:
             raise ValueError("writer returned an invalid merged revision count")
         outcome = ProcessOutcome(
-            process_attempt_id=process_id, attempt_id=attempt_id,
-            started_at=started_at, finished_at=now(), status="complete",
-            loaded_rows=projection.loaded_rows, processed_rows=projection.processed_rows,
-            rejected_rows=projection.rejected_rows, revision_rows_merged=merged,
+            process_attempt_id=process_id,
+            attempt_id=attempt_id,
+            started_at=started_at,
+            finished_at=now(),
+            status="complete",
+            loaded_rows=projection.loaded_rows,
+            processed_rows=projection.processed_rows,
+            rejected_rows=projection.rejected_rows,
+            revision_rows_merged=merged,
         )
         writer.record_success(session, outcome)
         committing = True
         session.sql("COMMIT").collect()
-        logger.info("Processed attempt %s: %d rows, %d rejected, %d revisions merged",
-                    attempt_id, outcome.processed_rows, outcome.rejected_rows, merged)
+        logger.info(
+            "Processed attempt %s: %d rows, %d rejected, %d revisions merged",
+            attempt_id,
+            outcome.processed_rows,
+            outcome.rejected_rows,
+            merged,
+        )
         return outcome
     except Exception as exc:
         if committing:
@@ -82,10 +92,15 @@ def process_loaded_attempt(
             try:
                 session.sql("ROLLBACK").collect()
             except Exception as rollback_error:
-                raise RuntimeError("rollback outcome unknown; inspect Snowflake before retry") from rollback_error
+                raise RuntimeError(
+                    "rollback outcome unknown; inspect Snowflake before retry"
+                ) from rollback_error
         failed = ProcessOutcome(
-            process_attempt_id=process_id, attempt_id=attempt_id,
-            started_at=started_at, finished_at=now(), status="failed",
+            process_attempt_id=process_id,
+            attempt_id=attempt_id,
+            started_at=started_at,
+            finished_at=now(),
+            status="failed",
             loaded_rows=projection.loaded_rows if projection else 0,
             processed_rows=projection.processed_rows if projection else 0,
             rejected_rows=projection.rejected_rows if projection else 0,
@@ -93,7 +108,10 @@ def process_loaded_attempt(
             error_type=type(exc).__name__,
             error_message=str(exc) if isinstance(exc, ValueError) else "Transformation failed",
         )
-        logger.error("Processing failed for attempt %s (%s); models rolled back",
-                     attempt_id, type(exc).__name__)
+        logger.error(
+            "Processing failed for attempt %s (%s); models rolled back",
+            attempt_id,
+            type(exc).__name__,
+        )
         writer.record_failure(session, failed)
         raise

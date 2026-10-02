@@ -28,8 +28,10 @@ class FixtureNamespaceTest(unittest.TestCase):
                 self.assertIn(TEST_DATABASE + ".", rewritten)
 
     def test_unexpected_database_or_schema_stops(self):
-        for source in ("SELECT * FROM OTHERDB.RAW.EVENTS",
-                       "SELECT * FROM QUAKEWATCH.PUBLIC.EVENTS"):
+        for source in (
+            "SELECT * FROM OTHERDB.RAW.EVENTS",
+            "SELECT * FROM QUAKEWATCH.PUBLIC.EVENTS",
+        ):
             with self.subTest(source=source), self.assertRaisesRegex(ValueError, "unexpected"):
                 validate_and_rewrite("sample.sql", source)
 

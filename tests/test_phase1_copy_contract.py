@@ -11,8 +11,12 @@ SQL = (ROOT / "sql/load/copy_raw.sql").read_text(encoding="utf-8")
 class CopyContractTests(unittest.TestCase):
     def test_copy_maps_every_required_raw_column(self) -> None:
         for field in (
-            "logical_batch_id", "attempt_id", "window_id", "fetched_at",
-            "payload_hash", "parser_version",
+            "logical_batch_id",
+            "attempt_id",
+            "window_id",
+            "fetched_at",
+            "payload_hash",
+            "parser_version",
         ):
             self.assertIn(f"t.$1:metadata:{field}", SQL)
         self.assertIn("t.$1:source_feature", SQL)
@@ -35,7 +39,11 @@ class CopyContractTests(unittest.TestCase):
         }
         self.assertIsInstance(record["source_feature"], dict)
         for field in (
-            "logical_batch_id", "attempt_id", "window_id", "fetched_at",
-            "payload_hash", "parser_version",
+            "logical_batch_id",
+            "attempt_id",
+            "window_id",
+            "fetched_at",
+            "payload_hash",
+            "parser_version",
         ):
             self.assertIn(field, record["metadata"])

@@ -47,9 +47,13 @@ class CortexEvaluateTests(unittest.TestCase):
             "33248.0 hours old at the SQL check time."
         )
         self.assertEqual(check_brief(brief, case), [])
-        self.assertIn("missing or misstated distance", check_brief(
-            brief.replace("from Anchorage", "from ak022f92oae2"), case,
-        ))
+        self.assertIn(
+            "missing or misstated distance",
+            check_brief(
+                brief.replace("from Anchorage", "from ak022f92oae2"),
+                case,
+            ),
+        )
         self.assertIn("hazard or action language", check_brief(brief + " Shaking risk.", case))
 
     def test_cache_skips_existing_and_seattle_day(self) -> None:
@@ -63,8 +67,7 @@ class CortexEvaluateTests(unittest.TestCase):
             write_cache(cache, path)
             loaded = read_cache(path)
         self.assertEqual(pending_cases(cases, loaded), [])
-        self.assertEqual(retry_case(cases, loaded, "anchorage-2022")["CASE_ID"],
-                         "anchorage-2022")
+        self.assertEqual(retry_case(cases, loaded, "anchorage-2022")["CASE_ID"], "anchorage-2022")
         loaded["results"]["aggregate-hash"]["retry"] = {"status": "attempt_started"}
         with self.assertRaisesRegex(RuntimeError, "already used"):
             retry_case(cases, loaded, "anchorage-2022")

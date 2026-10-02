@@ -11,10 +11,13 @@ from scripts.checks.quality import VIEW_NAMES, reviewed_sql
 
 class Phase3PostrunTest(unittest.TestCase):
     def test_preview_is_offline(self):
-        with patch("sys.argv", ["phase3_postrun.py"]), \
-             patch("scripts.checks.postrun.connect_project",
-                   side_effect=AssertionError("connected")), \
-             contextlib.redirect_stdout(io.StringIO()):
+        with (
+            patch("sys.argv", ["phase3_postrun.py"]),
+            patch(
+                "scripts.checks.postrun.connect_project", side_effect=AssertionError("connected")
+            ),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
             main()
 
     def test_full_report_passes_with_reconciled_rejects(self):
@@ -33,8 +36,12 @@ class Phase3PostrunTest(unittest.TestCase):
             report = postrun()
         self.assertEqual(report["status"], "pass")
         self.assertEqual(report["reject_reasons"], [("invalid_geometry", 485)])
-        self.assertFalse(any(call.args[0].startswith(("CREATE ", "DELETE ", "DROP "))
-                             for call in cursor.execute.call_args_list))
+        self.assertFalse(
+            any(
+                call.args[0].startswith(("CREATE ", "DELETE ", "DROP "))
+                for call in cursor.execute.call_args_list
+            )
+        )
 
     def test_reject_count_disagreement_is_review(self):
         cursor = MagicMock()

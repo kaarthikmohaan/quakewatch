@@ -31,7 +31,9 @@ REPLAY_PROCESS_ID = "516de8b981d7486d85b27ccf1d974fb0"
 def _guard_before(cursor, plans: list[dict]) -> None:
     expected_prior = sorted((attempt_id, 1) for attempt_id, _ in PRIOR_SEQUENCE)
     for table in (RAW_TABLE, RECEIPT_TABLE):
-        cursor.execute(f"SELECT ATTEMPT_ID, COUNT(*) FROM {table} GROUP BY ATTEMPT_ID ORDER BY ATTEMPT_ID")
+        cursor.execute(
+            f"SELECT ATTEMPT_ID, COUNT(*) FROM {table} GROUP BY ATTEMPT_ID ORDER BY ATTEMPT_ID"
+        )
         if cursor.fetchall() != expected_prior:
             raise RuntimeError(f"fixture RAW baseline differs: {table}")
     if _counts(cursor) != REPLAY_COUNTS:
@@ -39,10 +41,13 @@ def _guard_before(cursor, plans: list[dict]) -> None:
     cursor.execute(f"SELECT COUNT(*) FROM {CURATED}.EVENT_CURRENT")
     if cursor.fetchone()[0] != 0:
         raise RuntimeError("fixture deleted event unexpectedly current")
-    cursor.execute(f"""
+    cursor.execute(
+        f"""
         SELECT PROCESS_ATTEMPT_ID, STATUS FROM {CURATED}.BATCH_PROCESS_ATTEMPT
         WHERE ATTEMPT_ID = %s
-    """, (REPLAY_ATTEMPT,))
+    """,
+        (REPLAY_ATTEMPT,),
+    )
     if cursor.fetchall() != [(REPLAY_PROCESS_ID, "complete")]:
         raise RuntimeError("fixture stale-replay audit differs")
     for plan in plans:
@@ -54,17 +59,22 @@ def _guard_before(cursor, plans: list[dict]) -> None:
 def _guard_after(cursor, plans: list[dict]) -> None:
     expected_all = sorted((attempt_id, 1) for attempt_id, _ in PRIOR_SEQUENCE + SEQUENCE)
     for table in (RAW_TABLE, RECEIPT_TABLE):
-        cursor.execute(f"SELECT ATTEMPT_ID, COUNT(*) FROM {table} GROUP BY ATTEMPT_ID ORDER BY ATTEMPT_ID")
+        cursor.execute(
+            f"SELECT ATTEMPT_ID, COUNT(*) FROM {table} GROUP BY ATTEMPT_ID ORDER BY ATTEMPT_ID"
+        )
         if cursor.fetchall() != expected_all:
             raise RuntimeError(f"fixture RAW postload counts differ: {table}")
     for plan in plans:
-        cursor.execute(f"""
+        cursor.execute(
+            f"""
             SELECT EXTRACT_STATUS, LOAD_STATUS, SOURCE_ROWS_RETURNED,
                    RAW_ROWS_WRITTEN, LOADED_ROWS,
                    COALESCE(ARRAY_SIZE(COVERAGE_GAPS), 0),
                    MANIFEST:fixture_only::BOOLEAN
             FROM {RECEIPT_TABLE} WHERE ATTEMPT_ID = %s
-        """, (plan["attempt_id"],))
+        """,
+            (plan["attempt_id"],),
+        )
         if cursor.fetchall() != [("complete", "complete", 1, 1, 1, 0, True)]:
             raise RuntimeError(f"fixture RAW receipt differs: {plan['attempt_id']}")
 
@@ -83,18 +93,25 @@ def execute_load() -> list[dict]:
                 loaded = 0
                 copy_results = []
                 try:
-                    cursor.execute(f"PUT '{plan['events_path'].as_uri()}' {plan['stage_path']} "
-                                   "AUTO_COMPRESS=FALSE OVERWRITE=FALSE")
+                    cursor.execute(
+                        f"PUT '{plan['events_path'].as_uri()}' {plan['stage_path']} "
+                        "AUTO_COMPRESS=FALSE OVERWRITE=FALSE"
+                    )
                     put = _result_dicts(cursor)
                     if len(put) != 1 or put[0].get("status", "").upper() != "UPLOADED":
                         raise RuntimeError("old-origin fixture PUT did not upload one new file")
                     cursor.execute(plan["copy_sql"])
                     copy_results = _result_dicts(cursor)
-                    if len(copy_results) != 1 or copy_results[0].get("status", "").upper() != "LOADED":
+                    if (
+                        len(copy_results) != 1
+                        or copy_results[0].get("status", "").upper() != "LOADED"
+                    ):
                         raise RuntimeError("old-origin fixture COPY did not load one file")
                     loaded = int(copy_results[0]["rows_loaded"])
-                    cursor.execute(f"SELECT COUNT(*) FROM {RAW_TABLE} WHERE ATTEMPT_ID = %s",
-                                   (plan["attempt_id"],))
+                    cursor.execute(
+                        f"SELECT COUNT(*) FROM {RAW_TABLE} WHERE ATTEMPT_ID = %s",
+                        (plan["attempt_id"],),
+                    )
                     reconcile_loaded_rows(1, loaded, int(cursor.fetchone()[0]))
                 except Exception as exc:
                     _append_receipt(cursor, plan, "failed", loaded, copy_results, exc)

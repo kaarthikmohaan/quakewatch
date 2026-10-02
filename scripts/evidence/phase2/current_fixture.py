@@ -36,15 +36,32 @@ def view_select_sql(temp_table: str) -> str:
 def feature_row(name: str) -> tuple:
     feature = json.loads((FIXTURE_DIR / name).read_text(encoding="utf-8"))
     props = feature["properties"]
-    payload_hash = hashlib.sha256(json.dumps(
-        feature, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
-    ).encode("utf-8")).hexdigest()
+    payload_hash = hashlib.sha256(
+        json.dumps(
+            feature,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+    ).hexdigest()
+
     def clock(value: int) -> str:
         return datetime.fromtimestamp(value / 1000, tz=UTC).isoformat()
-    return (feature["id"], clock(props["updated"]), payload_hash,
-            feature["id"], clock(props["time"]),
-            "2026-09-30T00:00:00+00:00", "2026-09-30T00:00:00+00:00",
-            props["status"], props["mag"], "1", name, 1)
+
+    return (
+        feature["id"],
+        clock(props["updated"]),
+        payload_hash,
+        feature["id"],
+        clock(props["time"]),
+        "2026-09-30T00:00:00+00:00",
+        "2026-09-30T00:00:00+00:00",
+        props["status"],
+        props["mag"],
+        "1",
+        name,
+        1,
+    )
 
 
 INSERT_SQL = """INSERT INTO {table} (
@@ -69,7 +86,9 @@ def _assert_state(cursor, query: str, expected_rows: int, expected_current: list
     if rows != expected_current:
         raise RuntimeError(f"current-view fixture mismatch: {rows!r}")
     # The caller supplies the temporary table as the only source in this query.
-    match = re.search(r"FROM (QUAKEWATCH\.CURATED\.QW_CURRENT_FIXTURE_[0-9A-F]{32}) FACT_EVENT_REVISION", query)
+    match = re.search(
+        r"FROM (QUAKEWATCH\.CURATED\.QW_CURRENT_FIXTURE_[0-9A-F]{32}) FACT_EVENT_REVISION", query
+    )
     if match is None:
         raise ValueError("view query is not isolated to the temporary table")
     cursor.execute(f"SELECT COUNT(*) FROM {match.group(1)}")
@@ -86,24 +105,32 @@ def execute_fixture() -> dict:
             cursor.execute("USE ROLE QUAKEWATCH_ROLE")
             cursor.execute("USE WAREHOUSE QUAKEWATCH_WH")
             cursor.execute("ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = 300")
-            cursor.execute(f"CREATE TEMPORARY TABLE {table} LIKE QUAKEWATCH.CURATED.FACT_EVENT_REVISION")
+            cursor.execute(
+                f"CREATE TEMPORARY TABLE {table} LIKE QUAKEWATCH.CURATED.FACT_EVENT_REVISION"
+            )
             for name in ("normal_event.json", "synthetic_revision_event.json"):
                 cursor.execute(INSERT_SQL.format(table=table), feature_row(name))
             event_id = "uw714110682"
             _assert_state(cursor, query, 2, [(event_id, "reviewed", 1.28)])
-            cursor.execute(INSERT_SQL.format(table=table), feature_row("synthetic_tombstone_event.json"))
+            cursor.execute(
+                INSERT_SQL.format(table=table), feature_row("synthetic_tombstone_event.json")
+            )
             _assert_state(cursor, query, 3, [])
             cursor.execute(INSERT_SQL.format(table=table), feature_row("normal_event.json"))
             _assert_state(cursor, query, 4, [])
-            return {"active_revision_magnitude": 1.28,
-                    "current_after_tombstone": 0,
-                    "current_after_stale_replay": 0,
-                    "temporary_revision_rows": 4}
+            return {
+                "active_revision_magnitude": 1.28,
+                "current_after_tombstone": 0,
+                "current_after_stale_replay": 0,
+                "temporary_revision_rows": 4,
+            }
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--execute", action="store_true", help="run the paid Snowflake fixture check")
+    parser.add_argument(
+        "--execute", action="store_true", help="run the paid Snowflake fixture check"
+    )
     args = parser.parse_args()
     if args.execute:
         print(json.dumps(execute_fixture(), indent=2, sort_keys=True))

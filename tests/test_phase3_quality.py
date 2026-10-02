@@ -17,18 +17,22 @@ from scripts.checks.quality import (
 class Phase3QualityTest(unittest.TestCase):
     def test_preview_checks_reviewed_files_without_connecting(self):
         output = io.StringIO()
-        with patch("sys.argv", ["phase3_quality.py"]), \
-             patch("scripts.checks.quality.connect_project",
-                   side_effect=AssertionError("connected")), \
-             contextlib.redirect_stdout(output):
+        with (
+            patch("sys.argv", ["phase3_quality.py"]),
+            patch(
+                "scripts.checks.quality.connect_project", side_effect=AssertionError("connected")
+            ),
+            contextlib.redirect_stdout(output),
+        ):
             main()
         self.assertIn("no Snowflake connection", output.getvalue())
         self.assertEqual([len(group) for group in reviewed_sql()], [3, 3, 1])
 
     def test_changed_sql_stops_before_connection(self):
-        with patch("scripts.checks.quality.FILES",
-                   (("setup/10_health_views.sql", "wrong", 3),)), \
-             patch("scripts.checks.quality.connect_project") as connect:
+        with (
+            patch("scripts.checks.quality.FILES", (("setup/10_health_views.sql", "wrong", 3),)),
+            patch("scripts.checks.quality.connect_project") as connect,
+        ):
             with self.assertRaisesRegex(ValueError, "changed"):
                 execute_quality()
         connect.assert_not_called()
@@ -43,8 +47,9 @@ class Phase3QualityTest(unittest.TestCase):
         with patch("scripts.checks.quality.connect_project", return_value=connection):
             with self.assertRaisesRegex(RuntimeError, "partial or differ"):
                 execute_quality()
-        self.assertFalse(any(call.args[0].startswith("CREATE VIEW")
-                             for call in cursor.execute.call_args_list))
+        self.assertFalse(
+            any(call.args[0].startswith("CREATE VIEW") for call in cursor.execute.call_args_list)
+        )
 
     def test_runs_three_new_views_then_bounded_quality_reads(self):
         cursor = MagicMock()
@@ -86,8 +91,9 @@ class Phase3QualityTest(unittest.TestCase):
             report = execute_quality()
         self.assertEqual(report["views_created"], [])
         self.assertEqual(report["views_reused"], list(VIEW_NAMES))
-        self.assertFalse(any(call.args[0].startswith("CREATE VIEW")
-                             for call in cursor.execute.call_args_list))
+        self.assertFalse(
+            any(call.args[0].startswith("CREATE VIEW") for call in cursor.execute.call_args_list)
+        )
 
 
 if __name__ == "__main__":

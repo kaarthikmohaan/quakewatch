@@ -22,17 +22,25 @@ class ProcedureEntryTest(unittest.TestCase):
         session = object()
         result = json.loads(run(session, "attempt-1"))
         self.assertEqual(result["status"], "complete")
-        self.assertEqual((result["loaded_rows"], result["processed_rows"],
-                          result["rejected_rows"], result["revision_rows_merged"]),
-                         (3, 3, 1, 2))
+        self.assertEqual(
+            (
+                result["loaded_rows"],
+                result["processed_rows"],
+                result["rejected_rows"],
+                result["revision_rows_merged"],
+            ),
+            (3, 3, 1, 2),
+        )
         args = process.call_args.args
         self.assertIs(args[0], session)
         self.assertEqual(args[1], "attempt-1")
         self.assertIsInstance(args[2], SnowparkModelWriter)
         self.assertIs(args[2].canonical_resolver, resolve_durable_aliases)
 
-    @patch("quakewatch.snowpark_procedure.process_loaded_attempt",
-           side_effect=ValueError("load receipt incomplete"))
+    @patch(
+        "quakewatch.snowpark_procedure.process_loaded_attempt",
+        side_effect=ValueError("load receipt incomplete"),
+    )
     def test_handler_propagates_failure(self, process):
         with self.assertRaisesRegex(ValueError, "load receipt incomplete"):
             run(object(), "attempt-1")

@@ -45,22 +45,26 @@ def read_and_project_attempt(session: Any, attempt_id: str) -> BatchProjection:
     if _variant(receipt["COVERAGE_GAPS"]) not in (None, []):
         raise ValueError("RAW load receipt has unresolved coverage gaps")
     loaded = receipt["LOADED_ROWS"]
-    if not isinstance(loaded, int) or loaded < 0 or any(
-        receipt[name] != loaded for name in ("SOURCE_ROWS_RETURNED", "RAW_ROWS_WRITTEN")
+    if (
+        not isinstance(loaded, int)
+        or loaded < 0
+        or any(receipt[name] != loaded for name in ("SOURCE_ROWS_RETURNED", "RAW_ROWS_WRITTEN"))
     ):
         raise ValueError("RAW load receipt counts do not reconcile")
 
     rows = []
     for result in session.sql(RAW_SQL, params=[attempt_id]).collect():
         row = result.as_dict()
-        rows.append(RawObservation(
-            attempt_id=row["ATTEMPT_ID"],
-            window_id=row["WINDOW_ID"],
-            stage_file_name=row["STAGE_FILE_NAME"],
-            stage_file_row_number=row["STAGE_FILE_ROW_NUMBER"],
-            fetched_at=row["FETCHED_AT"],
-            payload_hash=row["PAYLOAD_HASH"],
-            raw_parser_version=row["PARSER_VERSION"],
-            payload=_variant(row["PAYLOAD"]),
-        ))
+        rows.append(
+            RawObservation(
+                attempt_id=row["ATTEMPT_ID"],
+                window_id=row["WINDOW_ID"],
+                stage_file_name=row["STAGE_FILE_NAME"],
+                stage_file_row_number=row["STAGE_FILE_ROW_NUMBER"],
+                fetched_at=row["FETCHED_AT"],
+                payload_hash=row["PAYLOAD_HASH"],
+                raw_parser_version=row["PARSER_VERSION"],
+                payload=_variant(row["PAYLOAD"]),
+            )
+        )
     return project_raw_attempt(rows, attempt_id, loaded)

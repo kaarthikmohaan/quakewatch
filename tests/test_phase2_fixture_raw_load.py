@@ -20,10 +20,14 @@ from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 class FixtureRawLoadTest(unittest.TestCase):
     def test_preview_validates_four_local_plans_without_connecting(self):
         output = io.StringIO()
-        with patch("sys.argv", ["phase2_fixture_raw_load.py"]), \
-             patch("scripts.evidence.phase2.fixture_raw_load.connect_project",
-                   side_effect=AssertionError("connected")), \
-             contextlib.redirect_stdout(output):
+        with (
+            patch("sys.argv", ["phase2_fixture_raw_load.py"]),
+            patch(
+                "scripts.evidence.phase2.fixture_raw_load.connect_project",
+                side_effect=AssertionError("connected"),
+            ),
+            contextlib.redirect_stdout(output),
+        ):
             main()
         plans = local_plans()
         self.assertEqual(len(plans), 4)
@@ -65,23 +69,43 @@ class FixtureRawLoadTest(unittest.TestCase):
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
         events = []
+
         def result_dicts(_cursor):
             command = cursor.execute.call_args.args[0]
-            return ([{"status": "UPLOADED"}] if command.startswith("PUT ")
-                    else [{"status": "LOADED", "rows_loaded": 1}])
-        with patch("scripts.evidence.phase2.fixture_raw_load.connect_project", return_value=connection), \
-             patch("scripts.evidence.phase2.fixture_raw_load._guard_empty",
-                   side_effect=lambda *_: events.append("guard")), \
-             patch("scripts.evidence.phase2.fixture_raw_load._result_dicts", side_effect=result_dicts), \
-             patch("scripts.evidence.phase2.fixture_raw_load._append_receipt",
-                   side_effect=lambda *_: events.append("receipt")):
+            return (
+                [{"status": "UPLOADED"}]
+                if command.startswith("PUT ")
+                else [{"status": "LOADED", "rows_loaded": 1}]
+            )
+
+        with (
+            patch(
+                "scripts.evidence.phase2.fixture_raw_load.connect_project", return_value=connection
+            ),
+            patch(
+                "scripts.evidence.phase2.fixture_raw_load._guard_empty",
+                side_effect=lambda *_: events.append("guard"),
+            ),
+            patch(
+                "scripts.evidence.phase2.fixture_raw_load._result_dicts", side_effect=result_dicts
+            ),
+            patch(
+                "scripts.evidence.phase2.fixture_raw_load._append_receipt",
+                side_effect=lambda *_: events.append("receipt"),
+            ),
+        ):
             results = execute_load()
         self.assertEqual(events, ["guard"] + ["receipt"] * 4)
         self.assertEqual([item["loaded_rows"] for item in results], [1] * 4)
         statements = [call.args[0] for call in cursor.execute.call_args_list]
         self.assertEqual(sum(item.startswith("PUT ") for item in statements), 4)
-        self.assertEqual(sum(item.startswith("COPY INTO ") or item.startswith("-- Phase 1")
-                             for item in statements), 4)
+        self.assertEqual(
+            sum(
+                item.startswith("COPY INTO ") or item.startswith("-- Phase 1")
+                for item in statements
+            ),
+            4,
+        )
 
 
 if __name__ == "__main__":

@@ -15,9 +15,15 @@ EVENT_ID = "uw714110682"
 CURATED = f"{TEST_DATABASE}.CURATED"
 RAW = f"{TEST_DATABASE}.RAW"
 MODEL_TABLES = (
-    "STG_EVENT_REVISION", "FACT_EVENT_REVISION", "BRIDGE_EVENT_SITE",
-    "FACT_BATCH_RUN", "BATCH_PROCESS_ATTEMPT", "DIM_SITE", "DIM_DATE",
-    "DIM_MAGNITUDE_TYPE", "DIM_EVENT_STATUS",
+    "STG_EVENT_REVISION",
+    "FACT_EVENT_REVISION",
+    "BRIDGE_EVENT_SITE",
+    "FACT_BATCH_RUN",
+    "BATCH_PROCESS_ATTEMPT",
+    "DIM_SITE",
+    "DIM_DATE",
+    "DIM_MAGNITUDE_TYPE",
+    "DIM_EVENT_STATUS",
 )
 EXPECTED_AFTER = {
     "STG_EVENT_REVISION": 1,
@@ -38,14 +44,14 @@ def _count(cursor, sql: str, params: tuple = ()) -> int:
 
 
 def _counts(cursor) -> dict[str, int]:
-    return {name: _count(cursor, f"SELECT COUNT(*) FROM {CURATED}.{name}")
-            for name in MODEL_TABLES}
+    return {name: _count(cursor, f"SELECT COUNT(*) FROM {CURATED}.{name}") for name in MODEL_TABLES}
 
 
 def _guard_raw(cursor) -> str:
     feature = json.loads((FIXTURES / SEQUENCE[0][1]).read_text(encoding="utf-8"))
     expected_hash = _hash_feature(feature)
-    cursor.execute(f"""
+    cursor.execute(
+        f"""
         SELECT a.EXTRACT_STATUS, a.LOAD_STATUS, a.SOURCE_ROWS_RETURNED,
                a.RAW_ROWS_WRITTEN, a.LOADED_ROWS,
                COALESCE(ARRAY_SIZE(a.COVERAGE_GAPS), 0),
@@ -55,9 +61,12 @@ def _guard_raw(cursor) -> str:
         FROM {RAW}.BATCH_ATTEMPT a
         JOIN {RAW}.RAW_EVENT_RECORDS r ON a.ATTEMPT_ID = r.ATTEMPT_ID
         WHERE a.ATTEMPT_ID = %s
-    """, (ATTEMPT_ID,))
-    if cursor.fetchall() != [("complete", "complete", 1, 1, 1, 0, True,
-                              expected_hash, EVENT_ID, "reviewed")]:
+    """,
+        (ATTEMPT_ID,),
+    )
+    if cursor.fetchall() != [
+        ("complete", "complete", 1, 1, 1, 0, True, expected_hash, EVENT_ID, "reviewed")
+    ]:
         raise RuntimeError("original fixture RAW receipt or source row differs")
     return expected_hash
 
@@ -67,12 +76,15 @@ def _guard_unique_keys(cursor) -> None:
         ("FACT_EVENT_REVISION", "CANONICAL_EVENT_ID, SOURCE_UPDATED_AT, PAYLOAD_HASH"),
         ("BRIDGE_EVENT_SITE", "CANONICAL_EVENT_ID, SOURCE_UPDATED_AT, PAYLOAD_HASH, SITE_KEY"),
     ):
-        duplicates = _count(cursor, f"""
+        duplicates = _count(
+            cursor,
+            f"""
             SELECT COUNT(*) FROM (
                 SELECT {columns} FROM {CURATED}.{table}
                 GROUP BY {columns} HAVING COUNT(*) > 1
             )
-        """)
+        """,
+        )
         if duplicates:
             raise RuntimeError(f"duplicate fixture {table} grain keys")
 
@@ -86,13 +98,15 @@ def _guard_before(cursor) -> str:
 
 
 def _guard_after(cursor, outcome: dict, expected_hash: str) -> dict[str, int]:
-    if (outcome.get("attempt_id") != ATTEMPT_ID
-            or outcome.get("status") != "complete"
-            or outcome.get("loaded_rows") != 1
-            or outcome.get("processed_rows") != 1
-            or outcome.get("rejected_rows") != 0
-            or outcome.get("revision_rows_merged") != 1
-            or not outcome.get("process_attempt_id")):
+    if (
+        outcome.get("attempt_id") != ATTEMPT_ID
+        or outcome.get("status") != "complete"
+        or outcome.get("loaded_rows") != 1
+        or outcome.get("processed_rows") != 1
+        or outcome.get("rejected_rows") != 0
+        or outcome.get("revision_rows_merged") != 1
+        or not outcome.get("process_attempt_id")
+    ):
         raise RuntimeError(f"original fixture processing outcome differs: {outcome}")
     counts = _counts(cursor)
     if counts != EXPECTED_AFTER:
@@ -103,11 +117,14 @@ def _guard_after(cursor, outcome: dict, expected_hash: str) -> dict[str, int]:
     """)
     if cursor.fetchall() != [(EVENT_ID, EVENT_ID, "reviewed", 1.08, expected_hash)]:
         raise RuntimeError("original fixture current event differs")
-    cursor.execute(f"""
+    cursor.execute(
+        f"""
         SELECT STATUS, LOADED_ROWS, PROCESSED_ROWS, REJECTED_ROWS,
                REVISION_ROWS_MERGED FROM {CURATED}.BATCH_PROCESS_ATTEMPT
         WHERE ATTEMPT_ID = %s AND PROCESS_ATTEMPT_ID = %s
-    """, (ATTEMPT_ID, outcome["process_attempt_id"]))
+    """,
+        (ATTEMPT_ID, outcome["process_attempt_id"]),
+    )
     if cursor.fetchall() != [("complete", 1, 1, 0, 1)]:
         raise RuntimeError("original fixture processing audit differs")
     _guard_unique_keys(cursor)
@@ -136,7 +153,9 @@ def execute_original() -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--execute", action="store_true", help="run one paid fixture procedure call")
+    parser.add_argument(
+        "--execute", action="store_true", help="run one paid fixture procedure call"
+    )
     args = parser.parse_args()
     if args.execute:
         print(json.dumps(execute_original(), indent=2, sort_keys=True))

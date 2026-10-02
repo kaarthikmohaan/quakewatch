@@ -50,14 +50,24 @@ def append_process_outcome(session: Any, outcome: ProcessOutcome) -> None:
         raise ValueError("process and load attempt IDs are required")
     if outcome.status not in ("complete", "failed"):
         raise ValueError("invalid processing status")
-    if (outcome.started_at.tzinfo is None or outcome.finished_at.tzinfo is None
-            or outcome.finished_at < outcome.started_at):
+    if (
+        outcome.started_at.tzinfo is None
+        or outcome.finished_at.tzinfo is None
+        or outcome.finished_at < outcome.started_at
+    ):
         raise ValueError("processing times must be ordered and timezone-aware")
-    counts = (outcome.loaded_rows, outcome.processed_rows,
-              outcome.rejected_rows, outcome.revision_rows_merged)
+    counts = (
+        outcome.loaded_rows,
+        outcome.processed_rows,
+        outcome.rejected_rows,
+        outcome.revision_rows_merged,
+    )
     if any(not isinstance(value, int) or value < 0 for value in counts):
         raise ValueError("processing counts must be nonnegative integers")
-    if outcome.processed_rows > outcome.loaded_rows or outcome.rejected_rows > outcome.processed_rows:
+    if (
+        outcome.processed_rows > outcome.loaded_rows
+        or outcome.rejected_rows > outcome.processed_rows
+    ):
         raise ValueError("processing counts are inconsistent")
     if outcome.status == "complete" and (outcome.error_type or outcome.error_message):
         raise ValueError("successful processing cannot carry an error")

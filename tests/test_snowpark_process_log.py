@@ -39,19 +39,27 @@ class ProcessLogTest(unittest.TestCase):
         sql, params = session.calls[-1]
         self.assertIn("INSERT INTO QUAKEWATCH.CURATED.BATCH_PROCESS_ATTEMPT", sql)
         row = json.loads(params[0])[0]
-        self.assertEqual((row["status"], row["rejected_rows"],
-                          row["revision_rows_merged"]), ("complete", 1, 2))
+        self.assertEqual(
+            (row["status"], row["rejected_rows"], row["revision_rows_merged"]), ("complete", 1, 2)
+        )
         self.assertIsNone(row["error_type"])
 
     def test_failed_retry_gets_separate_id_and_error(self):
         session = FakeSession()
-        failure = replace(SUCCESS, process_attempt_id="process-2", status="failed",
-                          revision_rows_merged=0, error_type="ValueError",
-                          error_message="bad receipt")
+        failure = replace(
+            SUCCESS,
+            process_attempt_id="process-2",
+            status="failed",
+            revision_rows_merged=0,
+            error_type="ValueError",
+            error_message="bad receipt",
+        )
         append_process_outcome(session, failure)
         row = json.loads(session.calls[-1][1][0])[0]
-        self.assertEqual((row["process_attempt_id"], row["status"], row["error_type"]),
-                         ("process-2", "failed", "ValueError"))
+        self.assertEqual(
+            (row["process_attempt_id"], row["status"], row["error_type"]),
+            ("process-2", "failed", "ValueError"),
+        )
 
     def test_duplicate_id_stops_before_insert(self):
         session = FakeSession(existing=True)
@@ -60,9 +68,11 @@ class ProcessLogTest(unittest.TestCase):
         self.assertEqual(len(session.calls), 1)
 
     def test_invalid_status_counts_and_times_stop_before_sql(self):
-        for invalid in (replace(SUCCESS, status="pending"),
-                        replace(SUCCESS, rejected_rows=4),
-                        replace(SUCCESS, finished_at=TIME.replace(tzinfo=None))):
+        for invalid in (
+            replace(SUCCESS, status="pending"),
+            replace(SUCCESS, rejected_rows=4),
+            replace(SUCCESS, finished_at=TIME.replace(tzinfo=None)),
+        ):
             session = FakeSession()
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                 append_process_outcome(session, invalid)

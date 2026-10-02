@@ -52,12 +52,15 @@ def distances_to_public_sites(
     rows = []
     for site_key, site in SITES.items():
         distance = (
-            None if longitude is None or latitude is None else
-            great_circle_km(longitude, latitude, site.longitude, site.latitude)
+            None
+            if longitude is None or latitude is None
+            else great_circle_km(longitude, latitude, site.longitude, site.latitude)
         )
-        rows.append(SiteDistance(
-            site_key=site_key,
-            epicentral_distance_km=distance,
-            within_radius=None if distance is None else distance <= site.radius_km,
-        ))
+        rows.append(
+            SiteDistance(
+                site_key=site_key,
+                epicentral_distance_km=distance,
+                within_radius=None if distance is None else distance <= site.radius_km,
+            )
+        )
     return rows

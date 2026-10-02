@@ -13,9 +13,16 @@ ROOT = Path(__file__).resolve().parents[3]
 SQL_PATH = ROOT / "sql" / "analysis/site_year_aggregates.sql"
 OUTPUT_PATH = ROOT / "data" / "cortex" / "phase4_aggregates.json"
 EXPECTED_CASES = {
-    "seattle-2022", "sf-2022", "anchorage-2022",
-    "seattle-2024", "sf-2024", "anchorage-2024",
-    "seattle-2026", "sf-2026", "anchorage-2026", "seattle-day",
+    "seattle-2022",
+    "sf-2022",
+    "anchorage-2022",
+    "seattle-2024",
+    "sf-2024",
+    "anchorage-2024",
+    "seattle-2026",
+    "sf-2026",
+    "anchorage-2026",
+    "seattle-day",
 }
 
 
@@ -26,8 +33,9 @@ def read_sql() -> str:
     return sql
 
 
-def save_aggregates(columns: list[str], rows: list[tuple], query_id: str,
-                    sql: str, output_path: Path = OUTPUT_PATH) -> dict:
+def save_aggregates(
+    columns: list[str], rows: list[tuple], query_id: str, sql: str, output_path: Path = OUTPUT_PATH
+) -> dict:
     records = [dict(zip(columns, row)) for row in rows]
     case_ids = [record["CASE_ID"] for record in records]
     if len(records) != 10 or set(case_ids) != EXPECTED_CASES:
@@ -55,8 +63,9 @@ def save_aggregates(columns: list[str], rows: list[tuple], query_id: str,
         "cases": records,
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(document, indent=2, sort_keys=True, default=str) + "\n",
-                           encoding="utf-8")
+    output_path.write_text(
+        json.dumps(document, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8"
+    )
     return document
 
 
@@ -85,20 +94,29 @@ def main() -> None:
     args = parser.parse_args()
     if args.execute:
         document = execute()
-        print(json.dumps({
-            "status": "saved",
-            "path": str(OUTPUT_PATH),
-            "case_count": document["case_count"],
-            "query_id": document["query_id"],
-            "sql_sha256": document["sql_sha256"],
-            "event_counts": {case["CASE_ID"]: case["EVENT_COUNT"]
-                             for case in document["cases"]},
-            "coverage_note": document["coverage_note"],
-        }, indent=2, sort_keys=True))
+        print(
+            json.dumps(
+                {
+                    "status": "saved",
+                    "path": str(OUTPUT_PATH),
+                    "case_count": document["case_count"],
+                    "query_id": document["query_id"],
+                    "sql_sha256": document["sql_sha256"],
+                    "event_counts": {
+                        case["CASE_ID"]: case["EVENT_COUNT"] for case in document["cases"]
+                    },
+                    "coverage_note": document["coverage_note"],
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
     else:
         sql = read_sql()
         print("Preview only: 10 bounded public-site aggregates; no Snowflake connection")
-        print(f"Role: QUAKEWATCH_ROLE; warehouse: QUAKEWATCH_WH; SQL SHA-256: {hashlib.sha256(sql.encode()).hexdigest()}")
+        print(
+            f"Role: QUAKEWATCH_ROLE; warehouse: QUAKEWATCH_WH; SQL SHA-256: {hashlib.sha256(sql.encode()).hexdigest()}"
+        )
         print(f"Output if approved: {OUTPUT_PATH} (ignored by Git)")
 
 

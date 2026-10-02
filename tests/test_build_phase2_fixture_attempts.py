@@ -16,8 +16,9 @@ class FixtureAttemptsTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             summaries = build_attempts(root)
-            self.assertEqual([item["attempt_id"] for item in summaries],
-                             [item[0] for item in SEQUENCE])
+            self.assertEqual(
+                [item["attempt_id"] for item in summaries], [item[0] for item in SEQUENCE]
+            )
             self.assertEqual(build_attempts(root), summaries)
             updates = []
             for attempt_id, fixture_name in SEQUENCE:
@@ -29,16 +30,19 @@ class FixtureAttemptsTest(unittest.TestCase):
                 self.assertEqual(count, 1)
                 self.assertTrue(manifest["fixture_only"])
                 self.assertEqual(manifest["fixture_source"], fixture_name)
-                self.assertEqual(manifest["query_parameters"]["source"],
-                                 "local_synthetic_fixture")
-                self.assertEqual(manifest["window_audit"][0]["status"],
-                                 "synthetic_fixture")
+                self.assertEqual(manifest["query_parameters"]["source"], "local_synthetic_fixture")
+                self.assertEqual(manifest["window_audit"][0]["status"], "synthetic_fixture")
                 self.assertEqual(manifest["attempt_id"], record["metadata"]["attempt_id"])
                 self.assertEqual(fields["source_event_id"], "uw714110682")
                 self.assertIsNone(fields["reject_reason"])
-                self.assertEqual(record["metadata"]["payload_hash"], hashlib.sha256(
-                    json.dumps(feature, sort_keys=True, separators=(",", ":"),
-                               ensure_ascii=False).encode()).hexdigest())
+                self.assertEqual(
+                    record["metadata"]["payload_hash"],
+                    hashlib.sha256(
+                        json.dumps(
+                            feature, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+                        ).encode()
+                    ).hexdigest(),
+                )
                 updates.append(fields["source_updated_at"])
             self.assertLess(updates[0], updates[1])
             self.assertLess(updates[1], updates[2])
@@ -50,13 +54,16 @@ class FixtureAttemptsTest(unittest.TestCase):
             first_record = json.loads((first / "events.jsonl").read_text())
             replay_record = json.loads((replay / "events.jsonl").read_text())
             self.assertNotEqual(first_manifest["attempt_id"], replay_manifest["attempt_id"])
-            self.assertEqual(first_manifest["requested_starttime"],
-                             replay_manifest["requested_starttime"])
-            self.assertEqual(first_manifest["requested_endtime"],
-                             replay_manifest["requested_endtime"])
+            self.assertEqual(
+                first_manifest["requested_starttime"], replay_manifest["requested_starttime"]
+            )
+            self.assertEqual(
+                first_manifest["requested_endtime"], replay_manifest["requested_endtime"]
+            )
             self.assertEqual(first_record["source_feature"], replay_record["source_feature"])
-            self.assertEqual(first_record["metadata"]["payload_hash"],
-                             replay_record["metadata"]["payload_hash"])
+            self.assertEqual(
+                first_record["metadata"]["payload_hash"], replay_record["metadata"]["payload_hash"]
+            )
 
     def test_existing_different_file_is_not_overwritten(self):
         with tempfile.TemporaryDirectory() as directory:

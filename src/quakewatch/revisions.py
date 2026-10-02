@@ -48,10 +48,10 @@ def deduplicate_revision_candidates(
         by_source[candidate.source_key] = candidate
         previous = by_revision.get(candidate.revision_key)
         if previous is None or (
-            candidate.fetched_at, candidate.stage_file_name, candidate.stage_file_row_number
-        ) > (
-            previous.fetched_at, previous.stage_file_name, previous.stage_file_row_number
-        ):
+            candidate.fetched_at,
+            candidate.stage_file_name,
+            candidate.stage_file_row_number,
+        ) > (previous.fetched_at, previous.stage_file_name, previous.stage_file_row_number):
             by_revision[candidate.revision_key] = candidate
     return [by_revision[key] for key in sorted(by_revision)]
 
@@ -75,12 +75,18 @@ def latest_revision_by_event(revisions: Iterable[RevisionState]) -> dict[str, Re
             raise ValueError("current revision timestamps must be timezone-aware")
         previous = latest.get(revision.canonical_event_id)
         rank = (
-            revision.source_updated_at, revision.fetched_at, revision.payload_hash,
-            revision.stage_file_name, revision.stage_file_row_number,
+            revision.source_updated_at,
+            revision.fetched_at,
+            revision.payload_hash,
+            revision.stage_file_name,
+            revision.stage_file_row_number,
         )
         if previous is None or rank > (
-            previous.source_updated_at, previous.fetched_at, previous.payload_hash,
-            previous.stage_file_name, previous.stage_file_row_number,
+            previous.source_updated_at,
+            previous.fetched_at,
+            previous.payload_hash,
+            previous.stage_file_name,
+            previous.stage_file_row_number,
         ):
             latest[revision.canonical_event_id] = revision
     return latest

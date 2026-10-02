@@ -12,9 +12,12 @@ class Phase3UniquenessSqlTest(unittest.TestCase):
         statements = [item.strip() for item in SQL.split(";") if item.strip()]
         self.assertEqual(len(statements), 2)
         self.assertTrue(all(re.search(r"\bSELECT\b", item) for item in statements))
-        self.assertFalse(re.search(r"\b(CALL|CREATE|DELETE|INSERT|MERGE|UPDATE|DROP|TRUNCATE)\b",
-                                   "\n".join(line for line in SQL.splitlines()
-                                             if not line.lstrip().startswith("--"))))
+        self.assertFalse(
+            re.search(
+                r"\b(CALL|CREATE|DELETE|INSERT|MERGE|UPDATE|DROP|TRUNCATE)\b",
+                "\n".join(line for line in SQL.splitlines() if not line.lstrip().startswith("--")),
+            )
+        )
         keys = ("CANONICAL_EVENT_ID", "SOURCE_UPDATED_AT", "PAYLOAD_HASH")
         for statement in statements:
             self.assertIn(", ".join(keys), statement)

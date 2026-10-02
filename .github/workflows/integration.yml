@@ -1,0 +1,42 @@
+name: Snowflake integration
+
+# Manual only: each run uses a little Snowflake warehouse time.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: snowflake-integration
+  cancel-in-progress: false
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install uv and Python 3.12
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.12"
+      - name: Install locked dependencies
+        run: uv sync --locked --no-editable
+      - name: Write the private key to a temporary file
+        env:
+          PRIVATE_KEY: ${{ secrets.QUAKEWATCH_SNOWFLAKE_PRIVATE_KEY }}
+        run: |
+          umask 077
+          printf '%s\n' "$PRIVATE_KEY" > "$RUNNER_TEMP/quakewatch_key.p8"
+      - name: Compile all SQL live and run read-only checks
+        env:
+          QUAKEWATCH_SNOWFLAKE_ACCOUNT: ${{ secrets.QUAKEWATCH_SNOWFLAKE_ACCOUNT }}
+          QUAKEWATCH_SNOWFLAKE_USER: ${{ secrets.QUAKEWATCH_SNOWFLAKE_USER }}
+          QUAKEWATCH_SNOWFLAKE_PRIVATE_KEY_FILE: ${{ runner.temp }}/quakewatch_key.p8
+          QUAKEWATCH_SNOWFLAKE_PRIVATE_KEY_PASSPHRASE: ${{ secrets.QUAKEWATCH_SNOWFLAKE_PRIVATE_KEY_PASSPHRASE }}
+        run: make integration EXECUTE=1
+      - name: Remove the private key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/quakewatch_key.p8"

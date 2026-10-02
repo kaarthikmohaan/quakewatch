@@ -13,11 +13,13 @@ class FixtureSetupSqlTest(unittest.TestCase):
     def test_creates_only_new_fixture_database_and_schemas(self):
         self.assertIn(f"CREATE DATABASE {TEST_DATABASE};", SQL)
         self.assertNotIn("CREATE DATABASE IF NOT EXISTS", SQL)
-        self.assertEqual(re.findall(r"(?m)^CREATE DATABASE .*;", SQL),
-                         [f"CREATE DATABASE {TEST_DATABASE};"])
-        self.assertEqual(re.findall(r"(?m)^CREATE SCHEMA .*;", SQL),
-                         [f"CREATE SCHEMA {TEST_DATABASE}.RAW;",
-                          f"CREATE SCHEMA {TEST_DATABASE}.CURATED;"])
+        self.assertEqual(
+            re.findall(r"(?m)^CREATE DATABASE .*;", SQL), [f"CREATE DATABASE {TEST_DATABASE};"]
+        )
+        self.assertEqual(
+            re.findall(r"(?m)^CREATE SCHEMA .*;", SQL),
+            [f"CREATE SCHEMA {TEST_DATABASE}.RAW;", f"CREATE SCHEMA {TEST_DATABASE}.CURATED;"],
+        )
         self.assertNotRegex(SQL, r"(?m)^(?:DROP|ALTER|DELETE|TRUNCATE|REPLACE)\b")
 
     def test_grants_only_project_role_access_to_fixture_schemas(self):

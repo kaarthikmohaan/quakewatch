@@ -9,8 +9,12 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 
 LOG_FORMAT = "%(asctime)s %(levelname)s %(name)s: %(message)s"
+DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+# Third-party clients log every HTTP request at INFO; keep only their warnings.
+QUIET_LOGGERS = ("httpx", "httpcore", "snowflake.connector")
 LOG_LEVEL_ENV = "QUAKEWATCH_LOG_LEVEL"
 
 
@@ -20,4 +24,10 @@ def configure_logging(level: str | None = None) -> None:
     resolved = logging.getLevelName(name)
     if not isinstance(resolved, int):
         raise ValueError(f"unknown log level: {name}")
-    logging.basicConfig(level=resolved, format=LOG_FORMAT, datefmt="%Y-%m-%dT%H:%M:%S%z")
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter(LOG_FORMAT, datefmt=DATE_FORMAT)
+    formatter.converter = time.gmtime  # timestamps in UTC, like the data
+    handler.setFormatter(formatter)
+    logging.basicConfig(level=resolved, handlers=[handler])
+    for name in QUIET_LOGGERS:
+        logging.getLogger(name).setLevel(max(resolved, logging.WARNING))

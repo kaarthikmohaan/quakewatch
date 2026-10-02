@@ -12,9 +12,9 @@ CUTOFF ?= 2026-09-29T00:00:00Z
 MAX ?= 50
 
 .DEFAULT_GOAL := help
-.PHONY: help setup lint typecheck fixtures test check extract plan-history capture-history \
+.PHONY: help setup lint format typecheck fixtures test check extract plan-history capture-history \
 	load-preview load load-history bootstrap process quality uniqueness metrics postrun \
-	release-parser-v2
+	analysis integration coverage release-parser-v2
 
 help:  ## List targets
 	@grep -E '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -24,8 +24,12 @@ help:  ## List targets
 setup:  ## Install locked dependencies
 	uv sync --locked --no-editable
 
-lint:  ## Run ruff
+lint:  ## Run ruff lint and the format check
 	.venv/bin/ruff check src scripts tests
+	.venv/bin/ruff format --check src scripts tests
+
+format:  ## Apply ruff formatting
+	.venv/bin/ruff format src scripts tests
 
 typecheck:  ## Run mypy on src/quakewatch
 	.venv/bin/mypy
@@ -38,14 +42,18 @@ fixtures:  ## Build the synthetic test fixtures CI uses
 test: fixtures  ## Run the secret-free test suite
 	$(PY) -m unittest discover -s tests
 
-check: lint typecheck test  ## Everything CI runs
+coverage: fixtures  ## Run the tests under coverage; fails below 80% of src/
+	$(PY) -m coverage run -m unittest discover -s tests
+	$(PY) -m coverage report
+
+check: lint typecheck coverage  ## Everything CI runs
 
 # ----- Source extraction (USGS) -----
 
 extract:  ## Fetch one batch: make extract SITE=seattle START=... END=...
 	@test -n "$(SITE)" -a -n "$(START)" -a -n "$(END)" || \
 		(echo "Usage: make extract SITE=seattle START=2026-09-28T00:00:00Z END=2026-09-29T00:00:00Z"; exit 2)
-	uv run quakewatch-extract --site $(SITE) --start $(START) --end $(END)
+	.venv/bin/quakewatch-extract --site $(SITE) --start $(START) --end $(END)
 
 plan-history:  ## Print the 180 planned history windows
 	$(PY) -m quakewatch.history_plan --cutoff $(CUTOFF)
@@ -83,6 +91,12 @@ postrun:  ## Aggregate quality and reject-reason check [EXECUTE=1]
 
 metrics:  ## Measure fetch-to-curated latency [EXECUTE=1]
 	$(PY) scripts/checks/latency_metrics.py $(RUN_FLAG)
+
+analysis:  ## Run the site-by-year and Seattle-day queries read-only [EXECUTE=1]
+	$(PY) scripts/checks/analysis.py $(RUN_FLAG)
+
+integration:  ## Compile all SQL live with EXPLAIN and run read-only checks [EXECUTE=1]
+	$(PY) scripts/checks/integration.py $(RUN_FLAG)
 
 release-parser-v2:  ## Relabel stub rejects and deploy parser version 2 [EXECUTE=1]
 	$(PY) scripts/migrations/parser_v2.py $(RUN_FLAG)

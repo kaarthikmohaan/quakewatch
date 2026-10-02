@@ -67,14 +67,18 @@ def execute() -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--execute", action="store_true", help="run approved paid Account Usage query")
+    parser.add_argument(
+        "--execute", action="store_true", help="run approved paid Account Usage query"
+    )
     args = parser.parse_args()
     if args.execute:
         print(json.dumps(execute(), indent=2, sort_keys=True, default=str))
     else:
         ids = expected_query_ids()
         print(f"Preview only: read Cortex usage for {len(ids)} query IDs; no Snowflake connection")
-        print("Role: ACCOUNTADMIN; warehouse: QUAKEWATCH_WH; view: CORTEX_AI_FUNCTIONS_USAGE_HISTORY")
+        print(
+            "Role: ACCOUNTADMIN; warehouse: QUAKEWATCH_WH; view: CORTEX_AI_FUNCTIONS_USAGE_HISTORY"
+        )
         print("Missing recent rows mean Account Usage lag, not zero credits")
 
 

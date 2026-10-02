@@ -54,12 +54,15 @@ def postrun() -> dict:
         "window_anomaly_rows": anomaly_counts[1],
         "duplicate_groups": duplicate_counts,
         "reject_reasons": reasons,
-        "status": "pass" if (
-            len(health) == 1 and health[0][0] == "RECONCILED"
+        "status": "pass"
+        if (
+            len(health) == 1
+            and health[0][0] == "RECONCILED"
             and anomaly_counts == [0, 0]
             and all(count == 0 for count in duplicate_counts.values())
             and health_rejects == reported_rejects
-        ) else "review",
+        )
+        else "review",
     }
 
 

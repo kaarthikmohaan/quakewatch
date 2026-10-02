@@ -18,6 +18,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "coverage>=7.16.2",
     "mypy>=2.4.0",
     "ruff>=0.16.10",
 ]
@@ -43,3 +44,12 @@ warn_unused_ignores = true
 warn_redundant_casts = true
 # The Snowflake connector and Snowpark ship without complete type stubs.
 ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["src/quakewatch"]
+
+[tool.coverage.report]
+# Measured at 85% when coverage was added; fail if it drops below 80%.
+fail_under = 80
+show_missing = false
+skip_covered = true

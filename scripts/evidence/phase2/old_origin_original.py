@@ -44,9 +44,23 @@ def _expected_hash(name: str) -> str:
 def _guard_raw(cursor) -> str:
     expected = []
     for attempt_id, fixture_name in SEQUENCE:
-        expected.append((attempt_id, "complete", "complete", 1, 1, 1, 0, True,
-                         _expected_hash(fixture_name), EVENT_ID, "reviewed"))
-    cursor.execute(f"""
+        expected.append(
+            (
+                attempt_id,
+                "complete",
+                "complete",
+                1,
+                1,
+                1,
+                0,
+                True,
+                _expected_hash(fixture_name),
+                EVENT_ID,
+                "reviewed",
+            )
+        )
+    cursor.execute(
+        f"""
         SELECT a.ATTEMPT_ID, a.EXTRACT_STATUS, a.LOAD_STATUS,
                a.SOURCE_ROWS_RETURNED, a.RAW_ROWS_WRITTEN, a.LOADED_ROWS,
                COALESCE(ARRAY_SIZE(a.COVERAGE_GAPS), 0),
@@ -56,7 +70,9 @@ def _guard_raw(cursor) -> str:
         FROM {RAW}.BATCH_ATTEMPT a
         JOIN {RAW}.RAW_EVENT_RECORDS r ON a.ATTEMPT_ID = r.ATTEMPT_ID
         WHERE a.ATTEMPT_ID IN (%s, %s) ORDER BY a.ATTEMPT_ID
-    """, tuple(sorted((ATTEMPT_ID, UPDATE_ATTEMPT_ID))))
+    """,
+        tuple(sorted((ATTEMPT_ID, UPDATE_ATTEMPT_ID))),
+    )
     if cursor.fetchall() != sorted(expected):
         raise RuntimeError("old-origin fixture RAW receipts or source rows differ")
     return _expected_hash(SEQUENCE[0][1])
@@ -69,10 +85,13 @@ def _guard_before(cursor) -> str:
     cursor.execute(f"SELECT COUNT(*) FROM {CURATED}.EVENT_CURRENT")
     if cursor.fetchone()[0] != 0:
         raise RuntimeError("fixture current view changed before old-origin call")
-    cursor.execute(f"""
+    cursor.execute(
+        f"""
         SELECT PROCESS_ATTEMPT_ID, STATUS, REVISION_ROWS_MERGED
         FROM {CURATED}.BATCH_PROCESS_ATTEMPT WHERE ATTEMPT_ID = %s
-    """, (REPLAY_ATTEMPT,))
+    """,
+        (REPLAY_ATTEMPT,),
+    )
     if cursor.fetchall() != [(REPLAY_PROCESS_ID, "complete", 1)]:
         raise RuntimeError("stale-replay processing audit differs")
     _guard_unique_keys(cursor)
@@ -80,14 +99,16 @@ def _guard_before(cursor) -> str:
 
 
 def _guard_after(cursor, outcome: dict, expected_hash: str) -> dict[str, int]:
-    if (outcome.get("attempt_id") != ATTEMPT_ID
-            or outcome.get("status") != "complete"
-            or outcome.get("loaded_rows") != 1
-            or outcome.get("processed_rows") != 1
-            or outcome.get("rejected_rows") != 0
-            or outcome.get("revision_rows_merged") != 1
-            or not outcome.get("process_attempt_id")
-            or outcome["process_attempt_id"] == REPLAY_PROCESS_ID):
+    if (
+        outcome.get("attempt_id") != ATTEMPT_ID
+        or outcome.get("status") != "complete"
+        or outcome.get("loaded_rows") != 1
+        or outcome.get("processed_rows") != 1
+        or outcome.get("rejected_rows") != 0
+        or outcome.get("revision_rows_merged") != 1
+        or not outcome.get("process_attempt_id")
+        or outcome["process_attempt_id"] == REPLAY_PROCESS_ID
+    ):
         raise RuntimeError(f"old-origin original processing outcome differs: {outcome}")
     counts = _counts(cursor)
     if counts != EXPECTED_AFTER:
@@ -99,17 +120,23 @@ def _guard_after(cursor, outcome: dict, expected_hash: str) -> dict[str, int]:
     """)
     if cursor.fetchall() != [(EVENT_ID, "reviewed", 1.1, expected_hash, "2020-01-15")]:
         raise RuntimeError("old-origin original is not the current event")
-    cursor.execute(f"""
+    cursor.execute(
+        f"""
         SELECT SOURCE_STATUS, MAGNITUDE, PAYLOAD_HASH,
                TO_CHAR(ORIGIN_TIME, 'YYYY-MM-DD')
         FROM {CURATED}.FACT_EVENT_REVISION WHERE CANONICAL_EVENT_ID = %s
-    """, (EVENT_ID,))
+    """,
+        (EVENT_ID,),
+    )
     if cursor.fetchall() != [("reviewed", 1.1, expected_hash, "2020-01-15")]:
         raise RuntimeError("old-origin original revision fact differs")
-    cursor.execute(f"""
+    cursor.execute(
+        f"""
         SELECT STATUS, REVISION_ROWS_MERGED FROM {CURATED}.BATCH_PROCESS_ATTEMPT
         WHERE ATTEMPT_ID = %s AND PROCESS_ATTEMPT_ID = %s
-    """, (ATTEMPT_ID, outcome["process_attempt_id"]))
+    """,
+        (ATTEMPT_ID, outcome["process_attempt_id"]),
+    )
     if cursor.fetchall() != [("complete", 1)]:
         raise RuntimeError("old-origin original processing audit differs")
     _guard_unique_keys(cursor)
@@ -138,7 +165,9 @@ def execute_original() -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--execute", action="store_true", help="run one paid fixture procedure call")
+    parser.add_argument(
+        "--execute", action="store_true", help="run one paid fixture procedure call"
+    )
     args = parser.parse_args()
     if args.execute:
         print(json.dumps(execute_original(), indent=2, sort_keys=True))

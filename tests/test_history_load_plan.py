@@ -11,14 +11,21 @@ from quakewatch.history_load_plan import check_snowflake, classify_loads, load_c
 
 class HistoryLoadPlanTests(unittest.TestCase):
     def test_classification_requires_matching_receipt_and_raw_rows(self) -> None:
-        candidates = [(number, {"attempt_id": str(number), "expected_rows": 10})
-                      for number in range(1, 6)]
-        receipts = [("1", "complete", 10), ("3", "failed", 0),
-                    ("4", "complete", 9), ("5", "complete", 10),
-                    ("5", "complete", 10)]
+        candidates = [
+            (number, {"attempt_id": str(number), "expected_rows": 10}) for number in range(1, 6)
+        ]
+        receipts = [
+            ("1", "complete", 10),
+            ("3", "failed", 0),
+            ("4", "complete", 9),
+            ("5", "complete", 10),
+            ("5", "complete", 10),
+        ]
         raw_counts = [("1", 10), ("3", 2), ("4", 10), ("5", 10)]
-        self.assertEqual([row[2] for row in classify_loads(candidates, receipts, raw_counts)],
-                         ["loaded", "ready", "investigate", "investigate", "investigate"])
+        self.assertEqual(
+            [row[2] for row in classify_loads(candidates, receipts, raw_counts)],
+            ["loaded", "ready", "investigate", "investigate", "investigate"],
+        )
 
     def test_account_check_uses_bound_ids_and_read_only_queries(self) -> None:
         candidates = [(1, {"attempt_id": "first", "expected_rows": 10})]
@@ -35,11 +42,17 @@ class HistoryLoadPlanTests(unittest.TestCase):
         with TemporaryDirectory() as folder:
             path = Path(folder) / "attempt" / "manifest.json"
             path.parent.mkdir()
-            with patch("quakewatch.history_load_plan.captured_history_windows", return_value={2: path}):
-                with patch("quakewatch.history_load_plan.plan_raw_load",
-                           return_value={"attempt_id": "attempt", "expected_rows": 185}) as plan:
-                    self.assertEqual(load_candidates(cutoff, Path(folder)),
-                                     [(2, {"attempt_id": "attempt", "expected_rows": 185})])
+            with patch(
+                "quakewatch.history_load_plan.captured_history_windows", return_value={2: path}
+            ):
+                with patch(
+                    "quakewatch.history_load_plan.plan_raw_load",
+                    return_value={"attempt_id": "attempt", "expected_rows": 185},
+                ) as plan:
+                    self.assertEqual(
+                        load_candidates(cutoff, Path(folder)),
+                        [(2, {"attempt_id": "attempt", "expected_rows": 185})],
+                    )
             plan.assert_called_once_with(path)
 
     def test_no_candidates_returns_empty_list(self) -> None:

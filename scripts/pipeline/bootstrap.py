@@ -33,7 +33,9 @@ def preview() -> None:
     print("Prerequisite: sql/setup/01_bootstrap_admin.sql run once with an admin role")
     for number, name in enumerate(TABLE_FILES, start=1):
         print(f"{number}. sql/setup/{name}")
-    print(f"{len(TABLE_FILES) + 1}. Upload {DEFAULT_OUTPUT.name} and run sql/setup/09_create_procedure.sql")
+    print(
+        f"{len(TABLE_FILES) + 1}. Upload {DEFAULT_OUTPUT.name} and run sql/setup/09_create_procedure.sql"
+    )
     print("Health views: created by `make quality` when absent")
 
 
@@ -52,7 +54,9 @@ def execute() -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Create QuakeWatch tables and procedure")
-    parser.add_argument("--execute", action="store_true", help="connect and run (uses warehouse credits)")
+    parser.add_argument(
+        "--execute", action="store_true", help="connect and run (uses warehouse credits)"
+    )
     args = parser.parse_args()
     if args.execute:
         print(json.dumps(execute(), indent=2, sort_keys=True))

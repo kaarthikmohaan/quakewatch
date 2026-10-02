@@ -1,12 +1,14 @@
 """Run one already captured QuakeWatch batch through Snowflake for a live demo."""
 
 import json
+import sys
 from contextlib import closing
 from pathlib import Path
 
 from quakewatch.raw_load import connect_project, execute_raw_load, plan_raw_load
 
-MANIFEST = Path("data/raw/20261002T045249Z-ee3a351be3/manifest.json")
+# The recorded 2 October demo batch; pass another manifest path to check a different batch.
+RECORDED_MANIFEST = Path("data/raw/20261002T045249Z-ee3a351be3/manifest.json")
 STATE_SQL = """
 SELECT HEALTH_STATUS, LOADED_ROWS, RAW_ROWS, STAGING_ROWS,
        PROCESSED_ROWS, REJECTED_ROWS
@@ -20,7 +22,7 @@ def show(label, value):
 
 
 def main():
-    plan = plan_raw_load(MANIFEST)
+    plan = plan_raw_load(Path(sys.argv[1]) if len(sys.argv) > 1 else RECORDED_MANIFEST)
     attempt_id = plan["attempt_id"]
     show("local_batch", {"attempt_id": attempt_id, "rows": plan["expected_rows"]})
     with closing(connect_project()) as connection:
@@ -53,15 +55,19 @@ def main():
             cursor.execute(STATE_SQL, (attempt_id,))
             before = cursor.fetchall()
             show("health_before_processing", before)
-            if before == [("PENDING_PROCESS", plan["expected_rows"],
-                           plan["expected_rows"], 0, None, None)]:
+            if before == [
+                ("PENDING_PROCESS", plan["expected_rows"], plan["expected_rows"], 0, None, None)
+            ]:
                 cursor.execute(
                     "CALL QUAKEWATCH.CURATED.PROCESS_LOADED_ATTEMPT(%s)",
                     (attempt_id,),
                 )
                 outcome = json.loads(cursor.fetchone()[0])
                 show("processing", outcome)
-                if outcome.get("status") != "complete" or outcome.get("processed_rows") != plan["expected_rows"]:
+                if (
+                    outcome.get("status") != "complete"
+                    or outcome.get("processed_rows") != plan["expected_rows"]
+                ):
                     raise RuntimeError("Processing result needs investigation")
             elif len(before) != 1 or before[0][0] != "RECONCILED":
                 raise RuntimeError("Unexpected batch health before processing")
@@ -69,8 +75,11 @@ def main():
             cursor.execute(STATE_SQL, (attempt_id,))
             after = cursor.fetchall()
             show("health_after_processing", after)
-            if (len(after) != 1 or after[0][0] != "RECONCILED"
-                    or after[0][1:5] != (plan["expected_rows"],) * 4):
+            if (
+                len(after) != 1
+                or after[0][0] != "RECONCILED"
+                or after[0][1:5] != (plan["expected_rows"],) * 4
+            ):
                 raise RuntimeError("Batch did not reconcile after processing")
 
             cursor.execute(Path("sql/analysis/sample_seattle_day.sql").read_text())

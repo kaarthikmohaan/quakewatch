@@ -9,7 +9,10 @@ SQL = (Path(__file__).resolve().parents[1] / "sql/setup/06_dimensions_bridge.sql
 class DimensionSqlContractTest(unittest.TestCase):
     def test_only_design_dimensions_are_defined(self) -> None:
         for name in (
-            "DIM_DATE", "DIM_SITE", "DIM_MAGNITUDE_TYPE", "DIM_EVENT_STATUS",
+            "DIM_DATE",
+            "DIM_SITE",
+            "DIM_MAGNITUDE_TYPE",
+            "DIM_EVENT_STATUS",
         ):
             with self.subTest(name=name):
                 self.assertIn(f"CREATE TABLE IF NOT EXISTS QUAKEWATCH.CURATED.{name}", SQL)

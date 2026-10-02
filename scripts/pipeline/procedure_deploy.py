@@ -16,9 +16,11 @@ def sql_statements(path: Path) -> list[str]:
     """Split a reviewed SQL file with the connector's splitter, keeping procedure bodies intact."""
     from snowflake.connector.util_text import split_statements
 
-    return [statement.strip() for statement, _ in
-            split_statements(StringIO(path.read_text()), remove_comments=True)
-            if statement.strip()]
+    return [
+        statement.strip()
+        for statement, _ in split_statements(StringIO(path.read_text()), remove_comments=True)
+        if statement.strip()
+    ]
 
 
 def run_sql_file(cursor, path: Path) -> int:

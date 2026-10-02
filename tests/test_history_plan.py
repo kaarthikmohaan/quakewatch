@@ -33,8 +33,7 @@ class HistoryPlanTests(unittest.TestCase):
                 resume_capture(cutoff, Path(folder), 51, False)
             self.assertEqual(len(resume_capture(cutoff, Path(folder), 50, False)), 50)
             with redirect_stdout(io.StringIO()):
-                self.assertEqual(resume_capture(cutoff, Path(folder), 3, False, 13),
-                                 [13, 14, 15])
+                self.assertEqual(resume_capture(cutoff, Path(folder), 3, False, 13), [13, 14, 15])
             with self.assertRaisesRegex(ValueError, "start-window must be between 1 and 180"):
                 resume_capture(cutoff, Path(folder), 1, False, 181)
 
@@ -42,8 +41,10 @@ class HistoryPlanTests(unittest.TestCase):
         cutoff = datetime(2026, 9, 29, tzinfo=UTC)
         with TemporaryDirectory() as folder:
             path = Path(folder) / "manifest.json"
-            path.write_text(json.dumps({"status": "failed", "coverage_gaps": [{"window_id": "w0001"}]}),
-                            encoding="utf-8")
+            path.write_text(
+                json.dumps({"status": "failed", "coverage_gaps": [{"window_id": "w0001"}]}),
+                encoding="utf-8",
+            )
             with patch("quakewatch.history_plan.run_batch", return_value=path) as extract:
                 with redirect_stdout(io.StringIO()):
                     with self.assertRaisesRegex(RuntimeError, "Window 1 did not reconcile"):
@@ -59,14 +60,31 @@ class HistoryPlanTests(unittest.TestCase):
                 attempt = root / str(number)
                 attempt.mkdir()
                 (attempt / "events.jsonl").write_text("", encoding="utf-8")
-                (attempt / "manifest.json").write_text(json.dumps({
-                    "status": status, "coverage_gaps": [], "site": {"name": SITES[site].name},
-                    "requested_starttime": start.isoformat(), "requested_endtime": end.isoformat(),
-                    "events_file": "events.jsonl",
-                }), encoding="utf-8")
+                (attempt / "manifest.json").write_text(
+                    json.dumps(
+                        {
+                            "status": status,
+                            "coverage_gaps": [],
+                            "site": {"name": SITES[site].name},
+                            "requested_starttime": start.isoformat(),
+                            "requested_endtime": end.isoformat(),
+                            "events_file": "events.jsonl",
+                        }
+                    ),
+                    encoding="utf-8",
+                )
             self.assertEqual(set(captured_history_windows(cutoff, root)), {1, 3})
-            with patch("sys.argv", ["history_plan", "--cutoff", "2026-09-29", "--output",
-                                    str(root), "--resume-preview"]):
+            with patch(
+                "sys.argv",
+                [
+                    "history_plan",
+                    "--cutoff",
+                    "2026-09-29",
+                    "--output",
+                    str(root),
+                    "--resume-preview",
+                ],
+            ):
                 with redirect_stdout(io.StringIO()) as output:
                     main()
             self.assertIn("Locally captured windows: 2 of 180", output.getvalue())
@@ -82,7 +100,9 @@ class HistoryPlanTests(unittest.TestCase):
             self.assertEqual(site_windows[0][1], datetime(2021, 10, 29, tzinfo=UTC))
             self.assertEqual(site_windows[-1][1], cutoff)
             self.assertTrue(all(start < end for start, end in site_windows))
-            self.assertTrue(all(left[1] == right[0] for left, right in zip(site_windows, site_windows[1:])))
+            self.assertTrue(
+                all(left[1] == right[0] for left, right in zip(site_windows, site_windows[1:]))
+            )
 
     def test_leap_day_cutoff_keeps_contiguous_boundaries(self) -> None:
         windows = history_windows(datetime(2024, 2, 29, tzinfo=UTC))
@@ -116,49 +136,94 @@ class HistoryPlanTests(unittest.TestCase):
     def test_execute_extracts_only_selected_window(self) -> None:
         args = ["history_plan", "--cutoff", "2026-09-29", "--window", "1", "--execute"]
         with patch("sys.argv", args):
-            with patch("quakewatch.history_plan.run_batch", return_value=Path("manifest.json")) as extract:
+            with patch(
+                "quakewatch.history_plan.run_batch", return_value=Path("manifest.json")
+            ) as extract:
                 with redirect_stdout(io.StringIO()):
                     main()
         extract.assert_called_once_with(
-            "seattle", datetime(2021, 9, 29, tzinfo=UTC),
-            datetime(2021, 10, 29, tzinfo=UTC), Path("data/raw")
+            "seattle",
+            datetime(2021, 9, 29, tzinfo=UTC),
+            datetime(2021, 10, 29, tzinfo=UTC),
+            Path("data/raw"),
         )
 
     def test_execute_passes_week_source_option(self) -> None:
-        args = ["history_plan", "--cutoff", "2026-09-29", "--window", "73",
-                "--source-days", "7", "--execute"]
+        args = [
+            "history_plan",
+            "--cutoff",
+            "2026-09-29",
+            "--window",
+            "73",
+            "--source-days",
+            "7",
+            "--execute",
+        ]
         with patch("sys.argv", args):
-            with patch("quakewatch.history_plan.run_batch", return_value=Path("manifest.json")) as extract:
+            with patch(
+                "quakewatch.history_plan.run_batch", return_value=Path("manifest.json")
+            ) as extract:
                 with redirect_stdout(io.StringIO()):
                     main()
         self.assertEqual(extract.call_args.kwargs, {"source_days": 7})
 
     def test_execute_passes_child_resume_option(self) -> None:
-        args = ["history_plan", "--cutoff", "2026-09-29", "--window", "73",
-                "--source-days", "1", "--resume-children", "--execute"]
+        args = [
+            "history_plan",
+            "--cutoff",
+            "2026-09-29",
+            "--window",
+            "73",
+            "--source-days",
+            "1",
+            "--resume-children",
+            "--execute",
+        ]
         with patch("sys.argv", args):
-            with patch("quakewatch.history_plan.run_batch", return_value=Path("manifest.json")) as extract:
+            with patch(
+                "quakewatch.history_plan.run_batch", return_value=Path("manifest.json")
+            ) as extract:
                 with redirect_stdout(io.StringIO()):
                     main()
-        self.assertEqual(extract.call_args.kwargs,
-                         {"source_days": 1, "resume_children": True})
+        self.assertEqual(extract.call_args.kwargs, {"source_days": 1, "resume_children": True})
 
     def test_execute_passes_hourly_child_option(self) -> None:
-        args = ["history_plan", "--cutoff", "2026-09-29", "--window", "12",
-                "--source-days", "1", "--source-hours", "3",
-                "--hourly-child", "11",
-                "--resume-children", "--execute"]
+        args = [
+            "history_plan",
+            "--cutoff",
+            "2026-09-29",
+            "--window",
+            "12",
+            "--source-days",
+            "1",
+            "--source-hours",
+            "3",
+            "--hourly-child",
+            "11",
+            "--resume-children",
+            "--execute",
+        ]
         with patch("sys.argv", args):
-            with patch("quakewatch.history_plan.run_batch", return_value=Path("manifest.json")) as extract:
+            with patch(
+                "quakewatch.history_plan.run_batch", return_value=Path("manifest.json")
+            ) as extract:
                 with redirect_stdout(io.StringIO()):
                     main()
-        self.assertEqual(extract.call_args.kwargs,
-                         {"source_days": 1, "source_hours": 3,
-                          "hourly_child": 11, "resume_children": True})
+        self.assertEqual(
+            extract.call_args.kwargs,
+            {"source_days": 1, "source_hours": 3, "hourly_child": 11, "resume_children": True},
+        )
 
     def test_child_resume_requires_source_days(self) -> None:
-        args = ["history_plan", "--cutoff", "2026-09-29", "--window", "73",
-                "--resume-children", "--execute"]
+        args = [
+            "history_plan",
+            "--cutoff",
+            "2026-09-29",
+            "--window",
+            "73",
+            "--resume-children",
+            "--execute",
+        ]
         with patch("sys.argv", args):
             with patch("quakewatch.history_plan.run_batch") as extract:
                 with redirect_stderr(io.StringIO()):

@@ -21,12 +21,15 @@ def main():
             cursor.execute("SELECT CURRENT_ROLE(), CURRENT_WAREHOUSE()")
             if cursor.fetchone() != ("QUAKEWATCH_ROLE", "QUAKEWATCH_WH"):
                 raise RuntimeError("Unexpected role or warehouse")
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT TABLE_NAME, TABLE_TYPE, TABLE_OWNER, RETENTION_TIME
                 FROM QUAKEWATCH_PHASE2_FIXTURE.INFORMATION_SCHEMA.TABLES
                 WHERE TABLE_SCHEMA = 'CURATED'
                   AND TABLE_NAME IN ('FACT_EVENT_REVISION', %s)
-            """, (CLONE_NAME,))
+            """,
+                (CLONE_NAME,),
+            )
             metadata = cursor.fetchall()
             if metadata != [("FACT_EVENT_REVISION", "BASE TABLE", "QUAKEWATCH_ROLE", 1)]:
                 raise RuntimeError(f"Fixture or clone metadata changed: {metadata}")
@@ -51,15 +54,25 @@ def main():
             event_id, source_updated_at, payload_hash, magnitude = cursor.fetchone()
             original = float(magnitude)
             bad = original + 1000.0
-            print(json.dumps({"preflight": "pass", "source_rows": 5,
-                              "clone": CLONE, "original_magnitude": original}), flush=True)
+            print(
+                json.dumps(
+                    {
+                        "preflight": "pass",
+                        "source_rows": 5,
+                        "clone": CLONE,
+                        "original_magnitude": original,
+                    }
+                ),
+                flush=True,
+            )
 
             cursor.execute(f"CREATE TABLE {CLONE} CLONE {SOURCE}")
             clone_query_id = cursor.sfqid
             cursor.execute(f"SELECT COUNT(*) FROM {CLONE}")
             if int(cursor.fetchone()[0]) != 5:
                 raise RuntimeError("Clone count differs; leave clone for inspection")
-            cursor.execute(f"""
+            cursor.execute(
+                f"""
                 MERGE INTO {CLONE} target
                 USING (SELECT %s::VARCHAR AS CANONICAL_EVENT_ID,
                               TO_TIMESTAMP_TZ(%s) AS SOURCE_UPDATED_AT,
@@ -69,7 +82,9 @@ def main():
                    AND target.SOURCE_UPDATED_AT = incoming.SOURCE_UPDATED_AT
                    AND target.PAYLOAD_HASH = incoming.PAYLOAD_HASH
                 WHEN MATCHED THEN UPDATE SET MAGNITUDE = incoming.BAD_MAGNITUDE
-            """, (event_id, source_updated_at, payload_hash, bad))
+            """,
+                (event_id, source_updated_at, payload_hash, bad),
+            )
             merge_query_id = cursor.sfqid
             if cursor.rowcount != 1:
                 raise RuntimeError("Unexpected clone MERGE count; leave clone for inspection")
@@ -79,23 +94,43 @@ def main():
             source_after = float(cursor.fetchone()[0])
             cursor.execute(f"SELECT MAGNITUDE FROM {CLONE} {where}", key)
             clone_after = float(cursor.fetchone()[0])
-            cursor.execute(f"SELECT MAGNITUDE FROM {CLONE} BEFORE (STATEMENT => '{merge_query_id}') {where}", key)
+            cursor.execute(
+                f"SELECT MAGNITUDE FROM {CLONE} BEFORE (STATEMENT => '{merge_query_id}') {where}",
+                key,
+            )
             before = float(cursor.fetchone()[0])
             if (source_after, clone_after, before) != (original, bad, original):
                 raise RuntimeError("Clone or Time Travel check failed; leave clone for inspection")
-            print(json.dumps({"clone_check": "pass", "source_value": source_after,
-                              "changed_clone_value": clone_after, "time_travel_value": before,
-                              "clone_query_id": clone_query_id, "merge_query_id": merge_query_id}), flush=True)
+            print(
+                json.dumps(
+                    {
+                        "clone_check": "pass",
+                        "source_value": source_after,
+                        "changed_clone_value": clone_after,
+                        "time_travel_value": before,
+                        "clone_query_id": clone_query_id,
+                        "merge_query_id": merge_query_id,
+                    }
+                ),
+                flush=True,
+            )
             cursor.execute(f"DROP TABLE {CLONE}")
             drop_query_id = cursor.sfqid
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT COUNT(*) FROM QUAKEWATCH_PHASE2_FIXTURE.INFORMATION_SCHEMA.TABLES
                 WHERE TABLE_SCHEMA = 'CURATED' AND TABLE_NAME = %s
-            """, (CLONE_NAME,))
+            """,
+                (CLONE_NAME,),
+            )
             if int(cursor.fetchone()[0]) != 0:
                 raise RuntimeError("Demo clone still exists")
-            print(json.dumps({"cleanup": "pass", "dropped_only": CLONE,
-                              "drop_query_id": drop_query_id}), flush=True)
+            print(
+                json.dumps(
+                    {"cleanup": "pass", "dropped_only": CLONE, "drop_query_id": drop_query_id}
+                ),
+                flush=True,
+            )
 
 
 if __name__ == "__main__":

@@ -10,6 +10,14 @@ Only the latest commit on `main` receives security fixes.
 | Latest `main` | :white_check_mark: |
 | Older commits | :x: |
 
+## Where credentials live
+
+QuakeWatch has no `.env` file. Snowflake credentials stay in each person's
+`~/.snowflake/config.toml` (see `snowflake-config.example.toml`), and the
+private-key passphrase is typed at a prompt. The manual integration workflow
+reads them from GitHub repository secrets and deletes its temporary key file
+after every run.
+
 ## Reporting a vulnerability
 
 Please do not open a public issue for a security problem. Report it privately

@@ -47,15 +47,23 @@ def validate_brief(message: str, summary: dict) -> list[str]:
     """Reject unsafe, incomplete, or obviously invented facts; SQL remains source."""
     problems = []
     lowered = message.lower()
-    for field in ("event_count", "nearest_event_id", "nearest_distance_km",
-                  "nearest_magnitude", "nearest_source_status", "nearest_age_hours"):
+    for field in (
+        "event_count",
+        "nearest_event_id",
+        "nearest_distance_km",
+        "nearest_magnitude",
+        "nearest_source_status",
+        "nearest_age_hours",
+    ):
         if str(summary[field]).lower() not in lowered:
             problems.append(f"missing {field}")
     if re.search(r"\b(risk|shaking|damage|evacuat\w*|shelter|safe|danger)\b", lowered):
         problems.append("hazard or action language")
     if re.search(r"\b(?:within|radius)(?:\W+\w+){0,4}\W+\d+(?:\.\d+)?\s*km\b", lowered):
         problems.append("unsupported radius size")
-    if re.search(r"\baway from\s+" + re.escape(str(summary["nearest_event_id"]).lower()) + r"\b", lowered):
+    if re.search(
+        r"\baway from\s+" + re.escape(str(summary["nearest_event_id"]).lower()) + r"\b", lowered
+    ):
         problems.append("distance incorrectly anchored to event ID")
     if not message.rstrip().endswith((".", "!", "?")):
         problems.append("incomplete ending")
@@ -85,18 +93,26 @@ def execute() -> dict:
                 "SELECT e.CANONICAL_EVENT_ID, ROUND(b.EPICENTRAL_DISTANCE_KM, 1), "
                 "e.MAGNITUDE, e.SOURCE_STATUS, "
                 "ROUND(DATEDIFF('minute', e.SOURCE_UPDATED_AT, CURRENT_TIMESTAMP()) / 60.0, 1) "
-                + FILTER +
-                " ORDER BY b.EPICENTRAL_DISTANCE_KM, e.CANONICAL_EVENT_ID LIMIT 1",
+                + FILTER
+                + " ORDER BY b.EPICENTRAL_DISTANCE_KM, e.CANONICAL_EVENT_ID LIMIT 1",
                 (SITE, START, END),
             )
             nearest = cursor.fetchone()
             nearest_query_id = cursor.sfqid
             if nearest is None:
                 raise RuntimeError("count and nearest-event queries disagree")
-            summary = dict(zip(
-                ("nearest_event_id", "nearest_distance_km", "nearest_magnitude",
-                 "nearest_source_status", "nearest_age_hours"), nearest,
-            ))
+            summary = dict(
+                zip(
+                    (
+                        "nearest_event_id",
+                        "nearest_distance_km",
+                        "nearest_magnitude",
+                        "nearest_source_status",
+                        "nearest_age_hours",
+                    ),
+                    nearest,
+                )
+            )
             summary["event_count"] = event_count
             prompt = prompt_for(summary)
             if len(prompt) > 1200:
@@ -153,7 +169,9 @@ def main() -> None:
     if args.execute:
         print(json.dumps(execute(), indent=2, sort_keys=True, default=str))
     else:
-        print(f"Preview: {MODEL}, {SITE}, {START} to {END}; one AI_COMPLETE call, max 120 output tokens")
+        print(
+            f"Preview: {MODEL}, {SITE}, {START} to {END}; one AI_COMPLETE call, max 120 output tokens"
+        )
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ Phase 1 also locks the Snowflake Python Connector for the planned batch loader. 
 ## Fetch a bounded batch
 
 ```sh
-uv run quakewatch-extract \
+.venv/bin/quakewatch-extract \
   --site seattle \
   --start 2026-09-28T00:00:00Z \
   --end 2026-09-29T00:00:00Z
@@ -224,3 +224,20 @@ The [metering runner](../scripts/checks/usage.py) read
 `QUAKEWATCH_WH` Account Usage hours on 2026-10-01. It uses the locally stored
 admin billing profile for a read-only account view, not for pipeline writes.
 The snapshot and its lag/shared-warehouse limits are in [results](results.md).
+
+## Live integration check
+
+`make integration EXECUTE=1` ([runner](../scripts/checks/integration.py)) is a
+read-only check of the code against the live schema. It compiles every SQL
+statement the Snowpark procedure issues, plus each reviewed check and analysis
+query, with `EXPLAIN USING TEXT`, confirms the procedure exists, and runs the
+post-run and uniqueness checks. It writes nothing. The same check runs on GitHub
+from the manual **Snowflake integration** workflow, which connects with four
+repository secrets instead of the passphrase prompt; see
+[CONTRIBUTING](../CONTRIBUTING.md#live-integration-check) and
+[ADR 0010](adr/0010-live-integration-check.md). Its first live run on
+2026-10-02 compiled 35 statements with no failures.
+
+`make analysis EXECUTE=1` ([runner](../scripts/checks/analysis.py)) runs the
+reviewed site-by-year and Seattle-day queries read-only and prints the rows
+without saving them.

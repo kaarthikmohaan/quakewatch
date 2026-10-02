@@ -38,21 +38,36 @@ class FakeSession:
 
 
 def projection(feature=FEATURE):
-    raw = RawObservation("attempt-1", "w1", "a/events.jsonl", 1,
-                         datetime(2026, 9, 30, tzinfo=UTC), "a" * 64, "1", feature)
+    raw = RawObservation(
+        "attempt-1",
+        "w1",
+        "a/events.jsonl",
+        1,
+        datetime(2026, 9, 30, tzinfo=UTC),
+        "a" * 64,
+        "1",
+        feature,
+    )
     return project_raw_attempt([raw], "attempt-1", 1)
 
 
 class AliasReadTest(unittest.TestCase):
     def test_old_and_current_ids_form_one_component(self):
-        new = {**FEATURE, "id": "us-new",
-               "properties": {**FEATURE["properties"], "ids": ",us-old,us-new,"}}
-        session = FakeSession([
-            {"SOURCE_EVENT_ID": "us-old", "ASSOCIATED_IDS": '["us-old"]'},
-            {"SOURCE_EVENT_ID": "us-new", "ASSOCIATED_IDS": ["us-old", "us-new"]},
-        ])
-        self.assertEqual(resolve_durable_aliases(session, projection(new)),
-                         {"us-new": "us-new", "us-old": "us-new"})
+        new = {
+            **FEATURE,
+            "id": "us-new",
+            "properties": {**FEATURE["properties"], "ids": ",us-old,us-new,"},
+        }
+        session = FakeSession(
+            [
+                {"SOURCE_EVENT_ID": "us-old", "ASSOCIATED_IDS": '["us-old"]'},
+                {"SOURCE_EVENT_ID": "us-new", "ASSOCIATED_IDS": ["us-old", "us-new"]},
+            ]
+        )
+        self.assertEqual(
+            resolve_durable_aliases(session, projection(new)),
+            {"us-new": "us-new", "us-old": "us-new"},
+        )
         self.assertIn("REJECT_REASON IS NULL", session.queries[0])
 
     def test_missing_current_observation_stops(self):
@@ -60,8 +75,9 @@ class AliasReadTest(unittest.TestCase):
             resolve_durable_aliases(FakeSession([]), projection())
 
     def test_malformed_stored_aliases_stop(self):
-        session = FakeSession([{"SOURCE_EVENT_ID": FEATURE["id"],
-                                "ASSOCIATED_IDS": '{"wrong":true}'}])
+        session = FakeSession(
+            [{"SOURCE_EVENT_ID": FEATURE["id"], "ASSOCIATED_IDS": '{"wrong":true}'}]
+        )
         with self.assertRaisesRegex(ValueError, "array of non-empty"):
             resolve_durable_aliases(session, projection())
 

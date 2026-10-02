@@ -22,10 +22,14 @@ class RawLoadTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.root = Path(self.directory.name)
         self.manifest = {
-            "status": "complete", "coverage_gaps": [], "events_file": "events.jsonl",
-            "logical_batch_id": "logical", "attempt_id": "attempt",
+            "status": "complete",
+            "coverage_gaps": [],
+            "events_file": "events.jsonl",
+            "logical_batch_id": "logical",
+            "attempt_id": "attempt",
             "fetched_at": "2026-09-29T00:00:00Z",
-            "source_rows_returned": 1, "raw_rows_written": 1,
+            "source_rows_returned": 1,
+            "raw_rows_written": 1,
             "requested_starttime": "2026-09-28T00:00:00Z",
             "requested_endtime": "2026-09-29T00:00:00Z",
             "query_parameters": {"format": "geojson"},
@@ -35,9 +39,12 @@ class RawLoadTests(unittest.TestCase):
         self.record = {
             "source_feature": {"id": "example"},
             "metadata": {
-                "logical_batch_id": "logical", "attempt_id": "attempt",
-                "fetched_at": "2026-09-29T00:00:00Z", "window_id": "w0001",
-                "payload_hash": "a" * 64, "parser_version": "1",
+                "logical_batch_id": "logical",
+                "attempt_id": "attempt",
+                "fetched_at": "2026-09-29T00:00:00Z",
+                "window_id": "w0001",
+                "payload_hash": "a" * 64,
+                "parser_version": "1",
             },
         }
         self.write_batch()
@@ -109,14 +116,17 @@ class RawLoadTests(unittest.TestCase):
         config = self.root / "config.toml"
         config.write_text(
             '[connections.quakewatch_project]\nrole="ACCOUNTADMIN"\n'
-            'authenticator="SNOWFLAKE_JWT"\n', encoding="utf-8"
+            'authenticator="SNOWFLAKE_JWT"\n',
+            encoding="utf-8",
         )
         with self.assertRaisesRegex(LoadReconciliationError, "QUAKEWATCH_ROLE"):
             project_connection_params(config, "local-passphrase")
 
     def test_successful_copy_appends_complete_receipt(self) -> None:
         cursor = FakeCursor()
-        loaded = execute_raw_load(plan_raw_load(self.root / "manifest.json"), FakeConnection(cursor))
+        loaded = execute_raw_load(
+            plan_raw_load(self.root / "manifest.json"), FakeConnection(cursor)
+        )
         self.assertEqual(loaded, 1)
         self.assertEqual(cursor.receipts[0][2], "origin")
         self.assertEqual(len(cursor.receipts), 1)
@@ -161,8 +171,13 @@ class FakeConnection:
 
 
 class FakeCursor:
-    def __init__(self, copy_status: str = "LOADED", existing_receipts: int = 0,
-                 raw_count_before: int = 0, raw_count_after: int = 1) -> None:
+    def __init__(
+        self,
+        copy_status: str = "LOADED",
+        existing_receipts: int = 0,
+        raw_count_before: int = 0,
+        raw_count_after: int = 1,
+    ) -> None:
         self.copy_status = copy_status
         self.existing_receipts = existing_receipts
         self.raw_count_before = raw_count_before
@@ -180,9 +195,9 @@ class FakeCursor:
             self.rows = [(self.existing_receipts,)]
         elif "FROM QUAKEWATCH.RAW.RAW_EVENT_RECORDS WHERE" in sql:
             self.raw_count_calls += 1
-            self.rows = [(
-                self.raw_count_before if self.raw_count_calls == 1 else self.raw_count_after,
-            )]
+            self.rows = [
+                (self.raw_count_before if self.raw_count_calls == 1 else self.raw_count_after,)
+            ]
         elif sql.startswith("PUT "):
             self.description = [SimpleNamespace(name="status")]
             self.rows = [("UPLOADED",)]

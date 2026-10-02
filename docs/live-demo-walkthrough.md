@@ -242,7 +242,7 @@ misstates them.
 |---|---|
 | `quakewatch-extract` with a new site and UTC range | Yes; it creates a new attempt ID |
 | `quakewatch.raw_load` preview with that attempt's manifest | Yes; local check only |
-| Fixed-input core driver | Only checks this completed attempt; change the ID for a new batch |
+| Fixed-input core driver | Yes, for an already loaded batch: pass its manifest path as the first argument (defaults to the recorded 2 October batch) |
 | Fixed-input recovery driver | Only the named test clone; it creates and removes paid objects |
 | Cortex trial | Only for a separately chosen paid, bounded case |
 | Live checks driver | Read-only but its analysis dates are fixed |

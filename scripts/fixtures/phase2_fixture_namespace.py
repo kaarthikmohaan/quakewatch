@@ -21,10 +21,11 @@ SQL_FILES = (
 
 
 def inputs() -> dict[str, str]:
-    files = {f"quakewatch/{name}": (REPO_ROOT / "src" / "quakewatch" / name).read_text()
-             for name in MODULES}
-    files.update({f"sql/{name}": (REPO_ROOT / "sql" / name).read_text()
-                  for name in SQL_FILES})
+    files = {
+        f"quakewatch/{name}": (REPO_ROOT / "src" / "quakewatch" / name).read_text()
+        for name in MODULES
+    }
+    files.update({f"sql/{name}": (REPO_ROOT / "sql" / name).read_text() for name in SQL_FILES})
     return files
 
 
@@ -47,8 +48,7 @@ def validate_and_rewrite(path: str, source: str) -> tuple[str, int]:
 
 
 def validate_all() -> dict[str, int]:
-    return {path: validate_and_rewrite(path, source)[1]
-            for path, source in inputs().items()}
+    return {path: validate_and_rewrite(path, source)[1] for path, source in inputs().items()}
 
 
 def main() -> None:

@@ -18,13 +18,13 @@ official USGS totals.
 | Batch receipts reconciled | **All 179** receipts (216,391 observations, including two overlapping 15-row Seattle samples): RAW = staged = processed + rejected | [2 October check](evidence/results-log.md#live-end-to-end-seattle-demo-2026-10-02) |
 | Rejected rows | **485**, all USGS placeholder ("stub") records, stored as `source_stub_record`; see [reject analysis](#reject-analysis) | [Quality deployment](evidence/results-log.md#first-phase-3-quality-deployment-attempt) |
 | Duplicate revision or site-bridge key groups | **0** | [Uniqueness check](evidence/results-log.md#first-phase-3-uniqueness-check) |
-| First-backfill fetch-to-curated p95 | **35.9 hours, missing the 24-hour target** set before measuring (178 attempts) | [Measurement plan and result](evidence/results-log.md#phase-3-first-backfill-measurement-plan-set-before-live-query) |
+| First-backfill fetch-to-curated p95 | **35.9 hours, missing the 24-hour target** set before measuring (178 attempts); a 2 October recheck with 179 attempts gave the same p95 | [Measurement plan and result](evidence/results-log.md#phase-3-first-backfill-measurement-plan-set-before-live-query), [recheck](evidence/results-log.md#verification-audit-2026-10-02) |
 | Failed transform, rollback, and retry from RAW | **Passed**; identical counts before failure, after rollback, and after retry | [Retry drill](evidence/results-log.md#isolated-failed-transform-and-retry-drill) |
 | Clone isolation and Time Travel recovery | **Passed** on a five-row fixture table; demo clone dropped | [Recovery drill](evidence/results-log.md#phase-4-clone-isolation-and-time-travel-drill) |
 | Cortex briefs passing human fact review | **9 of 9** in the evaluation; **4 other briefs rejected** by fact checks (2 before it, 2 in the [2 October demo](evidence/results-log.md#live-end-to-end-seattle-demo-2026-10-02)), with SQL used instead | [Cortex evaluation](evidence/results-log.md#phase-4-nine-case-cortex-evaluation) |
 | Measured Cortex cost | **0.003948756** AI credits for the first 11 completed calls, separate from warehouse compute; the 2 October calls are unmeasured | [Cortex evaluation](evidence/results-log.md#phase-4-nine-case-cortex-evaluation) |
 | Warehouse usage snapshot | **0.088875** credits for one fully reported hour (shared warehouse; not a per-demo bill) | [Metering snapshot](evidence/results-log.md#phase-4-warehouse-metering-snapshot) |
-| Secret-free tests | **328**, run in GitHub Actions with ruff and mypy on every push (303 at the published Phase 4 run) | [CI workflow](../.github/workflows/ci.yml), [first CI run](evidence/results-log.md#first-github-actions-fixture-run) |
+| Secret-free tests | **340**, run in GitHub Actions with ruff lint and format checks, mypy, and coverage (86% of `src/`, minimum 80%) on every push | [CI workflow](../.github/workflows/ci.yml), [first CI run](evidence/results-log.md#first-github-actions-fixture-run) |
 
 ## Design targets and status
 
@@ -80,11 +80,15 @@ staging and fact rows as version 2 ([release record](evidence/results-log.md#par
 
 ## Latency evidence
 
-Fetch-to-curated latency has one measured sample: the 178-attempt first
+Fetch-to-curated latency was first measured on the 178-attempt first
 backfill, where curation was run manually in bulk after loading (p95 35.9
-hours). It does not describe steady-state latency. A second sample needs
-scheduled runs that process each batch soon after it loads; this is listed
-under [still open](#still-open).
+hours). A recheck on 2 October covered 179 attempts, including the 2 October
+demo batch, and gave the same p95 (129,167.9 seconds, 35.9 hours) and a minimum
+of **293 seconds**. That minimum is the one batch processed straight after it
+was fetched: a single data point for what scheduled, per-batch processing could
+achieve, not a measured steady state. A real steady-state sample needs
+scheduled runs; this is listed under [still open](#still-open)
+([audit record](evidence/results-log.md#verification-audit-2026-10-02)).
 
 ## Still open
 
@@ -102,6 +106,7 @@ under [still open](#still-open).
 The [evidence log](evidence/results-log.md) is ordered newest first. Its
 sections are:
 
+- [Verification audit (2026-10-02)](evidence/results-log.md#verification-audit-2026-10-02)
 - [Parser version 2 release (2026-10-02)](evidence/results-log.md#parser-version-2-release-2026-10-02)
 - [Live end-to-end Seattle demo (2026-10-02)](evidence/results-log.md#live-end-to-end-seattle-demo-2026-10-02)
 - [Phase 4 ten-case Cortex aggregate snapshot](evidence/results-log.md#phase-4-ten-case-cortex-aggregate-snapshot)

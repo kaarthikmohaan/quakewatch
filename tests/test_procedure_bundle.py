@@ -20,12 +20,17 @@ class ProcedureBundleTest(unittest.TestCase):
             first = build_bundle(output)
             self.assertEqual(build_bundle(output), first)
             with ZipFile(output) as archive:
-                self.assertEqual(set(archive.namelist()),
-                                 {f"quakewatch/{name}" for name in MODULES})
+                self.assertEqual(
+                    set(archive.namelist()), {f"quakewatch/{name}" for name in MODULES}
+                )
             env = {**os.environ, "PYTHONPATH": str(output)}
             result = subprocess.run(
                 [sys.executable, "-c", "import quakewatch.snowpark_procedure"],
-                cwd=directory, env=env, capture_output=True, text=True, check=False,
+                cwd=directory,
+                env=env,
+                capture_output=True,
+                text=True,
+                check=False,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
 

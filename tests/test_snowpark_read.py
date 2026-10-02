@@ -38,17 +38,29 @@ class FakeSession:
 
 
 def receipt(**changes: object) -> dict:
-    row = dict(ATTEMPT_ID="attempt-1", EXTRACT_STATUS="complete", LOAD_STATUS="complete",
-               COVERAGE_GAPS="[]", SOURCE_ROWS_RETURNED=1, RAW_ROWS_WRITTEN=1,
-               LOADED_ROWS=1)
+    row = dict(
+        ATTEMPT_ID="attempt-1",
+        EXTRACT_STATUS="complete",
+        LOAD_STATUS="complete",
+        COVERAGE_GAPS="[]",
+        SOURCE_ROWS_RETURNED=1,
+        RAW_ROWS_WRITTEN=1,
+        LOADED_ROWS=1,
+    )
     return {**row, **changes}
 
 
 def raw(**changes: object) -> dict:
-    row = dict(ATTEMPT_ID="attempt-1", WINDOW_ID="w0001",
-               STAGE_FILE_NAME="attempt-1/events.jsonl", STAGE_FILE_ROW_NUMBER=1,
-               FETCHED_AT=datetime(2026, 9, 30, tzinfo=UTC), PAYLOAD_HASH="a" * 64,
-               PARSER_VERSION="1", PAYLOAD=json.dumps(FEATURE))
+    row = dict(
+        ATTEMPT_ID="attempt-1",
+        WINDOW_ID="w0001",
+        STAGE_FILE_NAME="attempt-1/events.jsonl",
+        STAGE_FILE_ROW_NUMBER=1,
+        FETCHED_AT=datetime(2026, 9, 30, tzinfo=UTC),
+        PAYLOAD_HASH="a" * 64,
+        PARSER_VERSION="1",
+        PAYLOAD=json.dumps(FEATURE),
+    )
     return {**row, **changes}
 
 
@@ -62,8 +74,11 @@ class SnowparkReadTest(unittest.TestCase):
         self.assertTrue(all("WHERE ATTEMPT_ID = ?" in sql for sql, _ in session.calls))
 
     def test_missing_or_failed_receipt_stops_before_raw_read(self) -> None:
-        for records in ([], [receipt(LOAD_STATUS="failed")],
-                        [receipt(COVERAGE_GAPS='[{"start":"unknown"}]')]):
+        for records in (
+            [],
+            [receipt(LOAD_STATUS="failed")],
+            [receipt(COVERAGE_GAPS='[{"start":"unknown"}]')],
+        ):
             with self.subTest(records=records):
                 session = FakeSession(records, [raw()])
                 with self.assertRaises(ValueError):

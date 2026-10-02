@@ -35,8 +35,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Preview or execute a bounded history RAW load")
     parser.add_argument("--cutoff", required=True, type=parse_utc)
     parser.add_argument("--output", type=Path, default=Path("data/raw"))
-    parser.add_argument("--max-windows", required=True, type=int, help="Maximum ready windows, 1 to 50")
-    parser.add_argument("--execute", action="store_true", help="Connect to Snowflake and run PUT/COPY")
+    parser.add_argument(
+        "--max-windows", required=True, type=int, help="Maximum ready windows, 1 to 50"
+    )
+    parser.add_argument(
+        "--execute", action="store_true", help="Connect to Snowflake and run PUT/COPY"
+    )
     args = parser.parse_args()
     configure_logging()
     if not 1 <= args.max_windows <= MAX_HISTORY_BATCH_WINDOWS:

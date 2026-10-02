@@ -23,12 +23,12 @@ class OldOriginAttemptsTest(unittest.TestCase):
                 path = root / attempt_id
                 manifest, count = validate_local_batch(path / "manifest.json")
                 record = json.loads((path / "events.jsonl").read_text())
-                self.assertEqual((count, manifest["fixture_source"], manifest["fixture_only"]),
-                                 (1, fixture, True))
-                self.assertEqual(manifest["requested_starttime"],
-                                 "2020-01-15T00:00:00.000Z")
-                self.assertEqual(manifest["requested_endtime"],
-                                 "2020-01-16T00:00:00.000Z")
+                self.assertEqual(
+                    (count, manifest["fixture_source"], manifest["fixture_only"]),
+                    (1, fixture, True),
+                )
+                self.assertEqual(manifest["requested_starttime"], "2020-01-15T00:00:00.000Z")
+                self.assertEqual(manifest["requested_endtime"], "2020-01-16T00:00:00.000Z")
                 self.assertEqual(record["metadata"]["attempt_id"], attempt_id)
                 row = project_feature(record["source_feature"])
                 self.assertIsNone(row["reject_reason"])

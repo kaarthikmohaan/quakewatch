@@ -20,8 +20,13 @@ from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 class FixtureStaleReplayTest(unittest.TestCase):
     def test_preview_does_not_connect(self):
         output = io.StringIO()
-        with patch("scripts.evidence.phase2.fixture_stale_replay.connect_project",
-                   side_effect=AssertionError("connected")), contextlib.redirect_stdout(output):
+        with (
+            patch(
+                "scripts.evidence.phase2.fixture_stale_replay.connect_project",
+                side_effect=AssertionError("connected"),
+            ),
+            contextlib.redirect_stdout(output),
+        ):
             preview()
         self.assertIn("no Snowflake connection", output.getvalue())
         self.assertIn(ATTEMPT_ID, output.getvalue())
@@ -37,22 +42,37 @@ class FixtureStaleReplayTest(unittest.TestCase):
 
     def test_changed_deletion_state_stops_before_call(self):
         cursor = MagicMock()
-        cursor.fetchall.return_value = [("complete", "complete", 1, 1, 1, 0,
-                                         True, "old", "uw714110682", "reviewed")]
-        with patch("scripts.evidence.phase2.fixture_stale_replay._expected_history",
-                   return_value=[("reviewed", "old")]), \
-             patch("scripts.evidence.phase2.fixture_stale_replay._counts",
-                   return_value={**DELETION_COUNTS, "FACT_EVENT_REVISION": 4}):
+        cursor.fetchall.return_value = [
+            ("complete", "complete", 1, 1, 1, 0, True, "old", "uw714110682", "reviewed")
+        ]
+        with (
+            patch(
+                "scripts.evidence.phase2.fixture_stale_replay._expected_history",
+                return_value=[("reviewed", "old")],
+            ),
+            patch(
+                "scripts.evidence.phase2.fixture_stale_replay._counts",
+                return_value={**DELETION_COUNTS, "FACT_EVENT_REVISION": 4},
+            ),
+        ):
             with self.assertRaisesRegex(RuntimeError, "measured deletion state"):
                 _guard_before(cursor)
 
     def test_replay_must_not_resurrect_event(self):
         cursor = MagicMock()
         cursor.fetchone.return_value = (1,)
-        outcome = {"attempt_id": ATTEMPT_ID, "status": "complete",
-                   "loaded_rows": 1, "processed_rows": 1, "rejected_rows": 0,
-                   "revision_rows_merged": 1, "process_attempt_id": "new-process"}
-        with patch("scripts.evidence.phase2.fixture_stale_replay._counts", return_value=EXPECTED_AFTER):
+        outcome = {
+            "attempt_id": ATTEMPT_ID,
+            "status": "complete",
+            "loaded_rows": 1,
+            "processed_rows": 1,
+            "rejected_rows": 0,
+            "revision_rows_merged": 1,
+            "process_attempt_id": "new-process",
+        }
+        with patch(
+            "scripts.evidence.phase2.fixture_stale_replay._counts", return_value=EXPECTED_AFTER
+        ):
             with self.assertRaisesRegex(RuntimeError, "resurrected"):
                 _guard_after(cursor, outcome, "old")
 
@@ -63,14 +83,25 @@ class FixtureStaleReplayTest(unittest.TestCase):
             [("reviewed", "old"), ("reviewed", "update"), ("deleted", "delete")],
             [("complete", 1)],
         ]
-        outcome = {"attempt_id": ATTEMPT_ID, "status": "complete",
-                   "loaded_rows": 1, "processed_rows": 1, "rejected_rows": 0,
-                   "revision_rows_merged": 1, "process_attempt_id": "new-process"}
-        with patch("scripts.evidence.phase2.fixture_stale_replay._counts", return_value=EXPECTED_AFTER), \
-             patch("scripts.evidence.phase2.fixture_stale_replay._expected_history",
-                   return_value=[("reviewed", "old"), ("reviewed", "update"),
-                                 ("deleted", "delete")]), \
-             patch("scripts.evidence.phase2.fixture_stale_replay._guard_unique_keys"):
+        outcome = {
+            "attempt_id": ATTEMPT_ID,
+            "status": "complete",
+            "loaded_rows": 1,
+            "processed_rows": 1,
+            "rejected_rows": 0,
+            "revision_rows_merged": 1,
+            "process_attempt_id": "new-process",
+        }
+        with (
+            patch(
+                "scripts.evidence.phase2.fixture_stale_replay._counts", return_value=EXPECTED_AFTER
+            ),
+            patch(
+                "scripts.evidence.phase2.fixture_stale_replay._expected_history",
+                return_value=[("reviewed", "old"), ("reviewed", "update"), ("deleted", "delete")],
+            ),
+            patch("scripts.evidence.phase2.fixture_stale_replay._guard_unique_keys"),
+        ):
             self.assertEqual(_guard_after(cursor, outcome, "old"), EXPECTED_AFTER)
 
     def test_single_call_happens_after_preflight(self):
@@ -81,11 +112,20 @@ class FixtureStaleReplayTest(unittest.TestCase):
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
         events = []
-        with patch("scripts.evidence.phase2.fixture_stale_replay.connect_project", return_value=connection), \
-             patch("scripts.evidence.phase2.fixture_stale_replay._guard_before",
-                   side_effect=lambda *_: events.append("before") or "old"), \
-             patch("scripts.evidence.phase2.fixture_stale_replay._guard_after",
-                   side_effect=lambda *_: events.append("after") or EXPECTED_AFTER):
+        with (
+            patch(
+                "scripts.evidence.phase2.fixture_stale_replay.connect_project",
+                return_value=connection,
+            ),
+            patch(
+                "scripts.evidence.phase2.fixture_stale_replay._guard_before",
+                side_effect=lambda *_: events.append("before") or "old",
+            ),
+            patch(
+                "scripts.evidence.phase2.fixture_stale_replay._guard_after",
+                side_effect=lambda *_: events.append("after") or EXPECTED_AFTER,
+            ),
+        ):
             execute_stale_replay()
         self.assertEqual(events, ["before", "after"])
         calls = [call.args[0] for call in cursor.execute.call_args_list]

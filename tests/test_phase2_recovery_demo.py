@@ -11,10 +11,14 @@ from scripts.evidence.phase2.recovery_demo import ATTEMPT_ID, CREATE_SQL, execut
 class RecoveryDemoTest(unittest.TestCase):
     def test_preview_never_connects(self):
         output = io.StringIO()
-        with patch("scripts.evidence.phase2.recovery_demo.connect_project",
-                   side_effect=AssertionError("connected")), \
-             patch("sys.argv", ["phase2_recovery_demo.py"]), \
-             contextlib.redirect_stdout(output):
+        with (
+            patch(
+                "scripts.evidence.phase2.recovery_demo.connect_project",
+                side_effect=AssertionError("connected"),
+            ),
+            patch("sys.argv", ["phase2_recovery_demo.py"]),
+            contextlib.redirect_stdout(output),
+        ):
             main()
         self.assertIn("no Snowflake connection", output.getvalue())
         self.assertIn(ATTEMPT_ID, output.getvalue())
@@ -35,9 +39,13 @@ class RecoveryDemoTest(unittest.TestCase):
         connection = MagicMock()
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
-        with patch("scripts.evidence.phase2.recovery_demo.connect_project", return_value=connection), \
-             patch("scripts.evidence.phase2.recovery_demo._snapshot",
-                   return_value={"raw": 0, "receipts": 1}):
+        with (
+            patch("scripts.evidence.phase2.recovery_demo.connect_project", return_value=connection),
+            patch(
+                "scripts.evidence.phase2.recovery_demo._snapshot",
+                return_value={"raw": 0, "receipts": 1},
+            ),
+        ):
             with self.assertRaisesRegex(RuntimeError, "expected one-row load"):
                 execute()
         self.assertFalse(any(call.args[0] == CREATE_SQL for call in cursor.execute.call_args_list))

@@ -15,10 +15,15 @@ class CortexMeteringTests(unittest.TestCase):
     def test_collects_exactly_eleven_unique_successful_ids(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "briefs.json"
-            path.write_text(json.dumps({"results": {
-                str(index): {"query_id": f"new-query-{index}"}
-                for index in range(9)
-            }}))
+            path.write_text(
+                json.dumps(
+                    {
+                        "results": {
+                            str(index): {"query_id": f"new-query-{index}"} for index in range(9)
+                        }
+                    }
+                )
+            )
             ids = expected_query_ids(path)
 
         self.assertEqual(len(ids), 11)

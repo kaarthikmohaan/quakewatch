@@ -33,10 +33,16 @@ def load_cases(path: Path = AGGREGATES_PATH) -> list[dict]:
     for case in cases:
         if case["SITE_KEY"] not in SITE_NAMES or case["RADIUS_KM"] != 250:
             raise RuntimeError("unexpected public site or radius")
-        if case["INPUT_SHA256"] != hashlib.sha256(
-            json.dumps({k: v for k, v in case.items() if k != "INPUT_SHA256"},
-                       sort_keys=True, default=str).encode()
-        ).hexdigest():
+        if (
+            case["INPUT_SHA256"]
+            != hashlib.sha256(
+                json.dumps(
+                    {k: v for k, v in case.items() if k != "INPUT_SHA256"},
+                    sort_keys=True,
+                    default=str,
+                ).encode()
+            ).hexdigest()
+        ):
             raise RuntimeError(f"aggregate hash mismatch: {case['CASE_ID']}")
     return cases
 
@@ -84,7 +90,9 @@ def check_brief(message: str, case: dict) -> list[str]:
         problems.append("hazard or action language")
     if re.search(r"\b(complete|all|every|guaranteed)\s+(source\s+)?coverage\b", lower):
         problems.append("unsupported coverage claim")
-    if re.search(r"\baway from\s+" + re.escape(str(case["NEAREST_EVENT_ID"]).lower()) + r"\b", lower):
+    if re.search(
+        r"\baway from\s+" + re.escape(str(case["NEAREST_EVENT_ID"]).lower()) + r"\b", lower
+    ):
         problems.append("distance anchored to event ID")
     if not message.rstrip().endswith("."):
         problems.append("incomplete ending")
@@ -103,20 +111,23 @@ def read_cache(path: Path = BRIEFS_PATH) -> dict:
 def write_cache(cache: dict, path: Path = BRIEFS_PATH) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(".tmp")
-    temporary.write_text(json.dumps(cache, indent=2, sort_keys=True, default=str) + "\n",
-                         encoding="utf-8")
+    temporary.write_text(
+        json.dumps(cache, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8"
+    )
     temporary.replace(path)
 
 
 def pending_cases(cases: list[dict], cache: dict) -> list[dict]:
     # The Seattle day already used its one allowed retry with llama3.1-8b.
-    return [case for case in cases if case["CASE_ID"] != "seattle-day"
-            and case["INPUT_SHA256"] not in cache["results"]]
+    return [
+        case
+        for case in cases
+        if case["CASE_ID"] != "seattle-day" and case["INPUT_SHA256"] not in cache["results"]
+    ]
 
 
 def retry_case(cases: list[dict], cache: dict, case_id: str) -> dict:
-    matches = [case for case in cases if case["CASE_ID"] == case_id
-               and case_id != "seattle-day"]
+    matches = [case for case in cases if case["CASE_ID"] == case_id and case_id != "seattle-day"]
     if len(matches) != 1:
         raise RuntimeError("retry case is not one of the nine eligible cases")
     case = matches[0]
@@ -133,8 +144,9 @@ def execute(retry_case_id: str | None = None) -> dict:
 
     cases = load_cases()
     cache = read_cache()
-    pending = ([retry_case(cases, cache, retry_case_id)] if retry_case_id
-               else pending_cases(cases, cache))
+    pending = (
+        [retry_case(cases, cache, retry_case_id)] if retry_case_id else pending_cases(cases, cache)
+    )
     if len(pending) > (1 if retry_case_id else MAX_NEW_CALLS):
         raise RuntimeError("pending Cortex calls exceed the reviewed cap")
     if not pending:
@@ -158,7 +170,8 @@ def execute(retry_case_id: str | None = None) -> dict:
                 # Persist an attempt marker first. If the process loses the
                 # response, a rerun cannot silently duplicate a paid call.
                 marker = {
-                    "case_id": case["CASE_ID"], "model": MODEL,
+                    "case_id": case["CASE_ID"],
+                    "model": MODEL,
                     "input_sha256": case["INPUT_SHA256"],
                     "generated_at_utc": datetime.now(UTC).isoformat(),
                     "status": "attempt_started",
@@ -197,10 +210,12 @@ def execute(retry_case_id: str | None = None) -> dict:
                     }
                 except snowflake.connector.errors.ProgrammingError as error:
                     result = {
-                        "case_id": case["CASE_ID"], "model": MODEL,
+                        "case_id": case["CASE_ID"],
+                        "model": MODEL,
                         "input_sha256": case["INPUT_SHA256"],
                         "generated_at_utc": datetime.now(UTC).isoformat(),
-                        "status": "error", "snowflake_error_code": error.errno,
+                        "status": "error",
+                        "snowflake_error_code": error.errno,
                         "fallback": "Use saved SQL aggregate.",
                     }
                 new_calls += 1
@@ -212,11 +227,13 @@ def execute(retry_case_id: str | None = None) -> dict:
                 if result["status"] == "error":
                     break
     return {
-        "status": "saved", "new_calls": new_calls,
+        "status": "saved",
+        "new_calls": new_calls,
         "results_path": str(BRIEFS_PATH),
-        "counts": {status: sum(r.get("retry", r)["status"] == status
-                               for r in cache["results"].values())
-                   for status in ("needs_human_fact_check", "rejected", "error")},
+        "counts": {
+            status: sum(r.get("retry", r)["status"] == status for r in cache["results"].values())
+            for status in ("needs_human_fact_check", "rejected", "error")
+        },
         "note": "Local checks cannot certify factuality; compare every brief with the saved SQL row.",
     }
 
@@ -228,13 +245,18 @@ def main() -> None:
     args = parser.parse_args()
     cases = load_cases()
     cache = read_cache()
-    pending = ([retry_case(cases, cache, args.retry_case)] if args.retry_case
-               else pending_cases(cases, cache))
+    pending = (
+        [retry_case(cases, cache, args.retry_case)]
+        if args.retry_case
+        else pending_cases(cases, cache)
+    )
     if args.execute:
         print(json.dumps(execute(args.retry_case), indent=2, sort_keys=True))
     else:
-        print(f"Preview only: model={MODEL}; saved cases={len(cases)}; "
-              f"pending calls={len(pending)}; max output tokens/call={MAX_OUTPUT_TOKENS}")
+        print(
+            f"Preview only: model={MODEL}; saved cases={len(cases)}; "
+            f"pending calls={len(pending)}; max output tokens/call={MAX_OUTPUT_TOKENS}"
+        )
         print("Seattle day is excluded: its one retry was already used.")
         print(f"Results if approved: {BRIEFS_PATH} (ignored by Git)")
 

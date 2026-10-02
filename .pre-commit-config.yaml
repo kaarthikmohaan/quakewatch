@@ -1,0 +1,15 @@
+# Optional local hooks: `uvx pre-commit install` once, then they run on each commit.
+# They call the project's own pinned ruff, so results match CI.
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-lint
+        name: ruff lint
+        entry: .venv/bin/ruff check --fix
+        language: system
+        types: [python]
+      - id: ruff-format
+        name: ruff format
+        entry: .venv/bin/ruff format
+        language: system
+        types: [python]

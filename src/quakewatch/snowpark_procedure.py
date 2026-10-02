@@ -20,13 +20,16 @@ def run(session: Any, attempt_id: str) -> str:
     outcome = process_loaded_attempt(
         session, attempt_id, SnowparkModelWriter(resolve_durable_aliases)
     )
-    return json.dumps({
-        "process_attempt_id": outcome.process_attempt_id,
-        "attempt_id": outcome.attempt_id,
-        "status": outcome.status,
-        "loaded_rows": outcome.loaded_rows,
-        "processed_rows": outcome.processed_rows,
-        "rejected_rows": outcome.rejected_rows,
-        "revision_rows_merged": outcome.revision_rows_merged,
-        "staging_parser_version": outcome.staging_parser_version,
-    }, separators=(",", ":"))
+    return json.dumps(
+        {
+            "process_attempt_id": outcome.process_attempt_id,
+            "attempt_id": outcome.attempt_id,
+            "status": outcome.status,
+            "loaded_rows": outcome.loaded_rows,
+            "processed_rows": outcome.processed_rows,
+            "rejected_rows": outcome.rejected_rows,
+            "revision_rows_merged": outcome.revision_rows_merged,
+            "staging_parser_version": outcome.staging_parser_version,
+        },
+        separators=(",", ":"),
+    )

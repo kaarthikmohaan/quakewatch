@@ -26,14 +26,16 @@ Use Python 3.12 and [uv](https://docs.astral.sh/uv/):
 uv sync --locked --no-editable
 ```
 
-Run everything CI runs (ruff lint, mypy type check, fixture build, and the
-secret-free tests):
+Run everything CI runs (ruff lint and format check, mypy, fixture build, and
+the secret-free tests under coverage, which must stay at or above 80%):
 
 ```sh
 make check
 ```
 
-Fix lint findings with `.venv/bin/ruff check --fix src scripts tests`.
+Fix lint findings with `.venv/bin/ruff check --fix src scripts tests` and
+formatting with `make format`. Optionally, `uvx pre-commit install` runs both
+on every commit using the project's own ruff.
 
 After changing package code, run `uv sync --locked --no-editable` again.
 
@@ -54,6 +56,24 @@ Live Snowflake runs use warehouse credits, and Cortex uses separate AI
 credits. Contributors are never expected to run them. If your change needs a
 live check, say so in the pull request and the maintainer will decide whether
 to run it.
+
+### Live integration check
+
+The **Snowflake integration** workflow (`.github/workflows/integration.yml`)
+runs `make integration EXECUTE=1` on demand from the GitHub Actions tab. It
+compiles every SQL statement against Snowflake with `EXPLAIN` and runs the
+read-only post-run and uniqueness checks; it never writes data. It needs four
+repository secrets (Settings → Secrets and variables → Actions):
+
+| Secret | Value |
+|---|---|
+| `QUAKEWATCH_SNOWFLAKE_ACCOUNT` | Account identifier |
+| `QUAKEWATCH_SNOWFLAKE_USER` | User whose key-pair is restricted to `QUAKEWATCH_ROLE` |
+| `QUAKEWATCH_SNOWFLAKE_PRIVATE_KEY` | The encrypted private key, PEM text |
+| `QUAKEWATCH_SNOWFLAKE_PRIVATE_KEY_PASSPHRASE` | Its passphrase |
+
+Locally, leave these variables unset; the commands then read
+`~/.snowflake/config.toml` and prompt for the passphrase.
 
 ## Secrets and private data
 

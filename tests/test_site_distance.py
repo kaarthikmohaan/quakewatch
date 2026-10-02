@@ -10,9 +10,10 @@ from quakewatch.site_distance import distances_to_public_sites, great_circle_km
 class SiteDistanceTest(unittest.TestCase):
     def test_same_point_is_zero_and_other_sites_are_outside(self) -> None:
         seattle = SITES["seattle"]
-        rows = {row.site_key: row for row in distances_to_public_sites(
-            seattle.longitude, seattle.latitude
-        )}
+        rows = {
+            row.site_key: row
+            for row in distances_to_public_sites(seattle.longitude, seattle.latitude)
+        }
         self.assertEqual(set(rows), set(SITES))
         self.assertAlmostEqual(rows["seattle"].epicentral_distance_km, 0.0)
         self.assertTrue(rows["seattle"].within_radius)

@@ -39,10 +39,16 @@ class FakeSession:
             return FakeFrame(self.bridges)
         if "DELETE FROM" in query:
             rows = self.bridges if "BRIDGE_EVENT_SITE" in query else self.facts
-            matched = [row for row in rows if (
-                row["CANONICAL_EVENT_ID"], row["SOURCE_UPDATED_AT"].isoformat(),
-                row["PAYLOAD_HASH"]
-            ) == tuple(params)]
+            matched = [
+                row
+                for row in rows
+                if (
+                    row["CANONICAL_EVENT_ID"],
+                    row["SOURCE_UPDATED_AT"].isoformat(),
+                    row["PAYLOAD_HASH"],
+                )
+                == tuple(params)
+            ]
             for row in matched:
                 rows.remove(row)
             count = len(matched) + (1 if self.wrong_count else 0)
@@ -57,22 +63,31 @@ class FakeSession:
         return FakeFrame([])
 
 
-def fact(canonical, source, hash_value="a", fetched_at=TIME,
-         stage_file_name="events.jsonl"):
-    return {"CANONICAL_EVENT_ID": canonical, "SOURCE_EVENT_ID": source,
-            "SOURCE_UPDATED_AT": TIME, "PAYLOAD_HASH": hash_value,
-            "FETCHED_AT": fetched_at, "STAGE_FILE_NAME": stage_file_name,
-            "STAGE_FILE_ROW_NUMBER": 1}
+def fact(canonical, source, hash_value="a", fetched_at=TIME, stage_file_name="events.jsonl"):
+    return {
+        "CANONICAL_EVENT_ID": canonical,
+        "SOURCE_EVENT_ID": source,
+        "SOURCE_UPDATED_AT": TIME,
+        "PAYLOAD_HASH": hash_value,
+        "FETCHED_AT": fetched_at,
+        "STAGE_FILE_NAME": stage_file_name,
+        "STAGE_FILE_ROW_NUMBER": 1,
+    }
 
 
 def bridge(canonical, hash_value="a", site="seattle"):
-    return {"CANONICAL_EVENT_ID": canonical, "SOURCE_UPDATED_AT": TIME,
-            "PAYLOAD_HASH": hash_value, "SITE_KEY": site}
+    return {
+        "CANONICAL_EVENT_ID": canonical,
+        "SOURCE_UPDATED_AT": TIME,
+        "PAYLOAD_HASH": hash_value,
+        "SITE_KEY": site,
+    }
 
 
 def all_sites(canonical, hash_value="a"):
-    return [bridge(canonical, hash_value, site)
-            for site in ("seattle", "san-francisco", "anchorage")]
+    return [
+        bridge(canonical, hash_value, site) for site in ("seattle", "san-francisco", "anchorage")
+    ]
 
 
 class AliasRekeyTest(unittest.TestCase):
@@ -87,11 +102,15 @@ class AliasRekeyTest(unittest.TestCase):
 
     def test_collision_keeps_latest_fetch_and_its_site_rows(self):
         later = TIME.replace(hour=1)
-        session = FakeSession([fact("z", "z", fetched_at=later), fact("a", "a")],
-                              all_sites("z") + all_sites("a"))
+        session = FakeSession(
+            [fact("z", "z", fetched_at=later), fact("a", "a")], all_sites("z") + all_sites("a")
+        )
         self.assertEqual(rekey_existing_aliases(session, {"z": "a", "a": "a"}), 1)
-        writes = [(sql, params) for sql, params in session.calls
-                  if "DELETE FROM" in sql or "UPDATE " in sql]
+        writes = [
+            (sql, params)
+            for sql, params in session.calls
+            if "DELETE FROM" in sql or "UPDATE " in sql
+        ]
         self.assertEqual(len(writes), 4)
         self.assertIn("DELETE FROM QUAKEWATCH.CURATED.BRIDGE_EVENT_SITE", writes[0][0])
         self.assertIn("DELETE FROM QUAKEWATCH.CURATED.FACT_EVENT_REVISION", writes[1][0])
@@ -100,12 +119,13 @@ class AliasRekeyTest(unittest.TestCase):
         self.assertEqual(writes[2][1], ["a", "z"])
 
     def test_collision_without_survivor_bridge_stops_before_write(self):
-        session = FakeSession([fact("z", "z", fetched_at=TIME.replace(hour=1)),
-                               fact("a", "a")], [bridge("z"), bridge("a")])
+        session = FakeSession(
+            [fact("z", "z", fetched_at=TIME.replace(hour=1)), fact("a", "a")],
+            [bridge("z"), bridge("a")],
+        )
         with self.assertRaisesRegex(ValueError, "complete public-site bridge"):
             rekey_existing_aliases(session, {"z": "a", "a": "a"})
-        self.assertFalse(any("UPDATE " in sql or "DELETE FROM" in sql
-                             for sql, _ in session.calls))
+        self.assertFalse(any("UPDATE " in sql or "DELETE FROM" in sql for sql, _ in session.calls))
 
     def test_duplicate_original_revision_stops_before_write(self):
         session = FakeSession([fact("z", "z"), fact("z", "z")])

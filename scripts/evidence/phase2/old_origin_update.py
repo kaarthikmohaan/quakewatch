@@ -33,13 +33,15 @@ EXPECTED_AFTER = {
 
 
 def _original_process_id(cursor) -> str:
-    cursor.execute(f"""
+    cursor.execute(
+        f"""
         SELECT PROCESS_ATTEMPT_ID, STATUS, REVISION_ROWS_MERGED
         FROM {CURATED}.BATCH_PROCESS_ATTEMPT WHERE ATTEMPT_ID = %s
-    """, (ORIGINAL_ATTEMPT,))
+    """,
+        (ORIGINAL_ATTEMPT,),
+    )
     rows = cursor.fetchall()
-    if (len(rows) != 1 or rows[0][1:] != ("complete", 1)
-            or not rows[0][0]):
+    if len(rows) != 1 or rows[0][1:] != ("complete", 1) or not rows[0][0]:
         raise RuntimeError("old-origin original processing audit differs")
     return rows[0][0]
 
@@ -53,29 +55,34 @@ def _guard_before(cursor, original_process_id: str) -> str:
                TO_CHAR(ORIGIN_TIME, 'YYYY-MM-DD')
         FROM {CURATED}.EVENT_CURRENT
     """)
-    if cursor.fetchall() != [(EVENT_ID, 1.1, _expected_hash(SEQUENCE[0][1]),
-                              "2020-01-15")]:
+    if cursor.fetchall() != [(EVENT_ID, 1.1, _expected_hash(SEQUENCE[0][1]), "2020-01-15")]:
         raise RuntimeError("old-origin current row differs before update")
-    cursor.execute(f"""
+    cursor.execute(
+        f"""
         SELECT PROCESS_ATTEMPT_ID, STATUS, REVISION_ROWS_MERGED
         FROM {CURATED}.BATCH_PROCESS_ATTEMPT WHERE ATTEMPT_ID = %s
-    """, (ORIGINAL_ATTEMPT,))
+    """,
+        (ORIGINAL_ATTEMPT,),
+    )
     if cursor.fetchall() != [(original_process_id, "complete", 1)]:
         raise RuntimeError("old-origin original processing audit differs")
     _guard_unique_keys(cursor)
     return _expected_hash(SEQUENCE[1][1])
 
 
-def _guard_after(cursor, outcome: dict, expected_hash: str,
-                 original_process_id: str) -> dict[str, int]:
-    if (outcome.get("attempt_id") != ATTEMPT_ID
-            or outcome.get("status") != "complete"
-            or outcome.get("loaded_rows") != 1
-            or outcome.get("processed_rows") != 1
-            or outcome.get("rejected_rows") != 0
-            or outcome.get("revision_rows_merged") != 1
-            or not outcome.get("process_attempt_id")
-            or outcome["process_attempt_id"] == original_process_id):
+def _guard_after(
+    cursor, outcome: dict, expected_hash: str, original_process_id: str
+) -> dict[str, int]:
+    if (
+        outcome.get("attempt_id") != ATTEMPT_ID
+        or outcome.get("status") != "complete"
+        or outcome.get("loaded_rows") != 1
+        or outcome.get("processed_rows") != 1
+        or outcome.get("rejected_rows") != 0
+        or outcome.get("revision_rows_merged") != 1
+        or not outcome.get("process_attempt_id")
+        or outcome["process_attempt_id"] == original_process_id
+    ):
         raise RuntimeError(f"old-origin update processing outcome differs: {outcome}")
     counts = _counts(cursor)
     if counts != EXPECTED_AFTER:
@@ -87,21 +94,27 @@ def _guard_after(cursor, outcome: dict, expected_hash: str,
     """)
     if cursor.fetchall() != [(EVENT_ID, "reviewed", 1.3, expected_hash, "2020-01-15")]:
         raise RuntimeError("old-origin current row did not select later update")
-    cursor.execute(f"""
+    cursor.execute(
+        f"""
         SELECT SOURCE_STATUS, MAGNITUDE, PAYLOAD_HASH,
                TO_CHAR(ORIGIN_TIME, 'YYYY-MM-DD')
         FROM {CURATED}.FACT_EVENT_REVISION
         WHERE CANONICAL_EVENT_ID = %s ORDER BY SOURCE_UPDATED_AT
-    """, (EVENT_ID,))
+    """,
+        (EVENT_ID,),
+    )
     if cursor.fetchall() != [
         ("reviewed", 1.1, _expected_hash(SEQUENCE[0][1]), "2020-01-15"),
         ("reviewed", 1.3, expected_hash, "2020-01-15"),
     ]:
         raise RuntimeError("old-origin revision history differs")
-    cursor.execute(f"""
+    cursor.execute(
+        f"""
         SELECT STATUS, REVISION_ROWS_MERGED FROM {CURATED}.BATCH_PROCESS_ATTEMPT
         WHERE ATTEMPT_ID = %s AND PROCESS_ATTEMPT_ID = %s
-    """, (ATTEMPT_ID, outcome["process_attempt_id"]))
+    """,
+        (ATTEMPT_ID, outcome["process_attempt_id"]),
+    )
     if cursor.fetchall() != [("complete", 1)]:
         raise RuntimeError("old-origin update processing audit differs")
     _guard_unique_keys(cursor)
@@ -127,13 +140,17 @@ def execute_update(original_process_id: str | None = None) -> dict:
             expected_hash = _guard_before(cursor, original_process_id)
             cursor.execute(f"CALL {CURATED}.PROCESS_LOADED_ATTEMPT(%s)", (ATTEMPT_ID,))
             outcome = json.loads(cursor.fetchone()[0])
-            return {"outcome": outcome,
-                    "counts": _guard_after(cursor, outcome, expected_hash, original_process_id)}
+            return {
+                "outcome": outcome,
+                "counts": _guard_after(cursor, outcome, expected_hash, original_process_id),
+            }
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--execute", action="store_true", help="run one paid fixture procedure call")
+    parser.add_argument(
+        "--execute", action="store_true", help="run one paid fixture procedure call"
+    )
     parser.add_argument("--original-process-id", help="optional ID printed by the original call")
     args = parser.parse_args()
     if args.execute:

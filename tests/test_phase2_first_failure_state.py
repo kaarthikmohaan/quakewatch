@@ -12,10 +12,14 @@ from scripts.evidence.phase2 import first_failure_state
 class FirstFailureStateTest(unittest.TestCase):
     def test_preview_does_not_connect(self):
         output = io.StringIO()
-        with patch("scripts.evidence.phase2.first_failure_state.connect_project",
-                   side_effect=AssertionError("connected")), \
-             patch("sys.argv", ["first_failure_state.py"]), \
-             contextlib.redirect_stdout(output):
+        with (
+            patch(
+                "scripts.evidence.phase2.first_failure_state.connect_project",
+                side_effect=AssertionError("connected"),
+            ),
+            patch("sys.argv", ["first_failure_state.py"]),
+            contextlib.redirect_stdout(output),
+        ):
             first_failure_state.main()
         self.assertIn("no Snowflake connection", output.getvalue())
 

@@ -36,10 +36,13 @@ EXPECTED_AFTER = {
 
 
 def _history(cursor) -> list[tuple[str, str]]:
-    cursor.execute(f"""
+    cursor.execute(
+        f"""
         SELECT SOURCE_STATUS, PAYLOAD_HASH FROM {CURATED}.FACT_EVENT_REVISION
         WHERE CANONICAL_EVENT_ID = %s ORDER BY SOURCE_UPDATED_AT
-    """, (EVENT_ID,))
+    """,
+        (EVENT_ID,),
+    )
     return cursor.fetchall()
 
 
@@ -53,7 +56,8 @@ def _expected_history() -> list[tuple[str, str]]:
 
 def _guard_before(cursor) -> str:
     expected_hash = _expected_history()[0][1]
-    cursor.execute(f"""
+    cursor.execute(
+        f"""
         SELECT a.EXTRACT_STATUS, a.LOAD_STATUS, a.SOURCE_ROWS_RETURNED,
                a.RAW_ROWS_WRITTEN, a.LOADED_ROWS,
                COALESCE(ARRAY_SIZE(a.COVERAGE_GAPS), 0),
@@ -63,19 +67,25 @@ def _guard_before(cursor) -> str:
         FROM {RAW}.BATCH_ATTEMPT a
         JOIN {RAW}.RAW_EVENT_RECORDS r ON a.ATTEMPT_ID = r.ATTEMPT_ID
         WHERE a.ATTEMPT_ID = %s
-    """, (ATTEMPT_ID,))
-    if cursor.fetchall() != [("complete", "complete", 1, 1, 1, 0, True,
-                              expected_hash, EVENT_ID, "reviewed")]:
+    """,
+        (ATTEMPT_ID,),
+    )
+    if cursor.fetchall() != [
+        ("complete", "complete", 1, 1, 1, 0, True, expected_hash, EVENT_ID, "reviewed")
+    ]:
         raise RuntimeError("stale replay RAW receipt or source row differs")
     if _counts(cursor) != DELETION_COUNTS:
         raise RuntimeError("fixture model is not at the measured deletion state")
     cursor.execute(f"SELECT COUNT(*) FROM {CURATED}.EVENT_CURRENT")
     if cursor.fetchone()[0] != 0 or _history(cursor) != _expected_history():
         raise RuntimeError("fixture tombstone/current state differs")
-    cursor.execute(f"""
+    cursor.execute(
+        f"""
         SELECT PROCESS_ATTEMPT_ID, STATUS, REVISION_ROWS_MERGED
         FROM {CURATED}.BATCH_PROCESS_ATTEMPT WHERE ATTEMPT_ID = %s
-    """, (DELETION_ATTEMPT,))
+    """,
+        (DELETION_ATTEMPT,),
+    )
     if cursor.fetchall() != [(DELETION_PROCESS_ID, "complete", 1)]:
         raise RuntimeError("deletion processing audit differs")
     _guard_unique_keys(cursor)
@@ -83,14 +93,16 @@ def _guard_before(cursor) -> str:
 
 
 def _guard_after(cursor, outcome: dict, expected_hash: str) -> dict[str, int]:
-    if (outcome.get("attempt_id") != ATTEMPT_ID
-            or outcome.get("status") != "complete"
-            or outcome.get("loaded_rows") != 1
-            or outcome.get("processed_rows") != 1
-            or outcome.get("rejected_rows") != 0
-            or outcome.get("revision_rows_merged") not in (0, 1)
-            or not outcome.get("process_attempt_id")
-            or outcome["process_attempt_id"] == DELETION_PROCESS_ID):
+    if (
+        outcome.get("attempt_id") != ATTEMPT_ID
+        or outcome.get("status") != "complete"
+        or outcome.get("loaded_rows") != 1
+        or outcome.get("processed_rows") != 1
+        or outcome.get("rejected_rows") != 0
+        or outcome.get("revision_rows_merged") not in (0, 1)
+        or not outcome.get("process_attempt_id")
+        or outcome["process_attempt_id"] == DELETION_PROCESS_ID
+    ):
         raise RuntimeError(f"stale replay processing outcome differs: {outcome}")
     counts = _counts(cursor)
     if counts != EXPECTED_AFTER:
@@ -100,10 +112,13 @@ def _guard_after(cursor, outcome: dict, expected_hash: str) -> dict[str, int]:
         raise RuntimeError("stale replay resurrected deleted event")
     if _history(cursor) != _expected_history() or expected_hash != _expected_history()[0][1]:
         raise RuntimeError("stale replay changed logical revision history")
-    cursor.execute(f"""
+    cursor.execute(
+        f"""
         SELECT STATUS, REVISION_ROWS_MERGED FROM {CURATED}.BATCH_PROCESS_ATTEMPT
         WHERE ATTEMPT_ID = %s AND PROCESS_ATTEMPT_ID = %s
-    """, (ATTEMPT_ID, outcome["process_attempt_id"]))
+    """,
+        (ATTEMPT_ID, outcome["process_attempt_id"]),
+    )
     if cursor.fetchall() != [("complete", outcome["revision_rows_merged"])]:
         raise RuntimeError("stale replay processing audit differs")
     _guard_unique_keys(cursor)

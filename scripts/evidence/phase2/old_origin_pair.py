@@ -44,22 +44,27 @@ def execute_pair() -> dict:
             update_hash = update_before(cursor, original_process_id)
             cursor.execute(f"CALL {CURATED}.PROCESS_LOADED_ATTEMPT(%s)", (UPDATE_ATTEMPT,))
             update_outcome = json.loads(cursor.fetchone()[0])
-            update_counts = update_after(cursor, update_outcome, update_hash,
-                                         original_process_id)
-            return {"original": original, "update": {"outcome": update_outcome,
-                                                       "counts": update_counts}}
+            update_counts = update_after(cursor, update_outcome, update_hash, original_process_id)
+            return {
+                "original": original,
+                "update": {"outcome": update_outcome, "counts": update_counts},
+            }
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--execute", action="store_true", help="run two paid fixture procedure calls")
+    parser.add_argument(
+        "--execute", action="store_true", help="run two paid fixture procedure calls"
+    )
     args = parser.parse_args()
     if args.execute:
         print(json.dumps(execute_pair(), indent=2, sort_keys=True))
     else:
         print("Phase 2 old-origin pair: preview only; no Snowflake connection")
         print(f"Order: {ORIGINAL_ATTEMPT}, then {UPDATE_ATTEMPT}")
-        print("Each call requires exact pre-state and verifies revision, current view, audit, and keys")
+        print(
+            "Each call requires exact pre-state and verifies revision, current view, audit, and keys"
+        )
         print("The update call runs only after the original post-check passes")
 
 

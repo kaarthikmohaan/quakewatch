@@ -7,6 +7,7 @@ import hashlib
 import json
 import logging
 import random
+import signal
 import sys
 import time
 import uuid
@@ -76,6 +77,15 @@ def source_deadline(seconds: int):
         _source_deadline_at.reset(token)
 
 
+def _raise_interrupt(signum: int, _frame: object) -> None:
+    raise KeyboardInterrupt(f"terminated by signal {signum}")
+
+
+def install_termination_handler() -> None:
+    """Treat SIGTERM like Ctrl-C so an interrupted capture saves a failed manifest."""
+    signal.signal(signal.SIGTERM, _raise_interrupt)
+
+
 def parse_utc(value: str) -> datetime:
     """Parse an ISO date/time. A date without a timezone is treated as UTC."""
     normalized = value.replace("Z", "+00:00")
@@ -92,9 +102,7 @@ def iso_utc(value: datetime) -> str:
     return value.astimezone(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
-def request_with_retry(
-    client: httpx.Client, url: str, params: dict[str, Any]
-) -> httpx.Response:
+def request_with_retry(client: httpx.Client, url: str, params: dict[str, Any]) -> httpx.Response:
     """Retry temporary HTTP/network failures a small, bounded number of times."""
     retryable_statuses = {429, 500, 502, 503, 504}
     consecutive_read_timeouts = 0
@@ -102,9 +110,11 @@ def request_with_retry(
         remaining = remaining_source_time()
         try:
             response = client.get(
-                url, params=params,
+                url,
+                params=params,
                 timeout=min(REQUEST_TIMEOUT_SECONDS, remaining)
-                if remaining is not None else REQUEST_TIMEOUT_SECONDS,
+                if remaining is not None
+                else REQUEST_TIMEOUT_SECONDS,
             )
             remaining_source_time()
         except httpx.TransportError as exc:
@@ -112,12 +122,19 @@ def request_with_retry(
             consecutive_read_timeouts = (
                 consecutive_read_timeouts + 1 if isinstance(exc, httpx.ReadTimeout) else 0
             )
-            if (attempt == MAX_HTTP_ATTEMPTS
-                    or consecutive_read_timeouts >= MAX_CONSECUTIVE_READ_TIMEOUTS):
+            if (
+                attempt == MAX_HTTP_ATTEMPTS
+                or consecutive_read_timeouts >= MAX_CONSECUTIVE_READ_TIMEOUTS
+            ):
                 raise
             delay = min(2 ** (attempt - 1), 8) + random.random() * 0.25
-            logger.warning("USGS request failed (%s); retry %d of %d in %.1fs",
-                           type(exc).__name__, attempt, MAX_HTTP_ATTEMPTS - 1, delay)
+            logger.warning(
+                "USGS request failed (%s); retry %d of %d in %.1fs",
+                type(exc).__name__,
+                attempt,
+                MAX_HTTP_ATTEMPTS - 1,
+                delay,
+            )
             remaining = remaining_source_time()
             time.sleep(min(delay, remaining) if remaining is not None else delay)
             continue
@@ -134,8 +151,13 @@ def request_with_retry(
         except ValueError:
             delay = min(2 ** (attempt - 1), 8)
         delay += random.random() * 0.25
-        logger.warning("USGS returned HTTP %d; retry %d of %d in %.1fs",
-                       response.status_code, attempt, MAX_HTTP_ATTEMPTS - 1, delay)
+        logger.warning(
+            "USGS returned HTTP %d; retry %d of %d in %.1fs",
+            response.status_code,
+            attempt,
+            MAX_HTTP_ATTEMPTS - 1,
+            delay,
+        )
         remaining = remaining_source_time()
         time.sleep(min(delay, remaining) if remaining is not None else delay)
 
@@ -189,7 +211,9 @@ def get_features(client: httpx.Client, params: dict[str, Any]) -> list[dict[str,
     return body["features"]
 
 
-def split_window(start: datetime, end: datetime) -> tuple[tuple[datetime, datetime], tuple[datetime, datetime]]:
+def split_window(
+    start: datetime, end: datetime
+) -> tuple[tuple[datetime, datetime], tuple[datetime, datetime]]:
     """Split an inclusive time range at its midpoint, intentionally overlapping there."""
     midpoint = start + (end - start) / 2
     if midpoint <= start or midpoint >= end:
@@ -235,7 +259,9 @@ def fetch_window(
         except httpx.ReadTimeout as exc:
             last_issue = f"source count timed out: {exc}"
             if timeout_split_depth >= MAX_TIMEOUT_SPLIT_DEPTH:
-                raise ExtractionError(f"{window_id}: {last_issue}", [unresolved(last_issue)]) from exc
+                raise ExtractionError(
+                    f"{window_id}: {last_issue}", [unresolved(last_issue)]
+                ) from exc
             break
         except (httpx.HTTPError, ExtractionError) as exc:
             raise ExtractionError(f"{window_id}: {exc}", [unresolved(str(exc))]) from exc
@@ -252,7 +278,9 @@ def fetch_window(
         except httpx.ReadTimeout as exc:
             last_issue = f"source fetch/count timed out: {exc}"
             if timeout_split_depth >= MAX_TIMEOUT_SPLIT_DEPTH:
-                raise ExtractionError(f"{window_id}: {last_issue}", [unresolved(last_issue)]) from exc
+                raise ExtractionError(
+                    f"{window_id}: {last_issue}", [unresolved(last_issue)]
+                ) from exc
             break
         except (httpx.HTTPError, ExtractionError) as exc:
             raise ExtractionError(f"{window_id}: {exc}", [unresolved(str(exc))]) from exc
@@ -292,8 +320,13 @@ def fetch_window(
     for suffix, (child_start, child_end) in zip(("a", "b"), (left, right), strict=True):
         try:
             child_rows, child_audits = fetch_window(
-                client, site, child_start, child_end, f"{window_id}.{suffix}",
-                timeout_split_depth + 1, query_base=query_base,
+                client,
+                site,
+                child_start,
+                child_end,
+                f"{window_id}.{suffix}",
+                timeout_split_depth + 1,
+                query_base=query_base,
             )
         except ExtractionError as exc:
             exc.window_audit = [*audits, *exc.window_audit]
@@ -307,8 +340,9 @@ def stable_json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
-def initial_request_windows(start: datetime, end: datetime,
-                            source_days: int | None) -> list[tuple[datetime, datetime]]:
+def initial_request_windows(
+    start: datetime, end: datetime, source_days: int | None
+) -> list[tuple[datetime, datetime]]:
     """Keep one logical month while optionally starting with shorter source calls."""
     if source_days is None:
         return [(start, end)]
@@ -323,8 +357,9 @@ def initial_request_windows(start: datetime, end: datetime,
     return windows
 
 
-def hourly_request_windows(start: datetime, end: datetime,
-                           source_hours: int) -> list[tuple[datetime, datetime]]:
+def hourly_request_windows(
+    start: datetime, end: datetime, source_hours: int
+) -> list[tuple[datetime, datetime]]:
     """Plan bounded sub-day children without changing the logical batch range."""
     if not 1 <= source_hours <= 12:
         raise ValueError("source-hours must be between 1 and 12")
@@ -337,8 +372,9 @@ def hourly_request_windows(start: datetime, end: datetime,
     return windows
 
 
-def prior_child_checkpoints(output_root: Path, logical_batch_id: str,
-                            source_days: int | None) -> dict[str, list[Path]]:
+def prior_child_checkpoints(
+    output_root: Path, logical_batch_id: str, source_days: int | None
+) -> dict[str, list[Path]]:
     """Find prior attempts for the same query and planned slice size."""
     checkpoints: dict[str, list[Path]] = {}
     for manifest_path in sorted(output_root.glob("*/manifest.json"), reverse=True):
@@ -346,16 +382,19 @@ def prior_child_checkpoints(output_root: Path, logical_batch_id: str,
             prior = json.loads(manifest_path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
-        if (prior.get("logical_batch_id") != logical_batch_id
-                or prior.get("initial_source_days") != source_days):
+        if (
+            prior.get("logical_batch_id") != logical_batch_id
+            or prior.get("initial_source_days") != source_days
+        ):
             continue
         for path in (manifest_path.parent / "children").glob("*.json"):
             checkpoints.setdefault(path.stem, []).append(path)
     return checkpoints
 
 
-def read_child_checkpoint(paths: list[Path], params: dict[str, Any],
-                          window_id: str) -> dict[str, Any] | None:
+def read_child_checkpoint(
+    paths: list[Path], params: dict[str, Any], window_id: str
+) -> dict[str, Any] | None:
     """Reuse only a complete, self-consistent local slice."""
     for path in paths:
         try:
@@ -373,17 +412,21 @@ def read_child_checkpoint(paths: list[Path], params: dict[str, Any],
                 and isinstance(payload["fetched_at"], str)
                 and isinstance(audits, list)
                 and isinstance(rows, list)
-                and all(isinstance(row, list) and len(row) == 2
-                        and isinstance(row[0], dict) and isinstance(row[1], str)
-                        for row in rows)
+                and all(
+                    isinstance(row, list)
+                    and len(row) == 2
+                    and isinstance(row[0], dict)
+                    and isinstance(row[1], str)
+                    for row in rows
+                )
                 and all(audit["status"] in {"split", "reconciled"} for audit in audits)
-                and all(row[1] in {audit["window_id"] for audit in leaves}
-                        for row in rows)
+                and all(row[1] in {audit["window_id"] for audit in leaves} for row in rows)
                 and sum(audit["returned_rows"] for audit in leaves) == len(rows)
-                and all(audit["count_before"] == audit["returned_rows"]
-                        == audit["count_after"] for audit in leaves)
-                and all(audit["source_fetched_at"] == payload["fetched_at"]
-                        for audit in leaves)
+                and all(
+                    audit["count_before"] == audit["returned_rows"] == audit["count_after"]
+                    for audit in leaves
+                )
+                and all(audit["source_fetched_at"] == payload["fetched_at"] for audit in leaves)
             )
             if valid:
                 return payload
@@ -404,10 +447,16 @@ def save_child_checkpoint(path: Path, payload: dict[str, Any]) -> None:
     temporary_path.replace(path)
 
 
-def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
-              source_days: int | None = None, resume_children: bool = False,
-              source_hours: int | None = None,
-              hourly_child: int | None = None) -> Path:
+def run_batch(
+    site_key: str,
+    start: datetime,
+    end: datetime,
+    output_root: Path,
+    source_days: int | None = None,
+    resume_children: bool = False,
+    source_hours: int | None = None,
+    hourly_child: int | None = None,
+) -> Path:
     if start >= end:
         raise ExtractionError("--start must be earlier than --end")
     initial_windows = initial_request_windows(start, end, source_days)
@@ -422,11 +471,15 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
         raise ValueError("source-hours requires source-days 1")
     if source_hours is not None and not 1 <= source_hours <= 12:
         raise ValueError("source-hours must be between 1 and 12")
-    if hourly_child is not None and (source_hours is None
-                                     or not 1 <= hourly_child <= len(initial_windows)):
+    if hourly_child is not None and (
+        source_hours is None or not 1 <= hourly_child <= len(initial_windows)
+    ):
         raise ValueError("hourly-child requires source-hours and a planned child number")
-    checkpoints = (prior_child_checkpoints(output_root, logical_batch_id, source_days)
-                   if resume_children else {})
+    checkpoints = (
+        prior_child_checkpoints(output_root, logical_batch_id, source_days)
+        if resume_children
+        else {}
+    )
     attempt_id = f"{datetime.now(UTC):%Y%m%dT%H%M%SZ}-{uuid.uuid4().hex[:10]}"
     fetched_at = iso_utc(datetime.now(UTC))
     attempt_dir = output_root / attempt_id
@@ -468,24 +521,34 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
         headers = {"User-Agent": USER_AGENT, "Accept": "application/geo+json, application/json"}
         features: list[tuple[dict[str, Any], str, str]] = []
         if len(initial_windows) > 1:
-            windows.append({
-                "window_id": "w0001", "starttime": iso_utc(start),
-                "endtime": iso_utc(end), "status": "split",
-                "reason": f"planned source slices of at most {source_days} days",
-            })
+            windows.append(
+                {
+                    "window_id": "w0001",
+                    "starttime": iso_utc(start),
+                    "endtime": iso_utc(end),
+                    "status": "split",
+                    "reason": f"planned source slices of at most {source_days} days",
+                }
+            )
         with source_deadline(SOURCE_WINDOW_DEADLINE_SECONDS):
             with httpx.Client(
                 headers=headers,
                 timeout=REQUEST_TIMEOUT_SECONDS,
                 follow_redirects=True,
             ) as client:
-                def capture_child(child_start: datetime, child_end: datetime,
-                                  window_id: str, checkpoint: dict[str, Any] | None) -> None:
+
+                def capture_child(
+                    child_start: datetime,
+                    child_end: datetime,
+                    window_id: str,
+                    checkpoint: dict[str, Any] | None,
+                ) -> None:
                     nonlocal active_window
                     params = source_params(site, child_start, child_end)
                     active_window = (window_id, child_start, child_end)
                     manifest["active_window"] = {
-                        "window_id": window_id, "starttime": iso_utc(child_start),
+                        "window_id": window_id,
+                        "starttime": iso_utc(child_start),
                         "endtime": iso_utc(child_end),
                     }
                     manifest["window_audit"] = windows
@@ -506,18 +569,25 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
                             ]
                         manifest["source_rows_fetched_this_attempt"] += len(child_features)
                         if resume_children:
-                            save_child_checkpoint(attempt_dir / "children" / f"{window_id}.json", {
-                                "query_parameters": params,
-                                "window_id": window_id,
-                                "attempt_id": attempt_id,
-                                "fetched_at": child_fetched_at,
-                                "window_audit": child_audits,
-                                "features": [[feature, row_window_id]
-                                             for feature, row_window_id in child_features],
-                            })
+                            save_child_checkpoint(
+                                attempt_dir / "children" / f"{window_id}.json",
+                                {
+                                    "query_parameters": params,
+                                    "window_id": window_id,
+                                    "attempt_id": attempt_id,
+                                    "fetched_at": child_fetched_at,
+                                    "window_audit": child_audits,
+                                    "features": [
+                                        [feature, row_window_id]
+                                        for feature, row_window_id in child_features
+                                    ],
+                                },
+                            )
                     else:
-                        child_features = [(feature, row_window_id)
-                                          for feature, row_window_id in checkpoint["features"]]
+                        child_features = [
+                            (feature, row_window_id)
+                            for feature, row_window_id in checkpoint["features"]
+                        ]
                         child_audits = [
                             {**audit, "reused_from_attempt_id": checkpoint["attempt_id"]}
                             for audit in checkpoint["window_audit"]
@@ -525,8 +595,10 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
                         child_fetched_at = checkpoint["fetched_at"]
                         manifest["reused_child_windows"].append(window_id)
                         manifest["source_rows_reused"] += len(child_features)
-                    features.extend((feature, row_window_id, child_fetched_at)
-                                    for feature, row_window_id in child_features)
+                    features.extend(
+                        (feature, row_window_id, child_fetched_at)
+                        for feature, row_window_id in child_features
+                    )
                     windows.extend(child_audits)
                     active_window = None
                     manifest.pop("active_window", None)
@@ -536,28 +608,40 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
                 for index, (child_start, child_end) in enumerate(initial_windows, start=1):
                     window_id = f"w0001.{index}" if len(initial_windows) > 1 else "w0001"
                     params = source_params(site, child_start, child_end)
-                    checkpoint = read_child_checkpoint(
-                        checkpoints.get(window_id, []), params, window_id
-                    ) if resume_children else None
-                    if (checkpoint is not None or source_hours is None
-                            or (hourly_child is not None and index != hourly_child)):
+                    checkpoint = (
+                        read_child_checkpoint(checkpoints.get(window_id, []), params, window_id)
+                        if resume_children
+                        else None
+                    )
+                    if (
+                        checkpoint is not None
+                        or source_hours is None
+                        or (hourly_child is not None and index != hourly_child)
+                    ):
                         capture_child(child_start, child_end, window_id, checkpoint)
                         continue
                     hours = hourly_request_windows(child_start, child_end, source_hours)
-                    windows.append({
-                        "window_id": window_id,
-                        "starttime": iso_utc(child_start), "endtime": iso_utc(child_end),
-                        "status": "split",
-                        "reason": f"planned source slices of at most {source_hours} hours",
-                    })
+                    windows.append(
+                        {
+                            "window_id": window_id,
+                            "starttime": iso_utc(child_start),
+                            "endtime": iso_utc(child_end),
+                            "status": "split",
+                            "reason": f"planned source slices of at most {source_hours} hours",
+                        }
+                    )
                     manifest["window_audit"] = windows
                     save_manifest()
                     for hour_index, (hour_start, hour_end) in enumerate(hours, start=1):
                         hour_id = f"{window_id}.{hour_index}"
                         hour_params = source_params(site, hour_start, hour_end)
-                        hour_checkpoint = read_child_checkpoint(
-                            checkpoints.get(hour_id, []), hour_params, hour_id
-                        ) if resume_children else None
+                        hour_checkpoint = (
+                            read_child_checkpoint(
+                                checkpoints.get(hour_id, []), hour_params, hour_id
+                            )
+                            if resume_children
+                            else None
+                        )
                         capture_child(hour_start, hour_end, hour_id, hour_checkpoint)
 
         rows_written = 0
@@ -614,9 +698,24 @@ def run_batch(site_key: str, start: datetime, end: datetime, output_root: Path,
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Fetch one bounded USGS earthquake batch.")
     parser.add_argument("--site", required=True, choices=sorted(SITES))
-    parser.add_argument("--start", required=True, type=parse_utc, help="Inclusive ISO date/time (UTC if timezone omitted)")
-    parser.add_argument("--end", required=True, type=parse_utc, help="Inclusive ISO date/time (UTC if timezone omitted)")
-    parser.add_argument("--output", type=Path, default=Path("data/raw"), help="Output root (default: data/raw; ignored by Git)")
+    parser.add_argument(
+        "--start",
+        required=True,
+        type=parse_utc,
+        help="Inclusive ISO date/time (UTC if timezone omitted)",
+    )
+    parser.add_argument(
+        "--end",
+        required=True,
+        type=parse_utc,
+        help="Inclusive ISO date/time (UTC if timezone omitted)",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("data/raw"),
+        help="Output root (default: data/raw; ignored by Git)",
+    )
     return parser
 
 
@@ -624,14 +723,22 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
     configure_logging()
+    install_termination_handler()
     try:
         manifest = run_batch(args.site, args.start, args.end, args.output)
     except (ExtractionError, httpx.HTTPError, OSError) as exc:
         print(f"Extraction failed: {exc}", file=sys.stderr)
         return 1
+    except KeyboardInterrupt as exc:
+        print(
+            f"Extraction interrupted ({exc or 'Ctrl-C'}); manifest marked failed", file=sys.stderr
+        )
+        return 130
     summary = json.loads(manifest.read_text(encoding="utf-8"))
     print(f"Batch {summary['attempt_id']} saved: {manifest}")
-    print(f"Source rows: {summary['source_rows_returned']}; raw rows written: {summary['raw_rows_written']}")
+    print(
+        f"Source rows: {summary['source_rows_returned']}; raw rows written: {summary['raw_rows_written']}"
+    )
     print(f"Window status: {summary['status']}")
     return 0
 

@@ -46,8 +46,16 @@ class FakeSession:
 
 
 def projection(n=1):
-    base = RawObservation("attempt-1", "w0001", "attempt-1/events.jsonl", 1,
-                          datetime(2026, 9, 30, tzinfo=UTC), "a" * 64, "1", FEATURE)
+    base = RawObservation(
+        "attempt-1",
+        "w0001",
+        "attempt-1/events.jsonl",
+        1,
+        datetime(2026, 9, 30, tzinfo=UTC),
+        "a" * 64,
+        "1",
+        FEATURE,
+    )
     return project_raw_attempt(
         [replace(base, stage_file_row_number=i + 1) for i in range(n)], "attempt-1", n
     )
@@ -66,19 +74,34 @@ class StagingWriteTest(unittest.TestCase):
 
     def test_existing_same_source_row_is_idempotent(self):
         p = projection()
-        session = FakeSession(existing=[dict(
-            STAGE_FILE_NAME="attempt-1/events.jsonl", STAGE_FILE_ROW_NUMBER=1,
-            ATTEMPT_ID="attempt-1", PAYLOAD_HASH="a" * 64,
-            RAW_PARSER_VERSION="1", STAGING_PARSER_VERSION=STAGING_PARSER_VERSION,
-        )], final_count=1)
+        session = FakeSession(
+            existing=[
+                dict(
+                    STAGE_FILE_NAME="attempt-1/events.jsonl",
+                    STAGE_FILE_ROW_NUMBER=1,
+                    ATTEMPT_ID="attempt-1",
+                    PAYLOAD_HASH="a" * 64,
+                    RAW_PARSER_VERSION="1",
+                    STAGING_PARSER_VERSION=STAGING_PARSER_VERSION,
+                )
+            ],
+            final_count=1,
+        )
         self.assertEqual(write_staging(session, p), 1)
 
     def test_existing_hash_conflict_stops_before_merge(self):
-        session = FakeSession(existing=[dict(
-            STAGE_FILE_NAME="attempt-1/events.jsonl", STAGE_FILE_ROW_NUMBER=1,
-            ATTEMPT_ID="attempt-1", PAYLOAD_HASH="b" * 64,
-            RAW_PARSER_VERSION="1", STAGING_PARSER_VERSION=STAGING_PARSER_VERSION,
-        )])
+        session = FakeSession(
+            existing=[
+                dict(
+                    STAGE_FILE_NAME="attempt-1/events.jsonl",
+                    STAGE_FILE_ROW_NUMBER=1,
+                    ATTEMPT_ID="attempt-1",
+                    PAYLOAD_HASH="b" * 64,
+                    RAW_PARSER_VERSION="1",
+                    STAGING_PARSER_VERSION=STAGING_PARSER_VERSION,
+                )
+            ]
+        )
         with self.assertRaisesRegex(ValueError, "conflicts"):
             write_staging(session, projection())
         self.assertFalse(any("MERGE INTO" in sql for sql, _ in session.calls))

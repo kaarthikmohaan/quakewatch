@@ -18,17 +18,19 @@ class FixtureBundleTest(unittest.TestCase):
             self.assertEqual(build_fixture_copy(output), (digest, count))
             self.assertEqual(count, len(MODULES) + len(SQL_FILES))
             with ZipFile(output / "quakewatch_procedure.zip") as archive:
-                self.assertEqual(set(archive.namelist()),
-                                 {f"quakewatch/{name}" for name in MODULES})
+                self.assertEqual(
+                    set(archive.namelist()), {f"quakewatch/{name}" for name in MODULES}
+                )
                 bodies = [archive.read(name).decode() for name in archive.namelist()]
             sql_bodies = [(output / "sql" / name).read_text() for name in SQL_FILES]
             for body in bodies + sql_bodies:
                 self.assertNotIn("QUAKEWATCH.RAW.", body)
                 self.assertNotIn("QUAKEWATCH.CURATED.", body)
-            self.assertIn(TEST_DATABASE + ".CURATED.FACT_EVENT_REVISION",
-                          "\n".join(bodies))
-            self.assertIn("@" + TEST_DATABASE + ".RAW.USGS_JSON_STAGE",
-                          (output / "sql" / "setup/09_create_procedure.sql").read_text())
+            self.assertIn(TEST_DATABASE + ".CURATED.FACT_EVENT_REVISION", "\n".join(bodies))
+            self.assertIn(
+                "@" + TEST_DATABASE + ".RAW.USGS_JSON_STAGE",
+                (output / "sql" / "setup/09_create_procedure.sql").read_text(),
+            )
 
 
 if __name__ == "__main__":

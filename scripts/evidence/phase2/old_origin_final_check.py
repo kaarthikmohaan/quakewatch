@@ -13,22 +13,32 @@ from scripts.fixtures.build_phase2_old_origin_attempts import SEQUENCE
 
 def verify(cursor) -> dict:
     _guard_raw(cursor)
-    cursor.execute(f"""
+    cursor.execute(
+        f"""
         SELECT ATTEMPT_ID, PROCESS_ATTEMPT_ID, STATUS, LOADED_ROWS,
                PROCESSED_ROWS, REJECTED_ROWS, REVISION_ROWS_MERGED
         FROM {CURATED}.BATCH_PROCESS_ATTEMPT
         WHERE ATTEMPT_ID IN (%s, %s) ORDER BY ATTEMPT_ID
-    """, tuple(sorted(attempt for attempt, _ in SEQUENCE)))
+    """,
+        tuple(sorted(attempt for attempt, _ in SEQUENCE)),
+    )
     rows = cursor.fetchall()
     by_attempt = {row[0]: row[1:] for row in rows}
-    if (len(rows) != 2 or len(by_attempt) != 2
-            or set(by_attempt) != {attempt for attempt, _ in SEQUENCE}):
+    if (
+        len(rows) != 2
+        or len(by_attempt) != 2
+        or set(by_attempt) != {attempt for attempt, _ in SEQUENCE}
+    ):
         raise RuntimeError("expected exactly two old-origin process audits")
     original = by_attempt[SEQUENCE[0][0]]
     update = by_attempt[SEQUENCE[1][0]]
-    if (original[1:] != ("complete", 1, 1, 0, 1)
-            or update[1:] != ("complete", 1, 1, 0, 1)
-            or not original[0] or not update[0] or original[0] == update[0]):
+    if (
+        original[1:] != ("complete", 1, 1, 0, 1)
+        or update[1:] != ("complete", 1, 1, 0, 1)
+        or not original[0]
+        or not update[0]
+        or original[0] == update[0]
+    ):
         raise RuntimeError("old-origin process audits differ")
     outcome = {
         "attempt_id": SEQUENCE[1][0],
@@ -40,10 +50,14 @@ def verify(cursor) -> dict:
         "revision_rows_merged": update[5],
     }
     counts = _guard_after(cursor, outcome, _expected_hash(SEQUENCE[1][1]), original[0])
-    return {"status": "verified", "old_origin_revisions": 2,
-            "current_magnitude": 1.3, "counts": counts,
-            "original_process_attempt_id": original[0],
-            "update_process_attempt_id": update[0]}
+    return {
+        "status": "verified",
+        "old_origin_revisions": 2,
+        "current_magnitude": 1.3,
+        "counts": counts,
+        "original_process_attempt_id": original[0],
+        "update_process_attempt_id": update[0],
+    }
 
 
 def main() -> None:

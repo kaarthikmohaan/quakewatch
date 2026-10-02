@@ -27,7 +27,7 @@ for straight away.
 | 3. Load RAW | `python -m quakewatch.history_raw_load --execute` | Stages files, runs `COPY INTO`, and reconciles counts |
 | 4. Build procedure | [`pipeline/build_procedure_bundle.py`](pipeline/build_procedure_bundle.py) | Builds the Snowpark procedure ZIP for upload |
 | 5. Process | [`pipeline/process_history.py`](pipeline/process_history.py) (`make process`) | Calls the procedure for loaded attempts, with per-attempt checks |
-| 6. Check | Scripts in [`checks/`](checks) | Reconciliation, uniqueness, health views, latency, and usage |
+| 6. Check | Scripts in [`checks/`](checks) (`make quality`, `uniqueness`, `postrun`, `metrics`, `analysis`, `integration`) | Reconciliation, uniqueness, health views, latency, analysis queries, and the live SQL compile check |
 | 7. Update sweep | `python -m quakewatch.update_extract`, then `python -m quakewatch.update_load` | Captures later source revisions and deletions (incomplete; see [results](../docs/results.md)) |
 
 ## Folders
@@ -35,7 +35,7 @@ for straight away.
 | Folder | Contents |
 |---|---|
 | [`pipeline/`](pipeline) | Steps of the regular batch path |
-| [`checks/`](checks) | Read-only quality, latency, and usage checks |
+| [`checks/`](checks) | Read-only checks: quality, uniqueness, latency, usage, analysis queries, and the live [integration check](checks/integration.py) |
 | [`migrations/`](migrations) | One-off data migrations, such as the [parser version 2 release](migrations/parser_v2.py) |
 | [`fixtures/`](fixtures) | Builders for the synthetic test data that CI generates before running tests |
 | [`evidence/phase2/`](evidence/phase2) | One-off Phase 2 drills: pilot, rerun, revision, tombstone, old-event, and retry fixtures |
