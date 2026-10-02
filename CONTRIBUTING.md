@@ -48,7 +48,9 @@ After changing package code, run `uv sync --locked --no-editable` again.
    separate from measured results, and never present an estimate as evidence.
 4. Use small [Conventional Commits](https://www.conventionalcommits.org/),
    for example `fix(extract): retry on 503` or `docs(runbook): clarify load`.
-5. Open a pull request and complete the template.
+5. Add a line under **Unreleased** in [CHANGELOG.md](CHANGELOG.md) for any
+   notable change.
+6. Open a pull request and complete the template.
 
 ## Snowflake and cost
 
