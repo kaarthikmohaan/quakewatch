@@ -16,6 +16,22 @@ Each entry keeps its query IDs, counts, and limits as originally recorded.
   complete USGS coverage. History windows 12, 42, and 73 remain source gaps, and
   no update-sweep watermark has been committed.
 
+## Parser version 2 release (2026-10-02)
+
+`make release-parser-v2 EXECUTE=1` ([runner](../../scripts/pipeline/release_parser_v2.py))
+ran under `QUAKEWATCH_ROLE` on `QUAKEWATCH_WH`, with the passphrase entered at
+the terminal prompt. Its pre-checks matched the offline replay: 216,391 staging
+rows, 485 `invalid_origin_time` rejects whose RAW payloads were all USGS stub
+features, no valid row at `[0, 0]`, and all fact rows at version 1. In one
+transaction it then relabelled exactly 485 rejects as `source_stub_record` and
+marked 216,391 staging rows and 215,877 fact rows as parser version 2, rechecked
+the counts, and committed. It then uploaded the version 2 procedure bundle
+(SHA-256 `2c97f4fac277ac3bc0fd7d16d4482447f86eba6fad5532d4e191416700053e73`),
+replaced `PROCESS_LOADED_ATTEMPT`, and created `QUAKEWATCH.RAW.UPDATE_WATERMARK`.
+The final staging state was 215,906 valid rows and 485 `source_stub_record`
+rejects, all at version 2. Query IDs were not captured, and the run's
+warehouse credits were not measured.
+
 ## Live end-to-end Seattle demo (2026-10-02)
 
 A new bounded capture for the public Seattle point and 2026-09-28 UTC first

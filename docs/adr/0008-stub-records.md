@@ -13,7 +13,7 @@ In parser version 2, reject these as `source_stub_record`. Also reject an active
 ## Consequences
 
 - Reject reasons describe causes, and the [reject analysis](../results.md#reject-analysis) documents the evidence.
-- Rows already in Snowflake keep the version 1 label until reprocessed.
+- The rows already in Snowflake were migrated on 2 October 2026 by a checked, single-transaction release ([record](../evidence/results-log.md#parser-version-2-release-2026-10-02)).
 - The fixture procedure bundle hash changed and was updated.
 
 **References:** [staging.py](../../src/quakewatch/staging.py)

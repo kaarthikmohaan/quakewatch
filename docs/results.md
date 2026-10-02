@@ -16,7 +16,7 @@ official USGS totals.
 | History windows loaded and reconciled | **177 of 180** planned windows; windows 12, 42, and 73 timed out even after splitting and are recorded as gaps | [Capture log](evidence/results-log.md#first-history-window-attempt) |
 | RAW rows loaded | **216,361** history rows, plus an overlapping 15-row Seattle sample | [RAW loads](evidence/results-log.md#first-history-window-attempt) |
 | Batch receipts reconciled | **All 179** receipts (216,391 observations, including two overlapping 15-row Seattle samples): RAW = staged = processed + rejected | [2 October check](evidence/results-log.md#live-end-to-end-seattle-demo-2026-10-02) |
-| Rejected rows | **485**, all USGS placeholder ("stub") records; see [reject analysis](#reject-analysis) | [Quality deployment](evidence/results-log.md#first-phase-3-quality-deployment-attempt) |
+| Rejected rows | **485**, all USGS placeholder ("stub") records, stored as `source_stub_record`; see [reject analysis](#reject-analysis) | [Quality deployment](evidence/results-log.md#first-phase-3-quality-deployment-attempt) |
 | Duplicate revision or site-bridge key groups | **0** | [Uniqueness check](evidence/results-log.md#first-phase-3-uniqueness-check) |
 | First-backfill fetch-to-curated p95 | **35.9 hours, missing the 24-hour target** set before measuring (178 attempts) | [Measurement plan and result](evidence/results-log.md#phase-3-first-backfill-measurement-plan-set-before-live-query) |
 | Failed transform, rollback, and retry from RAW | **Passed**; identical counts before failure, after rollback, and after retry | [Retry drill](evidence/results-log.md#isolated-failed-transform-and-retry-drill) |
@@ -73,8 +73,10 @@ labels them `source_stub_record` and also rejects an active record whose
 coordinates are the `[0, 0]` placeholder, while keeping a deleted record at
 that placeholder as a tombstone without coordinates. Replaying all 216,591
 local rows through version 2 gives the same 485 rejects, now as
-`source_stub_record`, and no other changes. The rows already in Snowflake keep
-their version 1 label until they are deliberately reprocessed.
+`source_stub_record`, and no other changes. On 2 October 2026 the stored
+Snowflake rows were migrated to match: after checks confirming every reject was
+a stub payload, one transaction relabelled exactly 485 rows and marked all
+staging and fact rows as version 2 ([release record](evidence/results-log.md#parser-version-2-release-2026-10-02)).
 
 ## Latency evidence
 
@@ -94,16 +96,13 @@ under [still open](#still-open).
 - **Cost:** warehouse credits were captured as a shared hourly snapshot, not
   per run; storage was not measured.
 - **User validation:** no target-analyst session has been held.
-- **Pending deployment:** the parser version 2 procedure and the
-  `UPDATE_WATERMARK` table are in the repository but not yet deployed to
-  Snowflake. `make release-parser-v2 EXECUTE=1` checks the stored rows,
-  relabels the 485 rejects in one transaction, and deploys both.
 
 ## Evidence log contents
 
 The [evidence log](evidence/results-log.md) is ordered newest first. Its
 sections are:
 
+- [Parser version 2 release (2026-10-02)](evidence/results-log.md#parser-version-2-release-2026-10-02)
 - [Live end-to-end Seattle demo (2026-10-02)](evidence/results-log.md#live-end-to-end-seattle-demo-2026-10-02)
 - [Phase 4 ten-case Cortex aggregate snapshot](evidence/results-log.md#phase-4-ten-case-cortex-aggregate-snapshot)
 - [Phase 4 nine-case Cortex evaluation](evidence/results-log.md#phase-4-nine-case-cortex-evaluation)

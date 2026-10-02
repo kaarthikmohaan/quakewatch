@@ -14,6 +14,6 @@ Advance the committed watermark to the sweep start time only after every window'
 
 - An incomplete sweep stays retryable; the watermark has correctly not advanced while the live sweep is incomplete.
 - Any machine or scheduler can run the loader, and a concurrent runner cannot double-advance the watermark.
-- The table must be created before the first sweep commit.
+- The table was created in Snowflake on 2 October 2026; no watermark has been committed yet.
 
 **References:** [update_load.py](../../src/quakewatch/update_load.py), [watermark DDL](../../sql/phase1_update_watermark.sql)
