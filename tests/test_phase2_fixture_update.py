@@ -5,8 +5,8 @@ import io
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.phase2_fixture_namespace import TEST_DATABASE
-from scripts.phase2_fixture_update import (
+from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
+from scripts.evidence.phase2.phase2_fixture_update import (
     ATTEMPT_ID, EXPECTED_AFTER, ORIGINAL_COUNTS, ORIGINAL_PROCESS_ID,
     _guard_after, _guard_before, _guard_raw, execute_update, preview,
 )
@@ -15,7 +15,7 @@ from scripts.phase2_fixture_update import (
 class FixtureUpdateTest(unittest.TestCase):
     def test_preview_does_not_connect(self):
         output = io.StringIO()
-        with patch("scripts.phase2_fixture_update.connect_project",
+        with patch("scripts.evidence.phase2.phase2_fixture_update.connect_project",
                    side_effect=AssertionError("connected")), contextlib.redirect_stdout(output):
             preview()
         self.assertIn("no Snowflake connection", output.getvalue())
@@ -32,8 +32,8 @@ class FixtureUpdateTest(unittest.TestCase):
 
     def test_changed_baseline_stops_before_call(self):
         cursor = MagicMock()
-        with patch("scripts.phase2_fixture_update._guard_raw", return_value="hash"), \
-             patch("scripts.phase2_fixture_update._counts",
+        with patch("scripts.evidence.phase2.phase2_fixture_update._guard_raw", return_value="hash"), \
+             patch("scripts.evidence.phase2.phase2_fixture_update._counts",
                    return_value={**ORIGINAL_COUNTS, "FACT_EVENT_REVISION": 2}):
             with self.assertRaisesRegex(RuntimeError, "measured original state"):
                 _guard_before(cursor)
@@ -57,11 +57,11 @@ class FixtureUpdateTest(unittest.TestCase):
                    "loaded_rows": 1, "processed_rows": 1,
                    "rejected_rows": 0, "revision_rows_merged": 1,
                    "process_attempt_id": "new-process"}
-        with patch("scripts.phase2_fixture_update._counts", return_value=EXPECTED_AFTER), \
-             patch("scripts.phase2_fixture_update._current",
+        with patch("scripts.evidence.phase2.phase2_fixture_update._counts", return_value=EXPECTED_AFTER), \
+             patch("scripts.evidence.phase2.phase2_fixture_update._current",
                    return_value=[("uw714110682", "reviewed", 1.28, "new")]), \
-             patch("scripts.phase2_fixture_update._hash_feature", return_value="old") as hashes, \
-             patch("scripts.phase2_fixture_update._guard_unique_keys"):
+             patch("scripts.evidence.phase2.phase2_fixture_update._hash_feature", return_value="old") as hashes, \
+             patch("scripts.evidence.phase2.phase2_fixture_update._guard_unique_keys"):
             # The fixture hash helper is called for the historical original.
             self.assertEqual(_guard_after(cursor, outcome, "new"), EXPECTED_AFTER)
         hashes.assert_called_once()
@@ -74,10 +74,10 @@ class FixtureUpdateTest(unittest.TestCase):
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
         events = []
-        with patch("scripts.phase2_fixture_update.connect_project", return_value=connection), \
-             patch("scripts.phase2_fixture_update._guard_before",
+        with patch("scripts.evidence.phase2.phase2_fixture_update.connect_project", return_value=connection), \
+             patch("scripts.evidence.phase2.phase2_fixture_update._guard_before",
                    side_effect=lambda *_: events.append("before") or "hash"), \
-             patch("scripts.phase2_fixture_update._guard_after",
+             patch("scripts.evidence.phase2.phase2_fixture_update._guard_after",
                    side_effect=lambda *_: events.append("after") or EXPECTED_AFTER):
             execute_update()
         self.assertEqual(events, ["before", "after"])

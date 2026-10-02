@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.phase4_cortex_metering import (
+from scripts.evidence.phase4.phase4_cortex_metering import (
     EARLIER_SUCCESSFUL_QUERY_IDS, expected_query_ids,
 )
 

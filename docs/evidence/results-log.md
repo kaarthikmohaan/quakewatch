@@ -1,0 +1,472 @@
+# Results evidence log
+
+The dated record behind the [results summary](../results.md), newest first. Each entry keeps its query IDs, counts, and limits as originally recorded.
+
+## Phase 4 ten-case Cortex aggregate snapshot
+
+I ran the approved read-only aggregate query on 2026-10-01 under
+`QUAKEWATCH_ROLE` and `QUAKEWATCH_WH`. The runner saved ten public-site,
+fixed-window SQL rows to Git-ignored
+`data/cortex/phase4_aggregates.json`. Query ID:
+`01c77065-0002-b136-000e-fef20003852e`; reviewed SQL SHA-256:
+`9b2110deeb6dfe241b0e6f1b5f2c809d9b6331988fa02ee7f64c6814492c7743`.
+Each row also has a hash of its saved aggregate input. The modeled within-radius
+event counts were:
+
+| Public site | 2022 | 2024 | 2026 to Sep 29 UTC |
+|---|---:|---:|---:|
+| Anchorage | 22,056 | 21,711 | 10,685 |
+| Seattle | 2,651 | 3,514 | 2,469 |
+| San Francisco | 15,975 | 18,859 | 16,183 |
+
+The tenth case, Seattle 2026-09-28 UTC, had 15 modeled events. All ten
+saved cases have one configured 250 km public radius, a nonzero count, and a
+nearest event with magnitude, source status, and record age. The script and
+saved file contain no site coordinates. These are counts of currently modeled
+rows in selected windows, **not** full USGS counts or proof of complete
+coverage; three history gaps and the incomplete update sweep remain open.
+The query may have resumed warehouse compute, but no per-query credit amount
+was measured. No Cortex call was made by this aggregate snapshot step.
+
+## Phase 4 nine-case Cortex evaluation
+
+I ran the approved bounded evaluator on 2026-10-01 for the nine saved
+annual/public-site cases. The Seattle day was excluded because its earlier
+`llama3.1-8b` result had already used one retry. The evaluator used
+`claude-haiku-4-5` under `QUAKEWATCH_ROLE`, issued exactly nine new
+`AI_COMPLETE` calls, and saved model, generation time, input/prompt hashes,
+query IDs, token usage, output, and local validation in Git-ignored
+`data/cortex/phase4_briefs.json`. A subsequent invocation returned
+`status=cached`, `new_calls=0`, showing no duplicate paid calls.
+
+All nine outputs passed the strict local screen. Human review then compared
+each stated UTC window, modeled count, 250 km radius, nearest event ID and
+distance **from the site**, magnitude, source status, and age at SQL check time
+against its saved SQL row; all nine passed. No output included a hazard/action
+or complete-source-coverage claim. The saved cache marks each human fact
+review as passed. This establishes factual agreement for these nine
+point-in-time aggregates only; it does not establish complete source coverage
+or that a target user finds the text easier to scan than SQL.
+
+The nine completions reported 1,845 prompt tokens and 926 completion tokens
+in total. Using the published `AI_COMPLETE` rates for this model (0.60 AI
+credits per million input tokens and 3.00 per million output tokens), a simple
+token-rate calculation is about **0.003885 AI credits**. This is an estimate
+from returned tokens; the later Account Usage query below verified the same
+AI-credit subtotal. Warehouse platform credits are separate and unmeasured
+for these calls.
+
+I then compared the Seattle 2024 SQL fact row with its generated
+Cortex sentence in chat and said **“cortex brief”** was easier to scan. This
+is my preference on one example, supporting continued optional use.
+It is not a target-analyst interview or a measured task-time improvement;
+those product checks remain open.
+
+I ran the separately approved read-only Account Usage query at
+2026-10-01 13:27:00 UTC (metering query ID
+`01c77087-0002-b1e7-000e-fef200036b0a`).
+`SNOWFLAKE.ACCOUNT_USAGE.CORTEX_AI_FUNCTIONS_USAGE_HISTORY` returned all 11
+expected query IDs, each marked completed, with **0.003948756 reported AI
+credits** in total: **0.003885000** for the nine `claude-haiku-4-5` briefs and
+**0.000063756** for the two `llama3.1-8b` briefs. This is measured AI-function
+usage for those exact successful calls, rather than the earlier token-rate
+estimate. The rejected trial-account calls generated no brief and were not
+among the 11 successful IDs. The metering query itself may have used XS
+warehouse compute; warehouse platform credits for the aggregate query,
+Cortex calls, and metering query are not isolated by this AI usage view.
+
+## Phase 4 Cortex trial attempt
+
+An approved bounded trial used the public Seattle
+2026-09-28 UTC sample, checked modeled events within the site radius, and
+selected one nearest event. The planned `AI_COMPLETE('llama3.1-8b', ...)` call
+was limited to one invocation and 120 output tokens. Snowflake rejected the
+call with error `399258 (0A000): AI function
+_COMPLETE_WITH_PROMPT_HISTORY_LLM is not available for trial accounts`.
+Therefore **no Cortex summary or usefulness result exists**. The SQL checks
+may have consumed warehouse compute; AI-function usage was not measured, so
+no exact cost or zero-charge claim is made. The deterministic SQL result is
+the fallback. Snowflake's current trial-account documentation says AI features
+are disabled by default until a credit card is added. No account billing setting was changed here.
+These early trial calls used the local administrator profile; the saved trial
+runner was later changed to execute as `QUAKEWATCH_ROLE`, matching the
+dedicated-role rule used by the nine-case evaluator.
+
+I then ran the bounded command again in the visible terminal. It
+returned `cortex_unavailable_for_trial_account` with the same Snowflake error
+`399258`; no AI summary was generated. The SQL result for the public Seattle
+sample was 15 modeled events within radius. The nearest was event
+`uw714111042`, 42.1 km away, magnitude 1.23, source status `reviewed`, and
+source-record age 59.6 hours at query time. The count and nearest query IDs
+were `01c76fc5-0002-afd6-000e-fef200033a4e` and
+`01c76fc5-0002-b113-000e-fef200035d76`. These SQL facts are a bounded
+sample, not a full-source coverage claim. Cortex access was still blocked at
+that point. I then verified the payment method in Snowsight before
+authorizing another paid attempt.
+
+After I confirmed a saved payment method and approved a third bounded
+attempt, `AI_COMPLETE` returned a `llama3.1-8b` completion (query ID
+`01c76fcf-0002-afd6-000e-fef200033b12`) with 140 prompt tokens and 120
+completion tokens. The count and nearest SQL queries were
+`01c76fcf-0002-b1e7-000e-fef20003693a` and
+`01c76fcf-0002-b136-000e-fef20003837e`. SQL again found 15 modeled
+Seattle-sample events within the configured site radius. The nearest event
+was `uw714111042`, distance 42.1 km, magnitude 1.23, source status
+`reviewed`, with source-record age 59.8 hours at query time.
+
+The generated text incorrectly said **“15 km Radius”** by treating the event
+count as a radius size; no 15 km radius was provided. It also stopped before
+stating the source-record age. This brief was **rejected** and the SQL facts
+remain the deterministic fallback. A tighter one-sentence prompt and local
+validation now reject missing facts, unsupported radius-size claims, hazard
+language, and truncated endings. That revision has not been sent to Cortex.
+The 260 returned tokens were the first usage evidence; the later Account Usage
+query above measured its AI credits. No usefulness claim is made from this
+failed example.
+
+I approved the single bounded retry for that same aggregate. It
+returned query ID `01c76fd2-0002-b113-000e-fef200035e4e` with 141 prompt
+tokens and 82 completion tokens. The contemporaneous SQL queries
+`01c76fd2-0002-afd6-000e-fef200033b1e` and
+`01c76fd2-0002-b136-000e-fef200038386` again found 15 events and nearest
+event `uw714111042`, 42.1 km **from the Seattle site**, magnitude 1.23,
+status `reviewed`, source-record age 59.8 hours. The output included those
+values and passed the first automatic checks, but said the nearest event was
+"42.1 km away from uw714111042," incorrectly anchoring distance to the event's
+own ID. Human fact review therefore **rejected the retry**. The validator now
+also rejects that phrasing. The one-retry limit for this aggregate has been
+reached; no further call on this saved input is planned. Actual billed AI
+credits were later measured above; warehouse credits remain unmeasured for
+these calls.
+
+## Phase 4 exit review
+
+I accepted the Phase 4 optional-demo exit on 2026-10-01. The sandbox
+clone and Time Travel drill passed and was cleaned up; a read-only metering
+snapshot recorded actual shared warehouse-hour credits with latency and
+attribution limits. Cortex was left optional and not run. This acceptance
+does not close the three USGS history gaps, the incomplete catalog-wide
+update sweep, the missed Phase 3 latency target, or the target-user interview.
+
+## Phase 4 sandbox recovery preflight
+
+My approved read-only preflight on 2026-10-01 passed under
+`QUAKEWATCH_ROLE` with `QUAKEWATCH_WH`. The isolated fixture
+`QUAKEWATCH_PHASE2_FIXTURE.CURATED.FACT_EVENT_REVISION` had five exact rows,
+five metadata rows, one day of Time Travel retention, and zero duplicate
+logical revision-key groups. The proposed
+`QUAKEWATCH_PHASE2_FIXTURE.CURATED.QW_PHASE4_REVISION_DEMO` clone name was
+absent. The final preflight query ID was
+`01c76f7e-0002-b136-000e-fef2000380fa`. This preflight read no main
+`QUAKEWATCH` fact data and did not create, mutate, or delete a table. It does
+not establish that any clone or Time Travel recovery has succeeded. Actual
+warehouse credits for the preflight were not measured.
+
+## Phase 4 clone isolation and Time Travel drill
+
+The separately approved live drill on 2026-10-01 returned `status=pass` for
+the isolated fixture. It created only
+`QUAKEWATCH_PHASE2_FIXTURE.CURATED.QW_PHASE4_REVISION_DEMO` as a clone of the
+five-row fixture revision fact (clone query ID
+`01c76f83-0002-b136-000e-fef20003810a`). A deliberate `MERGE` then changed
+one clone revision for `qw-old-origin-001` from magnitude 1.1 to 1001.1
+(MERGE query ID `01c76f83-0002-afd6-000e-fef20003390e`). The source table
+still had five rows and magnitude 1.1 for that exact revision key; the clone
+still had five rows and magnitude 1001.1. A `BEFORE (STATEMENT => ...)` read
+against the clone returned five rows and the original 1.1 value for the key;
+the pre-merge magnitude range was 1.08–1.3. The observed result demonstrates
+clone isolation and statement-ID Time Travel for this sandbox case. The
+one-day retention window limits how long the historical read can be repeated.
+
+I separately approved cleanup, and the guarded run on 2026-10-01
+returned `status=pass`: it dropped only the demo clone (DROP query ID
+`01c76f8f-0002-b113-000e-fef200035cf2`), confirmed the clone was absent
+from fixture metadata, and found the fixture source still had five rows.
+No main `QUAKEWATCH` fact table was modified. The earlier durable-RAW retry
+drill is separate evidence; this result does not close the three source gaps,
+the unfinished update sweep, or the missed first-backfill latency target.
+Actual warehouse credits and clone divergence/history storage were not
+measured at the time of the drill; no dollar cost is claimed. A later hourly
+metering snapshot is recorded below, but it cannot isolate the drill's cost.
+
+## Phase 4 warehouse metering snapshot
+
+My approved read-only Account Usage query on 2026-10-01 at 09:56:08 UTC
+(query ID `01c76fb4-0002-b136-000e-fef20003822e`) returned these rows for
+the shared `QUAKEWATCH_WH` warehouse:
+
+| UTC warehouse hour | Compute credits | Cloud-services credits | Reported credits |
+|---|---:|---:|---:|
+| 08:00–09:00 | 0.088875 | 0.004816942 | 0.093691942 |
+| 09:00–10:00 | 0.0705 | 0.000996943 | 0.071496943 |
+
+The second hour was still in progress at query time, and Account Usage may
+lag. The rows include all activity on this warehouse in those hours, not only
+the clone demo. They are actual observed warehouse-hour figures, **not** a
+per-drill bill or a dollar amount. Clone divergence/history storage and any
+account-level billing adjustments were not measured.
+
+## Phase 3 first-backfill measurement plan (set before live query)
+
+Sample: all complete origin-time attempts in `FACT_BATCH_RUN` whose requested UTC windows fall within 2021-09-29 through 2026-09-29, across the three public example sites. This includes one overlapping 15-row Seattle pilot; the unit is a batch attempt, not a unique earthquake. Measure the count, request/fetch/curation date range, and min/p50/p95/max `FETCH_TO_CURATED_SECONDS`. Target: at least 30 attempts and p95 no more than 86,400 seconds (24 hours) for this first manually run backfill. Also report last successful fetch age and newest accepted source-update age separately. This is a project acceptance target, not a production SLO; the three source gaps and incomplete update sweep are excluded from this latency sample and must remain visible in coverage reporting. The [reviewed SQL](../../sql/phase3_metrics.sql) and target were committed before running the measurement.
+
+The approved live measurement on 2026-10-01 returned 178 attempts and requested-window bounds of 2021-09-29 through 2026-09-29 UTC. Fetch times began 2026-09-29 07:54:52 UTC and the last curation was 2026-10-01 07:03:42 UTC. Fetch-to-curated seconds were min 85,670.574, p50 90,522.7, p95 129,170.4, and max 135,791.254. **The 24-hour p95 target was missed** (35.9 hours observed versus 24 hours targeted). The delayed, manually invoked bulk curation contributes to this first-backfill measure; it does not describe a scheduled steady-state service or USGS publication latency. The Snowflake latency query ID was `01c76f37-0002-af06-000e-fef200037666`.
+
+At the separate freshness query's execution time, the last successful fetch was 2026-09-30 06:19:30 UTC, age 91,918 seconds (25.5 hours), and the newest accepted source update was 2026-09-30 05:49:06 UTC, age 93,742 seconds (26.0 hours). Its query ID was `01c76f37-0002-affb-000e-fef200034592`. These ages are point-in-time observations and will change; the missing update sweep prevents a current-catalog freshness claim. Actual Snowflake credits were not measured.
+
+## First GitHub Actions fixture run
+
+The first CI run for commit `12a167a` started after the approved push on 2026-10-01 and failed in the fixture-test step. GitHub's job log showed `FileNotFoundError` for ignored synthetic `data/procedure/phase2_fixture/attempts/.../manifest.json` files; all 272 tests were discovered, with 10 errors. The locked install and Python setup steps passed. These generated local fixture files were present on the Mac but absent in GitHub's fresh checkout. A clean local checkout then reproduced two further missing-artifact errors for the ignored fixture procedure ZIP. The workflow now builds both the deterministic fixture ZIP/SQL and synthetic attempts before testing. The [follow-up CI run](https://github.com/kaarthikmohaan/quakewatch/actions/runs/36831735945) for pushed commit `bc69dde` completed with `success` on 2026-10-01. The same clean-checkout sequence passed all 273 tests locally. This CI job uses no Snowflake secrets or live warehouse integration.
+
+## Phase 3 exit review
+
+I accepted the Phase 3 design exit on 2026-10-01: live quality counts, CI, a dated sample, and the missed predeclared latency target are documented separately from targets. This phase acceptance did not close the three USGS history gaps, the incomplete catalog-wide update sweep, or the then-pending live failed-transform/retry demonstration.
+
+## Isolated failed-transform and retry drill
+
+The approved live fixture drill on 2026-10-01 returned `status=pass` for the already loaded `fixture-original-v1` attempt in `QUAKEWATCH_PHASE2_FIXTURE`. A test-only procedure deliberately raised after model writes; the coordinator rolled back those writes and appended one failed processing audit. The same RAW attempt was then passed to the normal procedure without source refetch or RAW reload. Before failure, after failure, and after retry, the snapshot was identical: one RAW row and receipt, six staging rows, five revision facts, 15 site bridges, six batch facts, three sites, four dates, two event statuses, one magnitude type, and one current event. The retry reported process attempt `806e9e2d47c04680a7bfbd4cabd68b6c`; both revision and bridge duplicate-group counts were zero.
+
+This demonstrates rollback, append-only failure audit, and a convergent retry for a **later processing invocation of a batch that had already succeeded**. It does not demonstrate a first-ever transform failure for a newly loaded batch. The test-only failure procedure remains in the fixture database. Snowflake credits and storage use were not measured. The three USGS history gaps and incomplete catalog-wide update sweep remain open.
+
+The separately approved first-ever failure attempt for new synthetic batch `fixture-first-failure-v1` reached its final guard on 2026-10-01 and raised `first-failure retry did not converge` after the `PUT`, `COPY`, complete receipt, intentional failure call, and normal retry call. The earlier load and rollback guards had passed. The approved read-only [state diagnostic](../../scripts/evidence/phase2/phase2_first_failure_state.py) then showed one RAW row and receipt, one failed process audit followed by one complete audit, one staged row and batch fact for the attempt, five total revision facts, 15 total site bridges, and zero duplicate groups. The RAW hash `eef7c3945e972555e034cce171c28a1cf044ab1bab8c14c581ca80365f7ef499` matches the local ignored fixture record. The complete audit reported `revision_rows_merged=1` because the later fetch updated metadata on an existing logical revision; the fact and bridge counts did not grow. The guard incorrectly expected zero MERGE changes, although the writer contract counts both inserts and updates. It is now corrected to require stable logical counts and unique keys. **First-ever transform failure, durable RAW, append-only failure audit, and retry without refetch are verified for this one synthetic batch.** Do not rerun the one-shot drill. Actual Snowflake credits were not measured.
+
+## Window 73 checkpoint retry after Phase 3 exit
+
+The bounded public USGS retry on 2026-10-01, attempt `20261001T075447Z-c12460171c`, reused the same 26 validated daily checkpoints and their 1,451 features. It fetched zero new features and reached `SourceDeadlineExceeded` on child `w0001.27`, 2022-10-25 through 2022-10-26 UTC. The failed manifest retains one unresolved gap and no `events.jsonl`; no Snowflake load or watermark advancement followed. This repeated response timeout is an observed source-coverage limit, not a successful zero-count window. Further identical retries are deferred until a different bounded request strategy or source-state change can be justified.
+
+## First Phase 3 quality deployment attempt
+
+The first approved Phase 3 quality runner attempt on 2026-10-01 stopped at its preflight because at least one of the three planned view names already existed in `QUAKEWATCH.CURATED`. The runner issued no view DDL, reconciliation query, or sample query. A subsequent read-only metadata check found all three names and visible definitions. Their SHA-256 hashes exactly match the reviewed local `CREATE VIEW` statements: batch health `9f37d2ca37e6bc570ff1de9d4b2e423fc4ce094e77384cff850ff68b0f13fca7`, reject rows `d848cce3d7b1b8aad4ea97ece3e2b3b037a7feb8ac0db74eda660300b9b71c57`, and window audit `4b79a3d15c11ea589e9fc756ec704a52f885aca89a1cc17945992757639283b1`.
+
+The guarded reuse run then executed the three reconciliation queries and bounded Seattle sample. It reported `status=pass`, zero unexpected batch-health rows, and zero unresolved or mismatched rows among windows with Snowflake receipts. The health summary had 177 `PENDING_PROCESS` history attempts with 216,361 loaded and observed RAW rows and zero staged or processed rows, plus one `RECONCILED` Seattle attempt with 15 loaded, staged, and processed rows and zero rejects. The Seattle current-event sample for 2026-09-28 UTC returned 15 events within the public 250 km radius, with magnitudes from 0.66 to 2.56. These are point-in-time results for currently loaded receipts and models; the three failed source windows have no Snowflake receipt and remain explicit local gaps. The update sweep has not committed a watermark. Snowflake credits were not measured.
+
+The first approved bounded history-processing trial on 2026-10-01 selected five previously pending RAW attempts and called `PROCESS_LOADED_ATTEMPT` once for each. The runner verified each attempt's pending RAW/receipt counts before the call and its reconciled health row afterward. All five passed: 1,858 + 1,490 + 167 + 1,709 + 1,565 = 6,789 processed rows, zero rejected rows. No source refetch or RAW reload was performed. This leaves 172 loaded history attempts and 209,572 RAW rows pending processing, based on the prior 177-attempt, 216,361-row snapshot. The remaining count needs a fresh health query after further processing; warehouse credits were not measured.
+
+The subsequent approved bounded run selected and processed all 172 remaining history attempts in one Snowflake session. Its final terminal result was `status=pass`, `completed_attempts=172`, `processed_rows=209572`, and `rejected_rows=485`. Each attempt passed an exact pending RAW/receipt count check before its call and a reconciled health-row check after the call; the runner would have stopped on the first mismatch. Together with the five-attempt trial, this is 177 processed history attempts and 216,361 processed RAW rows, of which 485 were rejected by typed projection. The three failed source windows remain outside Snowflake, and the catalog-wide update sweep watermark has not advanced. Warehouse credits were not measured.
+
+The approved read-only post-run check on 2026-10-01 returned `status=pass`: all 178 Snowflake receipts were `RECONCILED` (177 history attempts plus the overlapping 15-row Seattle sample), with 216,376 receipt/raw/staging/processed rows, 485 rejected rows, zero unexpected batch-health rows, zero loaded-window anomalies, and zero duplicate revision or bridge-key groups. The reject view grouped all 485 under `invalid_origin_time`. These counts are source observations, not 216,376 distinct earthquakes; the Seattle sample overlaps history. The original RAW payload and staged reject rows remain available for review. This check does not resolve the three local source gaps or the uncommitted update sweep. Actual Snowflake credit use remains unmeasured.
+
+## First Phase 3 uniqueness check
+
+On 2026-10-01, the approved read-only [uniqueness runner](../../scripts/checks/phase3_uniqueness.py) executed two duplicate-group counts against `QUAKEWATCH.CURATED`. It returned `status=pass`, `revision_duplicate_groups=0`, and `bridge_duplicate_groups=0`. These checks use the full logical revision key `(CANONICAL_EVENT_ID, SOURCE_UPDATED_AT, PAYLOAD_HASH)` and the bridge key with `SITE_KEY`. This is a point-in-time check of the currently populated project tables, not a guarantee that future loads cannot introduce duplicates. Actual Snowflake credits were not measured.
+
+## First live source capture
+
+| Measure | Observed value |
+|---|---|
+| Site | Seattle public example point, 250 km radius |
+| Requested range | 2026-09-28 00:00 UTC through 2026-09-29 00:00 UTC |
+| Count before fetch | 15 |
+| Features returned | 15 |
+| Count after fetch | 15 |
+| Raw JSON Lines written | 15 |
+| Window result | Reconciled |
+| Snowflake RAW rows loaded | 15, reported by the first loader run |
+
+This is one source-capture observation, not a completeness guarantee or a performance claim. The local manifest and source rows are under ignored `data/raw/` and are not published to GitHub.
+
+## First RAW load
+
+On 2026-09-29, the Python loader ran for attempt `20260929T075452Z-26375840ea`. Its manifest and local JSONL each contained 15 rows. The visible terminal reported `Loaded and reconciled RAW rows: 15` after the COPY result and attempt-filtered RAW count both matched 15 and the append-only batch receipt insert returned without an error. An independent read through the Snowflake Python Connector then returned `(receipt_count=1, load_status='complete', loaded_rows=15, raw_rows=15)` for this attempt. Warehouse credits and stage storage charges have not been measured.
+
+## First Phase 2 Snowpark pilot
+
+On 2026-09-30, the approved bounded pilot uploaded the procedure ZIP, created the local Phase 2 curated objects, and called `QUAKEWATCH.CURATED.PROCESS_LOADED_ATTEMPT` once for the same 15-row Seattle attempt. The live terminal returned `status=complete`, `loaded_rows=15`, `processed_rows=15`, `rejected_rows=0`, and `revision_rows_merged=15`. The process attempt ID was `42fc37d34e1545498ad004d8eeb35b72`. Its post-call count checks reported 15 typed staging rows, 15 revision fact rows, 45 event-site bridge rows, three public site rows, one batch fact row, and one processing-attempt row. The empty curated-schema preflight means this first call had no pre-existing curated fact or bridge rows to delete.
+
+This verifies one small procedure execution and its aggregate counts. It does not yet establish alias rekey behavior, tombstone/current-view behavior, historical model completeness, or actual Snowflake credit usage. The three history source gaps and incomplete catalog-wide update sweep remain unresolved.
+
+## Phase 2 same-attempt idempotency rerun
+
+On 2026-09-30, the approved guarded rerun called `QUAKEWATCH.CURATED.PROCESS_LOADED_ATTEMPT` once more for the same 15-row Seattle attempt `20260929T075452Z-26375840ea`. The terminal returned `status=complete`, `loaded_rows=15`, `processed_rows=15`, `rejected_rows=0`, and `revision_rows_merged=0`, with new process attempt ID `27b80b92c21a47c7b27ecaaf676c0ede`. Post-call counts were unchanged at 15 staged rows, 15 revision facts, 45 event-site bridges, three public sites, and one batch fact. The append-only processing audit grew from one to two rows. The guarded command also checked unique revision and bridge keys and that the batch fact points to the new process attempt. This establishes idempotency for this unchanged, same-attempt input only; overlapping attempts and changed source revisions still need separate checks. Actual credits were not measured.
+
+## Phase 2 isolated current-view fixture
+
+On 2026-09-30, the approved fixture check used a session-only Snowflake table shaped like `FACT_EVENT_REVISION` and ran the checked-in `EVENT_CURRENT` SELECT against it. The first two versions of `uw714110682` returned the later active revision at magnitude `1.28`. Adding a synthetic latest `deleted` revision returned zero current rows; replaying the old active row still returned zero. The temporary table held four rows at the end (original, update, tombstone, stale replay). The command completed without writing synthetic records to permanent RAW or curated tables. This verifies the checked-in current-view SQL on this fixture, not the deployed view or full Snowpark processing path. Warehouse credits were not measured.
+
+The separately approved admin metadata preflight on 2026-09-30 reported `QUAKEWATCH_PHASE2_FIXTURE` available for setup. This was one read-only `SHOW DATABASES LIKE` check, not fixture database creation or procedure execution. Availability is a point-in-time observation; cloud services usage was not measured.
+
+The approved guarded setup then created `QUAKEWATCH_PHASE2_FIXTURE` with `RAW` and `CURATED` schemas and narrow creation grants for `QUAKEWATCH_ROLE`. The terminal reported `statements_executed: 12` and both schemas after post-setup verification. No fixture stage, tables, or procedure were created in this step. Metadata/storage charges were not measured.
+
+The separately approved fixture deployment ran on 2026-09-30 using the project key-pair role. Its empty-schema guard passed, and its account package check found Python 3.12 with pinned `snowflake-snowpark-python` 1.55.0. The terminal reported `stage_upload: UPLOADED` and `ddl_statements_executed: 16` for the isolated `QUAKEWATCH_PHASE2_FIXTURE` database. These statements created the fixture RAW/curated objects and copied procedure. No synthetic fixture rows were loaded or processed. Warehouse credits and stage storage were not measured.
+
+The approved synthetic fixture RAW load then reported one loaded row for each isolated attempt: `fixture-original-v1`, `fixture-update-v1`, `fixture-deletion-v1`, and `fixture-stale-replay-v1`. The loader checked each COPY result against its attempt-filtered RAW count before appending a complete synthetic receipt. These four rows are local test fixtures, not USGS query results or coverage evidence. Warehouse and storage charges were not measured.
+
+The approved copied-procedure call for `fixture-original-v1` completed on 2026-09-30. It returned `loaded_rows=1`, `processed_rows=1`, `rejected_rows=0`, and `revision_rows_merged=1`, with process attempt ID `542ce981de9d45689e822581a89ee0f7`. Post-call checks found one staging row, one revision fact, three event-site bridge rows, three public sites, one date, one magnitude type, one event status, one batch fact, and one processing audit. The current view returned the original active event at magnitude 1.08 with the expected payload hash. The curated schema was empty before this call, so no pre-existing curated row needed deletion. Actual credits were not measured.
+
+On 2026-10-01, the approved copied-procedure call for `fixture-update-v1` returned `status=complete`, `loaded_rows=1`, `processed_rows=1`, `rejected_rows=0`, and `revision_rows_merged=1`, with process attempt ID `36ea2d1efb2144b1a4aad3e107f30842`. Guarded post-call checks found two staging rows, two revision facts, six event-site bridge rows, two batch facts, and two processing audits. Both original and later revisions remained in fact history; the current view selected the later revision at magnitude 1.28 with the expected payload hash. This is procedure-level evidence for a synthetic later update to the same origin-time event. It does not prove the catalog-wide update sweep captures changes outside a recent origin-time window. Actual credits were not measured.
+
+On 2026-10-01, the approved copied-procedure call for `fixture-deletion-v1` returned `status=complete`, `loaded_rows=1`, `processed_rows=1`, `rejected_rows=0`, and `revision_rows_merged=1`, with process attempt ID `5ad657ffe63449d3a3c2b1d37b32ad85`. Guarded post-call checks found three retained revision facts, nine event-site bridge rows, three batch facts, three processing audits, and zero rows in `EVENT_CURRENT`. The latest revision has `deleted` status, so the synthetic event is hidden from the current view without losing history. Actual credits were not measured.
+
+On 2026-10-01, the approved copied-procedure call for `fixture-stale-replay-v1` returned `status=complete`, `loaded_rows=1`, `processed_rows=1`, `rejected_rows=0`, and `revision_rows_merged=1`, with process attempt ID `516de8b981d7486d85b27ccf1d974fb0`. Guarded post-call checks found four staging rows, three retained logical revision facts, nine event-site bridge rows, four batch facts, four processing audits, and zero rows in `EVENT_CURRENT`. The merge updated the already-known old revision rather than adding a fourth logical revision. The tombstone still wins after stale replay. This is synthetic procedure-level evidence, not proof that every old USGS update was captured. Actual credits were not measured.
+
+The original and stale-replay attempts are also an overlapping-batch fixture: both request the same 2026-09-28 UTC day and contain the same event ID, source update timestamp, and payload hash under different attempt IDs. Both were processed successfully, but the second observation did not add a duplicate logical revision or bridge key. This establishes deduplication for this one synthetic cross-attempt overlap. It does not establish behavior for every possible overlapping window or source mutation.
+
+On 2026-10-01, the approved isolated RAW loader staged and copied `fixture-old-origin-original-v1` and `fixture-old-origin-update-v1`. It returned `loaded_rows=1` for each. Its post-check required exactly six one-row RAW attempts and receipts in the fixture database, with both new receipts complete and marked synthetic. These are local test records with a 2020-01-15 origin; no USGS source coverage is claimed. At this load step, neither new attempt had been processed by the copied Snowpark procedure. Warehouse and stage-storage charges were not measured.
+
+I then ran the guarded original old-origin procedure call. Its post-check raised `old-origin original model counts differ` after the procedure returned because the guard expected two `DIM_DATE` rows, while the terminal showed three. The three dates are expected: the existing 2026-09-28 date plus the synthetic event's 2020-01-15 origin and 2020-01-16 source-update dates. The same terminal count snapshot showed five staging rows, four revision facts, 12 site bridges, five batch facts, and five processing audits, consistent with a committed first call; the guard did not finish its current-view and history checks. A subsequent attempt to run the combined pair stopped at its initial preflight because the fixture model had already advanced. No second procedure call ran. The local guard now expects three dates after the first call and four after the later 2026-09-29 update. The update-only recovery command must verify the exact first-call state before processing the later update. No phase-exit claim is made yet.
+
+A later read-only diagnostic showed that both old-origin attempts had complete processing audits and that the fixture model had advanced to six staging rows, five revision facts, 15 site bridges, six batch facts, six process audits, and four date rows. The current view contained the old-origin event at magnitude 1.3. A separate read-only final guard then returned `status=verified`, `old_origin_revisions=2`, and `current_magnitude=1.3`. It checked both exact fixture payload hashes, retained 2020-origin history, process audits, total model counts, current-view winner, and unique revision/bridge keys. The original process attempt ID was `f6ca486374984429974cc8f1e1b5ca15`; the update process attempt ID was `78fdae3b5beb47cb8d791a85d8a1eac2`. This establishes the synthetic warehouse model's behavior for an old-origin update. It does not prove the USGS catalog-wide sweep captured such an update or resolve source gaps. Actual Snowflake credits were not measured.
+
+## Phase 2 exit review (2026-10-01)
+
+| Design exit evidence | Current evidence | Status |
+|---|---|---|
+| Revision selects the later version | Synthetic copied-procedure update retained both facts and selected magnitude 1.28 | Met for the fixture |
+| Old-event update outside the initial recent origin-time window | Two synthetic 2020-origin revisions were processed; final read-only guard verified both facts and current magnitude 1.3 | Met for the fixture |
+| Tombstone remains in history and hides current event | Synthetic copied-procedure deletion retained three facts and returned zero current rows | Met for the fixture |
+| Rerun does not create duplicate logical revisions | Main 15-row same-attempt rerun merged zero revisions; synthetic cross-attempt overlap retained three facts and unique bridge keys | Met for these fixtures |
+
+The stated Phase 2 exit fixtures now have measured evidence. I confirmed the phase-end checklist on 2026-10-01, so Phase 3 quality and evidence work may begin. The broader Snowflake failure/retry integration check and live nonzero reject evidence remain open and should not be inferred from these successful procedure calls. The Phase 1 catalog-wide update sweep and its unresolved source gaps remain separate source-coverage work.
+
+## Not measured yet
+
+- Snowflake fetch-to-curated latency, nonzero rejects, and pending batches
+- Complete FDSN update-sweep coverage
+- Warehouse credit usage
+- User task completion time or usefulness
+
+## First history-window attempt
+
+On 2026-09-29, the planned Seattle window from 2021-09-29 through 2022-09-29 failed during the USGS count request with a read timeout. Attempt `20260929T160547Z-b60d35bf44` has status `failed`, one structured unresolved coverage gap for the full requested window, and no `events.jsonl`. It was not staged or loaded into Snowflake. The full year is not yet reconciled; the failed attempt remains in the audit history.
+
+A smaller Seattle request from 2021-09-29 through 2021-10-29 succeeded as attempt `20260929T161003Z-5d0e466a47`: count before 167, features returned 167, count after 167, and 167 local JSONL lines. Its manifest is `complete` with no coverage gaps. This covers only the one-month slice; it does not resolve the rest of the failed one-year window. The Python loader subsequently reported `Loaded and reconciled RAW rows: 167` for this attempt after its COPY and attempt-filtered RAW counts matched and the receipt insert completed without an error. An independent read of this receipt has not yet been performed.
+
+The local history planner was subsequently changed to 60 month-sized windows per site, retaining the same five-year cutoff and public sites. Its first Seattle window matches this successful capture. The remaining windows still need extraction and count reconciliation; the failed year-long attempt remains in the audit history.
+
+Seattle monthly window 2, 2021-10-29 through 2021-11-29, completed as attempt `20260929T162551Z-742a6474a5`: USGS count before 185, returned features 185, count after 185, and 185 local JSONL lines. The manifest reports one reconciled window and no coverage gaps. The loader later reported `Loaded and reconciled RAW rows: 185` for this attempt. An independent receipt query has not yet been run.
+
+A separate local capture, `20260929T162532Z-5cac86e7be`, has the same logical batch ID and also reconciled 185 source rows; it was not loaded. A second invocation of the loader for the already-loaded `742a6474a5` attempt stopped at its immutable-receipt guard before PUT or COPY. These observations do not establish full repeat-run idempotency of the downstream warehouse models.
+
+Seattle monthly window 3, 2021-11-29 through 2021-12-29, completed as local attempt `20260929T163325Z-673ecac05f`: USGS count before 155, returned features 155, count after 155, and 155 JSONL lines. The manifest shows one reconciled window and no coverage gaps. This attempt has not been staged or loaded into Snowflake.
+
+The bounded resume runner's first live run for Seattle monthly window 4, 2021-12-29 through 2022-01-29, initially failed because the restricted execution environment could not resolve the USGS hostname. Attempt `20260929T175827Z-70cdef1dcf` records status `failed`, one coverage gap, and zero raw rows. A retry with network access succeeded as a separate attempt, `20260929T175854Z-cb9927c2b1`: count before 193, returned features 193, count after 193, and 193 local JSONL lines. Its manifest is `complete` with zero coverage gaps. Window 4 has not been staged or loaded into Snowflake.
+
+The next bounded run captured Seattle windows 5–7 in one invocation on 2026-09-29. Window 5 (`20260929T180021Z-3d2b3c35a7`) reconciled 267 before/returned/after and 267 JSONL lines; window 6 (`20260929T180023Z-c0b0727a50`) reconciled 203; window 7 (`20260929T180024Z-566cd3c453`) reconciled 248. Each manifest is `complete` with zero coverage gaps. These are local captures only and have not been staged or loaded into Snowflake. Seven of 180 planned monthly site windows now have complete local captures.
+
+A read-only Snowflake receipt check on 2026-09-29 compared these seven local candidates with `BATCH_ATTEMPT` receipts and attempt-filtered `RAW_EVENT_RECORDS` counts. Windows 1 and 2 were `loaded` with matching local, receipt, and RAW row counts. Windows 3–7 were `ready`, with no receipt and no RAW rows. Counts: loaded 2, ready 5, investigate 0. The check ran no PUT or COPY. Warehouse credits from this check were not measured.
+
+A requested 50-window USGS capture run stopped at Seattle window 12 on 2026-09-29. Windows 8–11 completed with reconciled local counts of 263, 224, 234, and 360 respectively, each with zero coverage gaps. Window 12 (2022-08-29 through 2022-09-29) timed out after bounded HTTP retries. Attempt `20260929T181215Z-6db1c7476f` records one unresolved gap and zero rows. A separate retry, `20260929T181444Z-57b624f069`, timed out the same way and also retains one gap and zero rows. The runner stopped at the gap; windows 13–57 were not requested. Eleven of 180 planned monthly site windows have complete local captures, but window 12 is not covered. None of windows 8–11 has been loaded into Snowflake.
+
+A third window-12 attempt with timeout splitting, `20260929T182006Z-2b8d22d8e1`, also failed. Its audit records splits at `w0001`, `w0001.a`, and `w0001.a.b`; `w0001.a.a` reconciled, but `w0001.a.b.a` still timed out at the configured depth limit. The attempt retained one unresolved leaf gap and wrote zero rows, so no partial month is being treated as complete. The explicit start-window option can continue later months while window 12 remains outstanding.
+
+An explicit continuation from Seattle window 13 captured windows 13–15 on 2026-09-30. Attempts `20260930T024713Z-a839f4d513`, `20260930T024715Z-49975e5095`, and `20260930T024716Z-5d777c6173` reconciled 259, 244, and 204 rows respectively; each count-before, returned-feature count, count-after, and JSONL line count matched with zero gaps. Fourteen of 180 planned windows now have complete local captures. Window 12 remains unresolved, and windows 13–15 have not been loaded into Snowflake.
+
+The next 50-window continuation from window 16 captured windows 16–24 before a prolonged source timeout at window 25. Their reconciled local row counts were 162, 232, 213, 216, 240, 212, 284, 367, and 436, totaling 2,362 rows; each count-before, returned-feature count, count-after, and JSONL line count matched with zero gaps. Attempt `20260930T025128Z-390c1c6b51` for window 25 (2023-09-29 through 2023-10-29) was interrupted after prolonged read-timeout retries. Its manifest is marked `failed` with an explicit unresolved full-window gap and zero rows; partial work is not counted. Windows 26–65 were not requested. Twenty-three of 180 planned windows now have complete local captures, with unresolved windows 12 and 25. The new captures have not been loaded into Snowflake.
+
+The continuation from window 26 captured windows 26–40 before a prolonged timeout at window 41. Their reconciled local row counts were 262, 202, 184, 210, 258, 299, 315, 384, 327, 335, 502, 368, 217, 233, and 232: 4,328 rows total. Each complete attempt matched count-before, returned features, count-after, and JSONL lines, with no gaps. Window 41 (2025-01-29 through 2025-02-28), attempt `20260930T032225Z-a2077ba962`, was interrupted after the initial signal-based deadline failed to stop its network retries; it is `failed` with one full-window gap and zero rows. Windows 42–75 were not requested. The deadline implementation was then changed to check remaining time before every HTTP request and retry wait; that revised mechanism has passed offline tests but has not yet been observed in a live timeout. Thirty-eight of 180 planned windows have complete local captures; windows 12, 25, and 41 remain unresolved. These new captures have not been loaded into Snowflake.
+
+The next continuation began at Seattle window 42 (2025-02-28 through 2025-03-29). Attempt `20260930T041759Z-3de2a8aeda` reached the revised source deadline and saved status `failed`, error type `SourceDeadlineExceeded`, one unresolved full-window gap, and zero rows. This live run confirms the remaining-time check stops a prolonged retry; windows 43–91 were not requested. Complete local capture remains 38 of 180 windows, with unresolved windows 12, 25, 41, and 42. No Snowflake load ran.
+
+The approved bounded RAW loader subsequently inspected all 38 complete local history candidates. Its visible terminal reported 36 new windows loaded and reconciled (windows 3–11, 13–24, and 26–40), 0 ready remaining, and no error. These new windows total 9,544 RAW rows from their validated manifests; together with previously loaded windows 1–2 (167 and 185 rows), the 38 history attempts account for 9,896 loaded RAW rows. The loader compared each COPY result and attempt-filtered RAW count with its local manifest before appending a complete receipt. This is loader-reported evidence; an independent aggregate receipt query has not yet been run. The earlier 15-row one-day sample is a separate overlapping attempt and is not included in 9,896. The four unresolved history windows remain 12, 25, 41, and 42. Warehouse credits and stage storage charges have not been measured.
+
+The next 50-window source continuation from window 43 captured windows 43–71 before stopping at San Francisco window 72. All 29 completed manifests matched count-before, returned features, count-after, and local JSONL lines, with zero gaps; they contain 22,467 rows in total. Windows 43–60 finish the Seattle plan, and 61–71 begin San Francisco. Window 72 (2022-08-29 through 2022-09-29), attempt `20260930T043552Z-b9a86fa447`, reached the source deadline and saved a failed manifest with one unresolved gap and zero rows. Windows 73–92 were not requested. Sixty-seven of 180 planned windows now have complete local captures; unresolved windows are 12, 25, 41, 42, and 72. The 29 new captures are local only and have not been loaded into Snowflake.
+
+The next continuation began at San Francisco window 73 (2022-09-29 through 2022-10-29). Attempt `20260930T044001Z-39526ae409` reached the three-minute source deadline and saved a failed manifest with one unresolved full-window gap and zero rows. No additional window was completed; windows 74–122 were not requested. Complete local capture remains 67 of 180, with unresolved windows 12, 25, 41, 42, 72, and 73. No Snowflake load ran.
+
+A diagnostic USGS FDSN count request for the first UTC day inside San Francisco window 73 (2022-09-29 through 2022-09-30, same public site center and 250 km radius) returned `51` within the 20-second client limit. This is only a one-day count, not a capture or reconciliation of the month. It suggests that smaller bounded requests may be worth testing for this gap; the month remains unresolved.
+
+A seven-day count for 2022-09-29 through 2022-10-06 with the extractor's additional `includedeleted=true` and `orderby=time-asc` options timed out at the 20-second client limit (`curl` exit 28). Because both range and options changed from the successful one-day diagnostic, this does not yet isolate which caused the slowdown. No features were captured and window 73 remains unresolved.
+
+The one-day diagnostic with those extra options initially returned HTTP 400 because the manual `curl` command omitted `format=geojson`; USGS explained that `includedeleted` requires GeoJSON or CSV format. The extractor already includes `format=geojson`, so this was a diagnostic-command error, not an extractor bug. Repeating the one-day count with the complete extractor parameter set returned `{"count":51,"maxAllowed":20000}` promptly. The seven-day timeout above also omitted `format=geojson`, so it should not be used to infer a range-size threshold; an exact-parameter seven-day test is still needed.
+
+The exact-parameter seven-day count for 2022-09-29 through 2022-10-06 returned `{"count":341,"maxAllowed":20000}` within the 20-second client limit. This supports trying week-sized audited child requests for slow monthly windows. It does not reconcile or load any events; window 73 remains unresolved until all child counts and feature responses match.
+
+A live retry of San Francisco window 73 with `--source-days 7`, attempt `20260930T045509Z-dced076363`, reached the three-minute source deadline while requesting counts. It saved status `failed`, one unresolved full-month gap, and zero rows. The current manifest does not identify which week was active when the deadline expired; preserving per-child progress in the audit is the next fix. The successful standalone seven-day count therefore did not establish that the full monthly capture would complete. Window 73 remains unresolved and was not loaded into Snowflake.
+
+After adding incremental child audit, a new week-sliced attempt for window 73, `20260930T050144Z-90ed53db7b`, reconciled its first three children: 341, 369, and 354 rows, with before/returned/after counts matching in each. The fourth child, 2022-10-20 through 2022-10-27, reached the source deadline and is recorded as `w0001.4` with an unresolved gap; the fifth child was not requested. The attempt wrote zero rows because the logical month was incomplete. This identifies the slow slice without claiming coverage of the month. No Snowflake load ran.
+
+An exact-parameter one-day USGS count for 2022-10-20 through 2022-10-21, inside the slow fourth child, returned `{"count":170,"maxAllowed":20000}` promptly. This supports trying one-day source slices for window 73, but it does not establish that the remaining days or the full month will reconcile. The gap remains open.
+
+A one-day-sliced retry of the full window 73, attempt `20260930T051517Z-1ee16d7035`, reconciled 26 daily child requests, representing 1,451 returned features in its audit. Child `w0001.27` (2022-10-25 through 2022-10-26) reached the three-minute monthly source deadline; children 28–30 were not requested. The attempt is `failed` with one precise unresolved child gap and zero JSONL rows because the whole logical month did not complete. The repeated full HTTP read-timeout retries consumed the remaining monthly budget before the extractor could split this slow day. Window 73 remains unresolved and was not loaded into Snowflake.
+
+The next source continuation started at window 74 and completed all 50 requested windows, 74–123, on 2026-09-30. These comprise San Francisco windows 74–120 and Anchorage windows 121–123. Their 50 manifests are `complete`, with no coverage gaps; for each audited child, USGS count before, returned features, and count after match. Manifest row totals also match local JSONL line counts. The batch contains 83,844 local raw rows. Overall, 117 of 180 planned monthly site windows have complete local captures. Windows 12, 25, 41, 42, 72, and 73 remain unresolved; the other 57 windows have not yet been captured. No Snowflake call was made for this continuation, and its 50 attempts remain local only.
+
+The next source continuation completed Anchorage windows 124–173 on 2026-09-30. All 50 manifests are `complete`, with zero coverage gaps. For every audited child, USGS count before, returned features, and count after match; manifest totals also match local JSONL line counts. These captures contain 89,565 local raw rows. Overall, 167 of 180 planned monthly site windows have complete local captures. The six earlier gaps remain unresolved, and windows 174–180 have not yet been captured. No Snowflake call was made for this continuation; these 50 attempts remain local only.
+
+The final first-pass source continuation completed Anchorage windows 174–180 on 2026-09-30. All seven manifests are `complete`, with zero coverage gaps. Each audited child has matching USGS count before, returned features, and count after; the 8,574 manifest rows match local JSONL line counts. All 180 planned monthly site windows have now been attempted: 174 have complete local captures, while windows 12, 25, 41, 42, 72, and 73 remain unresolved. These seven new attempts are local only; no Snowflake call was made.
+
+A one-day-sliced retry of Seattle window 12, attempt `20260930T055443Z-18c52e19c2`, reconciled its first ten daily children. The eleventh child, 2022-09-08 through 2022-09-09 UTC, exceeded the three-minute source deadline and is recorded as an unresolved child gap. The attempt is `failed` and wrote zero JSONL rows because the full logical month did not reconcile. Window 12 remains unresolved and was not loaded into Snowflake.
+
+A checkpoint-enabled retry of Seattle window 12 on 2026-10-01, attempt `20261001T134425Z-95ee5e220f`, independently reconciled the first ten daily children (102 source features in their audits) and saved ten local child checkpoints. The eleventh child, 2022-09-08 through 2022-09-09 UTC, again exceeded the three-minute source deadline. The attempt is `failed`, with one unresolved child gap and zero JSONL rows; its 102 audited features are not a complete monthly capture. No prior child checkpoint was reused in this attempt. A further retry with `--source-days 1 --resume-children` can reuse these ten saved children and focus source time on the unresolved day. Window 12 remains open and was not loaded into Snowflake.
+
+The follow-up checkpoint-resuming attempt `20261001T135022Z-5246138216` reused all ten saved daily children (102 features) but fetched zero new features. The 2022-09-08 through 2022-09-09 UTC child again exhausted the three-minute source deadline while fetching USGS counts, leaving one unresolved gap and zero monthly JSONL rows. Reusing checkpoints works, but it does not resolve this slow source day. Window 12 remains open and was not loaded into Snowflake.
+
+A separate exact-parameter count-only probe for that same UTC day used the extractor's GeoJSON, radius, include-deleted, and ordering parameters with a 20-second timeout. It also timed out, so the immediate blocker is the public USGS count response for this query rather than checkpoint reuse or Snowflake loading. This probe did not fetch or load any events.
+
+An exact-parameter count-only probe for the first six hours of that day, 2022-09-08T00:00:00Z through 06:00:00Z, returned HTTP 200 with `count=1` promptly. This shows at least one shorter source slice responds, but it does not prove the remaining 18 hours or the full day can be reconciled. No event capture or load ran.
+
+The remaining three six-hour count probes returned: 06:00–12:00 timed out at 20 seconds; 12:00–18:00 returned HTTP 200 with `count=1`; and 18:00–the next midnight returned HTTP 200 with `count=3`. These are only count diagnostics, not complete before/feature/after reconciliations. The slow portion is narrowed to 06:00–12:00 UTC; window 12 remains unresolved.
+
+The history extractor now supports a targeted `--source-hours 3 --hourly-child 11` retry alongside `--source-days 1 --resume-children`. Offline checks cover reuse of an earlier daily checkpoint, hourly checkpoint reuse after a failed attempt, and keeping later days on daily requests. This implementation has not yet produced a complete live window-12 capture; the gap and Snowflake load status are unchanged.
+
+The first live targeted-hour attempt, `20261001T141455Z-2657c07e44`, reused the ten daily checkpoints (102 features). Its first two three-hour children for 2022-09-08 reconciled with counts 1 and 0 and were saved as separate hashed checkpoints. The third child, 06:00–09:00 UTC, exhausted the three-minute source deadline while requesting counts. The attempt remains `failed`, with one unresolved hourly child and zero monthly JSONL rows. The two new hourly checkpoints represent durable progress, but the Seattle month and Snowflake load remain incomplete. No further count-only subdivision is claimed as a resolution.
+
+A one-day-sliced retry of Seattle window 25, attempt `20260930T060246Z-ad1808472c`, completed all 30 daily children. Their USGS count-before, returned-feature, and count-after values match individually; the 412 returned features match the local JSONL line count, with zero coverage gaps. This resolves the local source-capture gap for window 25. Overall, 175 of 180 planned windows now have complete local captures; windows 12, 41, 42, 72, and 73 remain unresolved. This attempt has not been loaded into Snowflake.
+
+A one-day-sliced retry of Seattle window 41, attempt `20260930T060733Z-f9cbc9f155`, completed all 30 daily children. Their USGS count-before, returned-feature, and count-after values match individually; the 255 returned features match the local JSONL line count, with zero coverage gaps. This resolves the local source-capture gap for window 41. Overall, 176 of 180 planned windows now have complete local captures; windows 12, 42, 72, and 73 remain unresolved. This attempt has not been loaded into Snowflake.
+
+A one-day-sliced retry of Seattle window 42, attempt `20260930T061111Z-9eb668e522`, reconciled its first three daily children. The fourth child, 2025-03-03 through 2025-03-04 UTC, exceeded the three-minute source deadline and is recorded as an unresolved child gap. The attempt is `failed` and wrote zero JSONL rows because the full logical month did not reconcile. Window 42 remains unresolved and was not loaded into Snowflake.
+
+A one-day-sliced retry of San Francisco window 72, attempt `20260930T061930Z-748d5f064f`, completed all 31 daily children. Their USGS count-before, returned-feature, and count-after values match individually; the 1,348 returned features match the local JSONL line count, with zero coverage gaps. This resolves the local source-capture gap for window 72. Overall, 177 of 180 planned windows now have complete local captures; windows 12, 42, and 73 remain unresolved. This attempt has not been loaded into Snowflake.
+
+A second one-day-sliced retry of San Francisco window 73, attempt `20260930T062315Z-1de850b3d1`, again reconciled its first 26 daily children (1,451 returned features in the child audit). Child 27, 2022-10-25 through 2022-10-26 UTC, again exceeded the three-minute source deadline. The attempt is `failed`, retains that precise unresolved gap, and wrote zero JSONL rows because the full logical month did not reconcile. Window 73 remains unresolved and was not loaded into Snowflake.
+
+The first checkpoint-enabled one-day retry of San Francisco window 73, attempt `20260930T073732Z-e3bdce362e`, again reached the three-minute deadline on child 27 (2022-10-25 through 2022-10-26 UTC). It remains `failed` with zero JSONL rows and one unresolved gap. Its first 26 daily children reconciled 1,451 features and were saved as 26 separate local child checkpoints; a local validation checked each checkpoint's query parameters, content hash, and reconciled counts. A later checkpoint-enabled retry can reuse those children, but this has not yet been observed in a live retry. Window 73 remains unresolved and was not loaded into Snowflake.
+
+The next checkpoint-enabled retry, attempt `20260930T074227Z-53dd607fef`, reused all 26 validated daily children and their 1,451 rows without refetching them. It then spent the remaining source budget on child 27 (2022-10-25 through 2022-10-26 UTC), which again timed out. The new manifest is `failed`, records 26 reused children and zero freshly fetched rows, retains the precise unresolved gap, and has no `events.jsonl`. This demonstrates local checkpoint reuse but does not resolve window 73 or establish source availability for that day. No Snowflake call ran.
+
+The later targeted-hour attempt `20261001T142252Z-9e2a269c9a` was stopped. It reused all 26 daily checkpoints (1,451 features) and reconciled six three-hour children of child 27, saving six hourly checkpoints with 26 newly fetched features. Interruption during child `w0001.27.7` (2022-10-25 18:00–21:00 UTC) left the manifest `failed` with `KeyboardInterrupt`, one explicit unresolved child, and zero monthly JSONL rows. I requested no further source retries. Window 73 remains an open local capture gap and was not loaded into Snowflake.
+
+The approved bounded RAW loader then ran in the visible terminal on 2026-09-30. It validated 177 complete local history candidates, used the project key-pair profile, and reported 50 windows loaded and reconciled: windows 25, 41, 43–72, and 74–91. Their local manifest totals sum to 53,931 rows; for each window, the loader reported matching COPY and attempt-filtered RAW counts before appending a complete receipt. It reported 89 ready windows remaining, with the earlier 38 already-loaded history windows skipped. The 50 new windows plus the prior 38 give 88 loader-reported loaded history windows and 63,827 history RAW rows; the separate 15-row one-day sample is excluded. This is terminal and loader evidence, not an independent aggregate receipt query. Windows 12, 42, and 73 remain unresolved source gaps. Warehouse credits and stage storage charges have not been measured.
+
+A second approved bounded RAW loader run in the visible terminal reported 50 more windows loaded and reconciled: windows 92–141. Their local manifest totals sum to 88,774 rows, and the loader reported matching COPY and attempt-filtered RAW counts before each complete receipt. It reported 39 ready windows remaining. Across both new runs and the earlier 38, there are now 138 loader-reported loaded history windows and 152,601 history RAW rows; the separate 15-row one-day sample remains excluded. This is terminal and loader evidence, not an independent aggregate receipt query. Windows 12, 42, and 73 remain unresolved source gaps. Warehouse credits and stage storage charges have not been measured.
+
+The final approved ready-history RAW load in the visible terminal reported windows 142–180 loaded and reconciled, followed by `Loaded 39 windows; 0 ready windows remain.` Their local manifests total 63,760 rows. All 177 complete local history candidates are now loader-reported loaded, totaling 216,361 RAW rows, excluding the separate 15-row one-day sample. The loader checked each COPY result and attempt-filtered RAW count; an independent aggregate receipt query has not been run. Windows 12, 42, and 73 remain explicit source gaps. This completes loading the currently captured history, not Phase 1: the catalog-wide update sweep and its watermark evidence remain outstanding. Warehouse credits and stage storage charges have not been measured.
+
+## First update-sweep bootstrap preparation
+
+On 2026-09-30, local inspection found the earliest successful capture at `2026-09-29T07:54:52.786Z` (the initial one-day sample); the earliest complete planned history capture was later, at `2026-09-29T16:10:03.761Z`. No committed update watermark file exists. The proposed bootstrap watermark is the earlier sample timestamp, with a 86,400-second overlap, producing `updatedafter=2026-09-28T07:54:52.786Z`. This bootstrap is a starting point, not evidence of an already completed sweep.
+
+The illustrative year-1900 lower bound is not an earliest-catalog guarantee: USGS documents historical US records from 1568 (https://earthquake.usgs.gov/data/catalog/catalogs/ushis/). A proposed broader origin-time lower bound of `0001-01-01T00:00:00Z` remains unverified. Two free USGS probes using that bound (an earliest-event query limited to one feature, then a count with the proposed updatedafter filter) each timed out after 25 seconds without a response. Both used the fixed origin cutoff `2026-09-29T00:00:00Z`. These timeouts establish neither acceptance nor rejection of the bound. No source sweep or watermark commit resulted. Finalizing the catalog lower bound remains outstanding; a real sweep should freeze its start time and origin cutoff when launched, not reuse the illustrative preview date.
+
+The bounded follow-up probes returned HTTP 200 with `{"count":0,"maxAllowed":20000}` for both `1568-01-01` through `1569-01-01` and `0001-01-01` through `0002-01-01`, using the same bootstrap `updatedafter`, GeoJSON, deletion, and ordering parameters. These results confirm that year 0001 is accepted for a bounded count request; they do not demonstrate performance of the full catalog range or absence of older events without the update filter. Use `0001-01-01T00:00:00Z` as the explicit operational lower bound for the proposed first sweep, with dates before that bound outside coverage. It is not asserted to be the earliest event in ComCat. The first live sweep still needs count reconciliation and RAW loading before committing any watermark.
+
+The first live catalog-wide update-sweep attempt, `20260930T083733Z-39c5aab2e8`, froze `sweep_started_at` and origin-time cutoff at `2026-09-30T08:37:33.423Z`, used lower bound `0001-01-01T00:00:00Z`, prior bootstrap watermark `2026-09-29T07:54:52.786Z`, and a 24-hour overlap. The USGS count/fetch recursion exceeded its three-minute source deadline before reconciling the full request. Its manifest is `failed`, with a conservative unresolved gap covering the full requested range, zero written rows, and `watermark_advanced: false`. It was not loaded into Snowflake. This establishes that a whole-catalog initial request is too slow in this run; a bounded initial partition is the next implementation change. No source completeness or update watermark advancement is claimed.
+
+A second live update-sweep attempt, `20260930T084645Z-78885cdc4c`, froze the cutoff at `2026-09-30T08:46:45.273Z` and started with 50-year origin-time slices. The first 40 planned children (0001-01-01 through 2001-01-01) reconciled, with three returned source features in their audit. Child `w0001.41`, 2001-01-01 through the cutoff, exceeded the three-minute deadline. The failed manifest preserves 40 reconciled child audits and one precise unresolved planned child, but wrote zero `events.jsonl` rows because the full logical sweep was incomplete. The prior watermark remains unchanged, and no Snowflake call ran. The next source retry should keep coarse empty historical slices and subdivide the recent 25-year range before requesting it.
+
+A third live update-sweep attempt, `20260930T085553Z-b0fc15d463`, used 50-year slices before 2001 and five-year slices afterward. Its manifest records 44 reconciled child windows, one split parent, and an unresolved child `w0001.45` covering 2021-01-01 through 2026-01-01; that child exceeded the three-minute source deadline. The incomplete sweep has zero written rows, no `events.jsonl`, and `watermark_advanced: false`. No Snowflake load ran. A subsequent retry can use the existing one-year recent-slice option to narrow the slow request without changing the design.
+
+The one-year retry first failed before reaching USGS because the local sandbox could not resolve the source hostname (`20260930T090821Z-62080fb212`); this is not source-coverage evidence. The network-enabled retry, `20260930T090855Z-67fd18f18e`, then reconciled 62 child windows and preserved an unresolved gap for 2023-01-01 through 2024-01-01 after the three-minute source deadline. Its manifest has one split parent, zero written rows, no `events.jsonl`, and `watermark_advanced: false`. No Snowflake load ran. The next source adjustment is to partition this slow recent year into smaller initial requests.
+
+The first monthly-slice sweep, `20260930T091846Z-31d7a86ca6`, reconciled 71 child windows (574 returned features in those saved audits) before the October 2023 child, `2023-10-01` through `2023-11-01`, exceeded the three-minute attempt deadline. The failed manifest records that precise unresolved gap, zero written rows, no `events.jsonl`, and `watermark_advanced: false`; the 574 audited features are not a completed capture or loaded data. No Snowflake call ran. The next source diagnosis should isolate smaller bounded requests within October before another full sweep.
+
+A standalone count request for 2023-10-01 through 2023-10-08, with the same update filter, GeoJSON format, deletion flag, and ordering as that sweep, timed out after the 20-second client limit. No count or feature data was returned. This is a source-response timeout for one week, not evidence that the week has zero matching records. The next diagnostic can try one UTC day to narrow the slow request.
+
+The matching count request for 2023-10-01 through 2023-10-02 returned HTTP 200 with `{"count":0,"maxAllowed":20000}`. This is a successful zero count for that UTC day only. The remainder of the first week and the October sweep gap remain unresolved.
+
+Six more matching, bounded daily count requests for October 2–7 each returned HTTP 200 with count zero. Thus all seven individual UTC days in October 1–8 returned zero, while the combined seven-day request timed out. This points to range-sensitive source response time for that query; it does not complete October coverage or reconcile a full update sweep.
+
+The remaining 24 October daily count probes returned count zero for 23 days. The October 9–10 UTC request timed out at 20 seconds, so that day's count is unknown. The other 30 daily zero counts are only diagnostic count results; they do not substitute for a reconciled feature capture, and the monthly sweep gap remains unresolved. Retry the single timed-out day before inferring whether it is persistently slow.
+
+A repeat count request for October 9–10 UTC, with the same parameters and 20-second limit, also timed out. This is a repeat source timeout for that day, not a zero count. The October 9 daily range can be divided into two half-day probes to locate the slow interval; no update-sweep coverage or watermark was advanced.
+
+Half-day count probes for October 9 found that 00:00–12:00 UTC timed out at 20 seconds, while 12:00–October 10 00:00 UTC returned HTTP 200 with count zero. The first half-day remains unknown. These are diagnostics only: no event features were captured, no full sweep reconciled, and no watermark advanced.
+
+The next split found the same pattern: October 9 00:00–06:00 UTC timed out at 20 seconds, while 06:00–12:00 UTC returned HTTP 200 with count zero. The unknown interval has narrowed to the first six hours; a zero count cannot be inferred for it. No source features were captured or loaded.
+
+Six one-hour count probes for October 9 00:00–06:00 UTC returned zero for 00:00–01:00, 01:00–02:00, and 03:00–06:00. The 02:00–03:00 request timed out after 20 seconds. That hour remains an explicit unknown despite the surrounding zero counts. These diagnostics do not reconcile the October monthly window or permit watermark advancement.
+
+Two half-hour probes narrowed the timeout again: October 9 02:00–02:30 UTC timed out at 20 seconds, while 02:30–03:00 returned HTTP 200 with count zero. Further manual subdivision is paused; the 02:00–02:30 interval remains an explicit unknown, and the October sweep gap, RAW rows, and watermark are unchanged. The next implementation step should preserve reconciled update-sweep children across a retry so source failures do not repeatedly discard earlier work.
+
+The first checkpoint-enabled live sweep, `20260930T095900Z-2fb588dc8d`, froze its sweep start and origin cutoff at `2026-09-30T09:59:00.481Z`. It saved 71 reconciled child checkpoints containing 574 audited returned features, then exceeded the three-minute source deadline on the October 2023 monthly child (`w0001.72`). Its manifest is `failed`, with that exact month as an unresolved gap, zero written rows, no `events.jsonl`, and no watermark advancement. Unlike earlier attempts, the 71 completed children have locally saved feature payloads, audit counts, fetch times, and checksums; a retry with this exact frozen sweep can validate and reuse them. This has not yet been observed in a live retry. No Snowflake call ran.
+
+The daily-October retry of that exact frozen sweep, `20260930T100803Z-cf8e520655`, validated and reused all 71 prior checkpoints, then saved eight new reconciled daily checkpoints for October 1–8. The October 9–10 UTC child (`w0001.80`) exceeded the three-minute deadline. Its failed manifest has 79 reconciled child audits, one unresolved October 9 daily gap, zero written rows, no `events.jsonl`, and `watermark_advanced: false`. This is live evidence that update-sweep checkpoint reuse works, but the update sweep is still incomplete and no Snowflake call ran.
+
+Further free count diagnostics using the same update filter returned zero for five of the six five-minute ranges from October 9 02:00–02:30 UTC; 02:20–02:25 timed out at a 12-second client limit. Five one-minute probes within that range returned zero for 02:20–02:21 and 02:22–02:25, while 02:21–02:22 timed out. This is a narrower diagnostic timeout, not a reconciled gap boundary in the sweep manifest. No zero count or source completeness is claimed for that minute. Further manual subdivision was stopped.
+
+A fresh offline history inventory validated 177 local complete candidates and 216,361 local JSONL rows against their manifests. Planned windows 12, 42, and 73 remain missing. This independently checks the local files behind the loader-reported totals, but it does not query Snowflake receipts or RAW counts; the loaded status still rests on the earlier loader runs.
+
+An approved read-only Snowflake verification using the dedicated project connection checked all 177 local history candidates against their individual complete receipts and attempt-filtered RAW row counts. It reported `loaded=177, ready=0, investigate=0`; no PUT or COPY ran. Combined with the offline 216,361-row manifest inventory above, this confirms matching load counts for every captured history window. It does not fill windows 12, 42, or 73, complete the catalog-wide update sweep, or measure actual warehouse credit use.
+
+A bounded GeoJSON event-query probe for the unresolved October 9 02:21–02:22 UTC interval, using the same `updatedafter`, deletion, and ordering parameters as the count probes, also timed out after 20 seconds. Both FDSN count and event-query endpoints failed to answer for that minute in these attempts. This supports recording a source-response gap rather than attributing the problem only to the count endpoint. No rows were captured and the watermark remains unchanged.

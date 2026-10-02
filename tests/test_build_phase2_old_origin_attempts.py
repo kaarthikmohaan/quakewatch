@@ -8,8 +8,8 @@ from pathlib import Path
 
 from quakewatch.raw_load import validate_local_batch
 from quakewatch.staging import project_feature
-from scripts.build_phase2_fixture_attempts import build_attempts
-from scripts.build_phase2_old_origin_attempts import FETCH_BASE, SEQUENCE
+from scripts.fixtures.build_phase2_fixture_attempts import build_attempts
+from scripts.fixtures.build_phase2_old_origin_attempts import FETCH_BASE, SEQUENCE
 
 
 class OldOriginAttemptsTest(unittest.TestCase):

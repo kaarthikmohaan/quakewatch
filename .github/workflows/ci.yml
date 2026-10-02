@@ -21,8 +21,8 @@ jobs:
         run: uv sync --locked --no-editable
       - name: Build local synthetic fixtures
         run: |
-          PYTHONPATH=src:. .venv/bin/python scripts/build_phase2_fixture_bundle.py
-          PYTHONPATH=src:. .venv/bin/python scripts/build_phase2_fixture_attempts.py
-          PYTHONPATH=src:. .venv/bin/python scripts/build_phase2_old_origin_attempts.py
+          PYTHONPATH=src:. .venv/bin/python scripts/fixtures/build_phase2_fixture_bundle.py
+          PYTHONPATH=src:. .venv/bin/python scripts/fixtures/build_phase2_fixture_attempts.py
+          PYTHONPATH=src:. .venv/bin/python scripts/fixtures/build_phase2_old_origin_attempts.py
       - name: Run secret-free fixture tests
         run: PYTHONPATH=src:. .venv/bin/python -m unittest discover -s tests

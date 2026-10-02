@@ -5,17 +5,17 @@ import io
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.phase2_old_origin_raw_load import (
+from scripts.evidence.phase2.phase2_old_origin_raw_load import (
     REPLAY_COUNTS, SEQUENCE, _guard_before, execute_load, local_plans, main,
 )
-from scripts.phase2_fixture_namespace import TEST_DATABASE
+from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 
 
 class OldOriginRawLoadTest(unittest.TestCase):
     def test_preview_only_two_isolated_plans_without_connecting(self):
         output = io.StringIO()
         with patch("sys.argv", ["phase2_old_origin_raw_load.py"]), \
-             patch("scripts.phase2_old_origin_raw_load.connect_project",
+             patch("scripts.evidence.phase2.phase2_old_origin_raw_load.connect_project",
                    side_effect=AssertionError("connected")), \
              contextlib.redirect_stdout(output):
             main()
@@ -39,7 +39,7 @@ class OldOriginRawLoadTest(unittest.TestCase):
             "fixture-original-v1", "fixture-update-v1", "fixture-deletion-v1",
             "fixture-stale-replay-v1"))
         cursor.fetchall.return_value = prior
-        with patch("scripts.phase2_old_origin_raw_load._counts",
+        with patch("scripts.evidence.phase2.phase2_old_origin_raw_load._counts",
                    return_value={**REPLAY_COUNTS, "FACT_EVENT_REVISION": 4}):
             with self.assertRaisesRegex(RuntimeError, "measured stale-replay state"):
                 _guard_before(cursor, local_plans(SEQUENCE))
@@ -58,13 +58,13 @@ class OldOriginRawLoadTest(unittest.TestCase):
             sql = cursor.execute.call_args.args[0]
             return ([{"status": "UPLOADED"}] if sql.startswith("PUT ")
                     else [{"status": "LOADED", "rows_loaded": 1}])
-        with patch("scripts.phase2_old_origin_raw_load.connect_project", return_value=connection), \
-             patch("scripts.phase2_old_origin_raw_load._guard_before",
+        with patch("scripts.evidence.phase2.phase2_old_origin_raw_load.connect_project", return_value=connection), \
+             patch("scripts.evidence.phase2.phase2_old_origin_raw_load._guard_before",
                    side_effect=lambda *_: events.append("before")), \
-             patch("scripts.phase2_old_origin_raw_load._guard_after",
+             patch("scripts.evidence.phase2.phase2_old_origin_raw_load._guard_after",
                    side_effect=lambda *_: events.append("after")), \
-             patch("scripts.phase2_old_origin_raw_load._result_dicts", side_effect=result_dicts), \
-             patch("scripts.phase2_old_origin_raw_load._append_receipt",
+             patch("scripts.evidence.phase2.phase2_old_origin_raw_load._result_dicts", side_effect=result_dicts), \
+             patch("scripts.evidence.phase2.phase2_old_origin_raw_load._append_receipt",
                    side_effect=lambda *_: events.append("receipt")):
             results = execute_load()
         self.assertEqual(events, ["before", "receipt", "receipt", "after"])

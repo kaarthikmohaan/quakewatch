@@ -29,9 +29,9 @@ uv sync --locked --no-editable
 Run the secret-free test suite, exactly as CI does:
 
 ```sh
-PYTHONPATH=src:. .venv/bin/python scripts/build_phase2_fixture_bundle.py
-PYTHONPATH=src:. .venv/bin/python scripts/build_phase2_fixture_attempts.py
-PYTHONPATH=src:. .venv/bin/python scripts/build_phase2_old_origin_attempts.py
+PYTHONPATH=src:. .venv/bin/python scripts/fixtures/build_phase2_fixture_bundle.py
+PYTHONPATH=src:. .venv/bin/python scripts/fixtures/build_phase2_fixture_attempts.py
+PYTHONPATH=src:. .venv/bin/python scripts/fixtures/build_phase2_old_origin_attempts.py
 PYTHONPATH=src:. .venv/bin/python -m unittest discover -s tests
 ```
 

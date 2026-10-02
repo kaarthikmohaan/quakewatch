@@ -162,12 +162,25 @@ connection and can use warehouse credits; see the [runbook](docs/runbook.md).
    baseline.
 5. Add a gated Snowflake integration job to CI alongside the fixture tests.
 
+## Repository layout
+
+```text
+src/quakewatch/   Extractor, loaders, and Snowpark procedure code
+sql/              Reviewed Snowflake DDL and checks, with setup order (sql/README.md)
+scripts/          Pipeline steps, checks, test-fixture builders, and evidence drills (scripts/README.md)
+tests/            Secret-free unit and fixture tests run in CI
+docs/             Design, data dictionary, runbook, and results
+docs/evidence/    Dated results log with query IDs
+docs/plans/       Working plans for individual drills
+```
+
 ## Docs
 
 - [Design and project plan](docs/design.md)
-- [Data dictionary](docs/data-dictionary.md): tables, grains, and keys
-- [Runbook](docs/runbook.md)
-- [Observed results](docs/results.md)
+- [Data dictionary](docs/data-dictionary.md): tables, grains, keys, and ERD
+- [Runbook](docs/runbook.md) and [operations reference](docs/operations-reference.md)
+- [Results summary](docs/results.md) and [evidence log](docs/evidence/results-log.md)
+- [Scripts guide](scripts/README.md) and [SQL setup order](sql/README.md)
 - [Phase 4 close-out and remaining work](docs/phase4-closeout.md)
 - [Cortex evaluation](docs/phase4-cortex-evaluation.md)
 - [Two-minute evidence-based demo](docs/demo.md)

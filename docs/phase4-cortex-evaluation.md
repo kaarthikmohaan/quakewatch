@@ -23,7 +23,7 @@ The three unresolved history windows and unfinished catalog-wide update sweep
 remain disclosed. Cases with missing nearest magnitude or no events use the
 deterministic fallback rather than inventing facts.
 
-The [runner](../scripts/phase4_cortex_aggregates.py) previews by default.
+The [runner](../scripts/evidence/phase4/phase4_cortex_aggregates.py) previews by default.
 After separate warehouse-cost approval, `--execute` runs the single SQL query
 as `QUAKEWATCH_ROLE` on `QUAKEWATCH_WH`, validates the ten case IDs and public
 250 km radii, then saves `data/cortex/phase4_aggregates.json` locally. That
@@ -37,7 +37,7 @@ record ages describe its check time and are not live ages at later use.
 
 ## Next evaluation, after separate approval
 
-The [offline-previewed evaluator](../scripts/phase4_cortex_evaluate.py) uses
+The [offline-previewed evaluator](../scripts/evidence/phase4/phase4_cortex_evaluate.py) uses
 `claude-haiku-4-5`, which a free model-listing command showed as accessible to
 `QUAKEWATCH_ROLE`. A separate read-only grant listing showed `USE AI FUNCTIONS`
 and `SNOWFLAKE.CORTEX_USER` granted through `PUBLIC` in this account. This
@@ -74,7 +74,7 @@ the Cortex brief as easier to scan than the SQL fact row. This supports
 keeping the optional brief, subject to SQL fallback and the wider target-user
 task interview still required by the design.
 
-The [metering preview](../scripts/phase4_cortex_metering.py) collects the
+The [metering preview](../scripts/evidence/phase4/phase4_cortex_metering.py) collects the
 eleven successful Cortex query IDs (two Seattle trials and nine annual cases)
 from documented IDs and the local cache. After separate warehouse-cost
 approval, it will read `CORTEX_AI_FUNCTIONS_USAGE_HISTORY` once as

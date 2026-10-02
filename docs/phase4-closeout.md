@@ -23,7 +23,7 @@ bill or storage charge; do not convert the earlier XS estimate into measured
 per-demo credits. Cortex was deliberately left out of the close-out because
 it is optional and has not passed its factuality and user-value evaluation.
 
-I approved [read-only metering runner](../scripts/phase4_usage.py)
+I approved [read-only metering runner](../scripts/checks/phase4_usage.py)
 queried hourly Account Usage for `QUAKEWATCH_WH` from 08:00 to 12:00 UTC on
 1 October. It returned the two rows above at 09:56 UTC; later hours were not
 yet present. Snowflake says this view can lag by up to three hours. An absent

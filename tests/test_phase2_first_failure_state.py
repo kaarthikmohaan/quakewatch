@@ -6,13 +6,13 @@ import io
 import unittest
 from unittest.mock import patch
 
-from scripts import phase2_first_failure_state
+from scripts.evidence.phase2 import phase2_first_failure_state
 
 
 class FirstFailureStateTest(unittest.TestCase):
     def test_preview_does_not_connect(self):
         output = io.StringIO()
-        with patch("scripts.phase2_first_failure_state.connect_project",
+        with patch("scripts.evidence.phase2.phase2_first_failure_state.connect_project",
                    side_effect=AssertionError("connected")), \
              patch("sys.argv", ["phase2_first_failure_state.py"]), \
              contextlib.redirect_stdout(output):

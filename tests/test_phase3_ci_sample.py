@@ -19,9 +19,9 @@ class Phase3CiSampleTest(unittest.TestCase):
         self.assertNotIn("snow sql", WORKFLOW)
 
     def test_ci_builds_ignored_synthetic_fixtures_before_tests(self):
-        bundle = WORKFLOW.index("scripts/build_phase2_fixture_bundle.py")
-        first = WORKFLOW.index("scripts/build_phase2_fixture_attempts.py")
-        second = WORKFLOW.index("scripts/build_phase2_old_origin_attempts.py")
+        bundle = WORKFLOW.index("scripts/fixtures/build_phase2_fixture_bundle.py")
+        first = WORKFLOW.index("scripts/fixtures/build_phase2_fixture_attempts.py")
+        second = WORKFLOW.index("scripts/fixtures/build_phase2_old_origin_attempts.py")
         tests = WORKFLOW.index("python -m unittest discover -s tests")
         self.assertLess(bundle, first)
         self.assertLess(first, second)

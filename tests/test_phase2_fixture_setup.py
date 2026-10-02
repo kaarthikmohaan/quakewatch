@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from scripts.phase2_fixture_setup import EXPECTED, execute_setup, main, setup_statements
+from scripts.evidence.phase2.phase2_fixture_setup import EXPECTED, execute_setup, main, setup_statements
 
 
 class FixtureSetupTest(unittest.TestCase):
@@ -25,7 +25,7 @@ class FixtureSetupTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "altered.sql"
             path.write_text("USE ROLE ACCOUNTADMIN; DROP DATABASE QUAKEWATCH;")
-            with patch("scripts.phase2_fixture_setup.SETUP_FILE", path):
+            with patch("scripts.evidence.phase2.phase2_fixture_setup.SETUP_FILE", path):
                 with self.assertRaisesRegex(ValueError, "differs"):
                     setup_statements()
 
@@ -35,9 +35,9 @@ class FixtureSetupTest(unittest.TestCase):
         connection = MagicMock()
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
-        with patch("scripts.phase2_fixture_setup.admin_params", return_value={}), \
+        with patch("scripts.evidence.phase2.phase2_fixture_setup.admin_params", return_value={}), \
              patch("snowflake.connector.connect", return_value=connection), \
-             patch("scripts.phase2_fixture_setup.name_occupied", return_value=True):
+             patch("scripts.evidence.phase2.phase2_fixture_setup.name_occupied", return_value=True):
             with self.assertRaisesRegex(RuntimeError, "occupied"):
                 execute_setup(Path("unused"))
         cursor.execute.assert_not_called()
@@ -50,9 +50,9 @@ class FixtureSetupTest(unittest.TestCase):
         connection = MagicMock()
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
-        with patch("scripts.phase2_fixture_setup.admin_params", return_value={}), \
+        with patch("scripts.evidence.phase2.phase2_fixture_setup.admin_params", return_value={}), \
              patch("snowflake.connector.connect", return_value=connection), \
-             patch("scripts.phase2_fixture_setup.name_occupied", side_effect=[False, True]):
+             patch("scripts.evidence.phase2.phase2_fixture_setup.name_occupied", side_effect=[False, True]):
             result = execute_setup(Path("unused"))
         self.assertEqual(result["statements_executed"], len(EXPECTED))
         self.assertEqual([call.args[0] for call in cursor.execute.call_args_list[:len(EXPECTED)]],

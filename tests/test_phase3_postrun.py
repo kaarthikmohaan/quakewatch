@@ -5,14 +5,14 @@ import io
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.phase3_postrun import main, postrun
-from scripts.phase3_quality import VIEW_NAMES, reviewed_sql
+from scripts.checks.phase3_postrun import main, postrun
+from scripts.checks.phase3_quality import VIEW_NAMES, reviewed_sql
 
 
 class Phase3PostrunTest(unittest.TestCase):
     def test_preview_is_offline(self):
         with patch("sys.argv", ["phase3_postrun.py"]), \
-             patch("scripts.phase3_postrun.connect_project",
+             patch("scripts.checks.phase3_postrun.connect_project",
                    side_effect=AssertionError("connected")), \
              contextlib.redirect_stdout(io.StringIO()):
             main()
@@ -29,7 +29,7 @@ class Phase3PostrunTest(unittest.TestCase):
         connection = MagicMock()
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
-        with patch("scripts.phase3_postrun.connect_project", return_value=connection):
+        with patch("scripts.checks.phase3_postrun.connect_project", return_value=connection):
             report = postrun()
         self.assertEqual(report["status"], "pass")
         self.assertEqual(report["reject_reasons"], [("invalid_geometry", 485)])
@@ -48,7 +48,7 @@ class Phase3PostrunTest(unittest.TestCase):
         connection = MagicMock()
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
-        with patch("scripts.phase3_postrun.connect_project", return_value=connection):
+        with patch("scripts.checks.phase3_postrun.connect_project", return_value=connection):
             self.assertEqual(postrun()["status"], "review")
 
 

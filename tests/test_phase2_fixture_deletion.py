@@ -5,17 +5,17 @@ import io
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.phase2_fixture_deletion import (
+from scripts.evidence.phase2.phase2_fixture_deletion import (
     ATTEMPT_ID, EXPECTED_AFTER, UPDATE_COUNTS, UPDATE_PROCESS_ID,
     _guard_after, _guard_before, _guard_raw, execute_deletion, preview,
 )
-from scripts.phase2_fixture_namespace import TEST_DATABASE
+from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 
 
 class FixtureDeletionTest(unittest.TestCase):
     def test_preview_does_not_connect(self):
         output = io.StringIO()
-        with patch("scripts.phase2_fixture_deletion.connect_project",
+        with patch("scripts.evidence.phase2.phase2_fixture_deletion.connect_project",
                    side_effect=AssertionError("connected")), contextlib.redirect_stdout(output):
             preview()
         self.assertIn("no Snowflake connection", output.getvalue())
@@ -32,8 +32,8 @@ class FixtureDeletionTest(unittest.TestCase):
 
     def test_changed_update_state_stops_before_call(self):
         cursor = MagicMock()
-        with patch("scripts.phase2_fixture_deletion._guard_raw", return_value="hash"), \
-             patch("scripts.phase2_fixture_deletion._counts",
+        with patch("scripts.evidence.phase2.phase2_fixture_deletion._guard_raw", return_value="hash"), \
+             patch("scripts.evidence.phase2.phase2_fixture_deletion._counts",
                    return_value={**UPDATE_COUNTS, "FACT_EVENT_REVISION": 3}):
             with self.assertRaisesRegex(RuntimeError, "measured update state"):
                 _guard_before(cursor)
@@ -58,10 +58,10 @@ class FixtureDeletionTest(unittest.TestCase):
                    "loaded_rows": 1, "processed_rows": 1,
                    "rejected_rows": 0, "revision_rows_merged": 1,
                    "process_attempt_id": "new-process"}
-        with patch("scripts.phase2_fixture_deletion._counts", return_value=EXPECTED_AFTER), \
-             patch("scripts.phase2_fixture_deletion._hash_feature",
+        with patch("scripts.evidence.phase2.phase2_fixture_deletion._counts", return_value=EXPECTED_AFTER), \
+             patch("scripts.evidence.phase2.phase2_fixture_deletion._hash_feature",
                    side_effect=["old", "update"]), \
-             patch("scripts.phase2_fixture_deletion._guard_unique_keys"):
+             patch("scripts.evidence.phase2.phase2_fixture_deletion._guard_unique_keys"):
             self.assertEqual(_guard_after(cursor, outcome, "delete"), EXPECTED_AFTER)
 
     def test_single_call_happens_after_preflight(self):
@@ -72,10 +72,10 @@ class FixtureDeletionTest(unittest.TestCase):
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
         events = []
-        with patch("scripts.phase2_fixture_deletion.connect_project", return_value=connection), \
-             patch("scripts.phase2_fixture_deletion._guard_before",
+        with patch("scripts.evidence.phase2.phase2_fixture_deletion.connect_project", return_value=connection), \
+             patch("scripts.evidence.phase2.phase2_fixture_deletion._guard_before",
                    side_effect=lambda *_: events.append("before") or "hash"), \
-             patch("scripts.phase2_fixture_deletion._guard_after",
+             patch("scripts.evidence.phase2.phase2_fixture_deletion._guard_after",
                    side_effect=lambda *_: events.append("after") or EXPECTED_AFTER):
             execute_deletion()
         self.assertEqual(events, ["before", "after"])

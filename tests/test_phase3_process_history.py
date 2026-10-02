@@ -6,14 +6,14 @@ import json
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.phase3_process_history import main, process_history
+from scripts.pipeline.phase3_process_history import main, process_history
 
 
 class Phase3ProcessHistoryTest(unittest.TestCase):
     def test_preview_does_not_connect(self):
         output = io.StringIO()
         with patch("sys.argv", ["phase3_process_history.py"]), \
-             patch("scripts.phase3_process_history.connect_project",
+             patch("scripts.pipeline.phase3_process_history.connect_project",
                    side_effect=AssertionError("connected")), \
              contextlib.redirect_stdout(output):
             main()
@@ -35,7 +35,7 @@ class Phase3ProcessHistoryTest(unittest.TestCase):
         connection = MagicMock()
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
-        with patch("scripts.phase3_process_history.connect_project",
+        with patch("scripts.pipeline.phase3_process_history.connect_project",
                    return_value=connection), contextlib.redirect_stdout(io.StringIO()):
             result = process_history(1)
         self.assertEqual(result["completed_attempts"], 1)
@@ -53,7 +53,7 @@ class Phase3ProcessHistoryTest(unittest.TestCase):
         connection = MagicMock()
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
-        with patch("scripts.phase3_process_history.connect_project",
+        with patch("scripts.pipeline.phase3_process_history.connect_project",
                    return_value=connection):
             with self.assertRaisesRegex(RuntimeError, "state changed"):
                 process_history(1)

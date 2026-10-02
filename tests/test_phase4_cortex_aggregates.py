@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.phase4_cortex_aggregates import EXPECTED_CASES, save_aggregates
+from scripts.evidence.phase4.phase4_cortex_aggregates import EXPECTED_CASES, save_aggregates
 
 
 COLUMNS = [

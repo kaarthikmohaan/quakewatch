@@ -4,7 +4,7 @@ import contextlib
 import io
 import unittest
 
-from scripts.phase2_fixture_namespace import (
+from scripts.fixtures.phase2_fixture_namespace import (
     TEST_DATABASE, inputs, main, validate_all, validate_and_rewrite,
 )
 

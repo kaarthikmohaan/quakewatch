@@ -8,7 +8,7 @@ from pathlib import Path
 
 from quakewatch.raw_load import validate_local_batch
 from quakewatch.staging import project_feature
-from scripts.build_phase2_fixture_attempts import SEQUENCE, build_attempts
+from scripts.fixtures.build_phase2_fixture_attempts import SEQUENCE, build_attempts
 
 
 class FixtureAttemptsTest(unittest.TestCase):

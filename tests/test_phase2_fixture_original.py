@@ -5,8 +5,8 @@ import io
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.phase2_fixture_namespace import TEST_DATABASE
-from scripts.phase2_fixture_original import (
+from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
+from scripts.evidence.phase2.phase2_fixture_original import (
     ATTEMPT_ID, EVENT_ID, EXPECTED_AFTER, _guard_after, _guard_before,
     _guard_raw, execute_original, preview,
 )
@@ -15,7 +15,7 @@ from scripts.phase2_fixture_original import (
 class FixtureOriginalTest(unittest.TestCase):
     def test_preview_does_not_connect(self):
         output = io.StringIO()
-        with patch("scripts.phase2_fixture_original.connect_project",
+        with patch("scripts.evidence.phase2.phase2_fixture_original.connect_project",
                    side_effect=AssertionError("connected")), contextlib.redirect_stdout(output):
             preview()
         self.assertIn("no Snowflake connection", output.getvalue())
@@ -32,8 +32,8 @@ class FixtureOriginalTest(unittest.TestCase):
 
     def test_curated_must_be_empty_before_call(self):
         cursor = MagicMock()
-        with patch("scripts.phase2_fixture_original._guard_raw", return_value="hash"), \
-             patch("scripts.phase2_fixture_original._counts",
+        with patch("scripts.evidence.phase2.phase2_fixture_original._guard_raw", return_value="hash"), \
+             patch("scripts.evidence.phase2.phase2_fixture_original._counts",
                    return_value={"FACT_EVENT_REVISION": 1}):
             with self.assertRaisesRegex(RuntimeError, "must be empty"):
                 _guard_before(cursor)
@@ -57,8 +57,8 @@ class FixtureOriginalTest(unittest.TestCase):
                    "loaded_rows": 1, "processed_rows": 1,
                    "rejected_rows": 0, "revision_rows_merged": 1,
                    "process_attempt_id": "p"}
-        with patch("scripts.phase2_fixture_original._counts", return_value=EXPECTED_AFTER), \
-             patch("scripts.phase2_fixture_original._guard_unique_keys") as unique:
+        with patch("scripts.evidence.phase2.phase2_fixture_original._counts", return_value=EXPECTED_AFTER), \
+             patch("scripts.evidence.phase2.phase2_fixture_original._guard_unique_keys") as unique:
             self.assertEqual(_guard_after(cursor, outcome, "hash"), EXPECTED_AFTER)
         unique.assert_called_once_with(cursor)
 
@@ -70,10 +70,10 @@ class FixtureOriginalTest(unittest.TestCase):
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
         events = []
-        with patch("scripts.phase2_fixture_original.connect_project", return_value=connection), \
-             patch("scripts.phase2_fixture_original._guard_before",
+        with patch("scripts.evidence.phase2.phase2_fixture_original.connect_project", return_value=connection), \
+             patch("scripts.evidence.phase2.phase2_fixture_original._guard_before",
                    side_effect=lambda *_: events.append("before") or "hash"), \
-             patch("scripts.phase2_fixture_original._guard_after",
+             patch("scripts.evidence.phase2.phase2_fixture_original._guard_after",
                    side_effect=lambda *_: events.append("after") or EXPECTED_AFTER):
             execute_original()
         self.assertEqual(events, ["before", "after"])

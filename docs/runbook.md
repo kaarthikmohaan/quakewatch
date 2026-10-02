@@ -77,7 +77,7 @@ PYTHONPATH=src .venv/bin/python -m quakewatch.raw_load \
 It reported 15 expected rows, the local file path, and the stage path
 `@QUAKEWATCH.RAW.USGS_JSON_STAGE/20261002T045249Z-ee3a351be3`. It said
 `No upload, COPY, or account connection performed.` The
-[fixed-input core driver](demo-code/2026-10-02-core.py.txt)
+[fixed-input core driver](../scripts/evidence/live_demo_2026_10_02/core.py)
 ran as `PYTHONPATH=src:. .venv/bin/python /private/tmp/quakewatch_live_demo.py`.
 Its archived source is linked above; the temporary path is not part of the
 repository. It printed `already_loaded` with 15 rows. It did not upload,
@@ -120,7 +120,7 @@ The main warehouse objects are described in the [data dictionary](data-dictionar
 
 ## 5. Query and check the warehouse
 
-The [fixed-input live checks](demo-code/2026-10-02-checks.py.txt) ran as
+The [fixed-input live checks](../scripts/evidence/live_demo_2026_10_02/checks.py) ran as
 `PYTHONPATH=src:. .venv/bin/python /private/tmp/quakewatch_live_checks.py`.
 They used the reviewed
 [Seattle analysis](../sql/phase3_sample_analysis.sql),
@@ -168,8 +168,8 @@ These behaviours were tested in an isolated Snowflake fixture database. They wer
 | Stale replay or overlapping batch | Do not add duplicate logical version or restore a deleted event |
 | Failed transformation | Keep RAW and a failed audit; retry processing without another source fetch |
 
-The [Phase 2 results](results.md#phase-2-exit-review-2026-10-01) and
-[recovery results](results.md#isolated-failed-transform-and-retry-drill) give
+The [Phase 2 results](evidence/results-log.md#phase-2-exit-review-2026-10-01) and
+[recovery results](evidence/results-log.md#isolated-failed-transform-and-retry-drill) give
 the fixture counts and limits. The warehouse checks in this terminal run found
 zero revision and site-link duplicate groups.
 
@@ -189,8 +189,8 @@ planning, extraction, and guarded load steps.
 
 ## 8. Cortex brief
 
-The [Cortex trial](../scripts/phase4_cortex_trial.py) ran with
-`PYTHONPATH=src:. .venv/bin/python scripts/phase4_cortex_trial.py --execute`.
+The [Cortex trial](../scripts/evidence/phase4/phase4_cortex_trial.py) ran with
+`PYTHONPATH=src:. .venv/bin/python scripts/evidence/phase4/phase4_cortex_trial.py --execute`.
 It made one
 `AI_COMPLETE` call with `llama3.1-8b` and a 120-token output cap. Only SQL
 aggregate facts went into the prompt, not raw records, coordinates, or
@@ -205,7 +205,7 @@ query IDs were `01c77438-0002-b28e-000e-fef20003c0c6` and
 
 ## 9. Clone and Time Travel recovery
 
-The [fixed-input recovery driver](demo-code/2026-10-02-recovery.py.txt)
+The [fixed-input recovery driver](../scripts/evidence/live_demo_2026_10_02/recovery.py)
 ran as `PYTHONPATH=src:. .venv/bin/python /private/tmp/quakewatch_live_recovery.py`.
 The archived source is linked above. It
 used only the isolated five-row fixture table. It created a uniquely named

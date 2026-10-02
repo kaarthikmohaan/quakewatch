@@ -5,7 +5,7 @@ import io
 import unittest
 from unittest.mock import patch
 
-from scripts.phase2_current_fixture import (
+from scripts.evidence.phase2.phase2_current_fixture import (
     _assert_state, feature_row, preview, view_select_sql,
 )
 
@@ -32,7 +32,7 @@ class FakeCursor:
 class CurrentFixtureTest(unittest.TestCase):
     def test_preview_does_not_connect(self):
         output = io.StringIO()
-        with patch("scripts.phase2_current_fixture.connect_project",
+        with patch("scripts.evidence.phase2.phase2_current_fixture.connect_project",
                    side_effect=AssertionError("connected")), contextlib.redirect_stdout(output):
             preview()
         self.assertIn("no Snowflake connection", output.getvalue())

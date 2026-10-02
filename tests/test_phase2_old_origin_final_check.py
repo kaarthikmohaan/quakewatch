@@ -3,8 +3,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.phase2_old_origin_final_check import verify
-from scripts.phase2_old_origin_update import EXPECTED_AFTER
+from scripts.evidence.phase2.phase2_old_origin_final_check import verify
+from scripts.evidence.phase2.phase2_old_origin_update import EXPECTED_AFTER
 
 
 class OldOriginFinalCheckTest(unittest.TestCase):
@@ -14,10 +14,10 @@ class OldOriginFinalCheckTest(unittest.TestCase):
             ("fixture-old-origin-original-v1", "p1", "complete", 1, 1, 0, 1),
             ("fixture-old-origin-update-v1", "p2", "complete", 1, 1, 0, 1),
         ]
-        with patch("scripts.phase2_old_origin_final_check._guard_raw"), \
-             patch("scripts.phase2_old_origin_final_check._expected_hash",
+        with patch("scripts.evidence.phase2.phase2_old_origin_final_check._guard_raw"), \
+             patch("scripts.evidence.phase2.phase2_old_origin_final_check._expected_hash",
                    return_value="new"), \
-             patch("scripts.phase2_old_origin_final_check._guard_after",
+             patch("scripts.evidence.phase2.phase2_old_origin_final_check._guard_after",
                    return_value=EXPECTED_AFTER) as after:
             report = verify(cursor)
         self.assertEqual(report["status"], "verified")
@@ -35,8 +35,8 @@ class OldOriginFinalCheckTest(unittest.TestCase):
         cursor.fetchall.return_value = [
             ("fixture-old-origin-original-v1", "p1", "complete", 1, 1, 0, 1),
         ]
-        with patch("scripts.phase2_old_origin_final_check._guard_raw"), \
-             patch("scripts.phase2_old_origin_final_check._guard_after") as after:
+        with patch("scripts.evidence.phase2.phase2_old_origin_final_check._guard_raw"), \
+             patch("scripts.evidence.phase2.phase2_old_origin_final_check._guard_after") as after:
             with self.assertRaisesRegex(RuntimeError, "exactly two"):
                 verify(cursor)
         after.assert_not_called()

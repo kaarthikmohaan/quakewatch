@@ -2,7 +2,7 @@
 
 import unittest
 
-from scripts.phase4_clone_recovery import before_query
+from scripts.evidence.phase4.phase4_clone_recovery import before_query
 
 
 class CloneRecoveryTests(unittest.TestCase):

@@ -3,8 +3,8 @@
 import re
 import unittest
 
-from scripts.build_procedure_bundle import REPO_ROOT
-from scripts.phase2_fixture_namespace import TEST_DATABASE
+from scripts.pipeline.build_procedure_bundle import REPO_ROOT
+from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 
 
 SQL = (REPO_ROOT / "sql" / "phase2_fixture_setup.sql").read_text()

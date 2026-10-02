@@ -7,8 +7,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from scripts.phase2_fixture_namespace import TEST_DATABASE
-from scripts.phase2_fixture_raw_load import (
+from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
+from scripts.evidence.phase2.phase2_fixture_raw_load import (
     _append_receipt, _guard_empty, execute_load, local_plans, main,
 )
 
@@ -17,7 +17,7 @@ class FixtureRawLoadTest(unittest.TestCase):
     def test_preview_validates_four_local_plans_without_connecting(self):
         output = io.StringIO()
         with patch("sys.argv", ["phase2_fixture_raw_load.py"]), \
-             patch("scripts.phase2_fixture_raw_load.connect_project",
+             patch("scripts.evidence.phase2.phase2_fixture_raw_load.connect_project",
                    side_effect=AssertionError("connected")), \
              contextlib.redirect_stdout(output):
             main()
@@ -31,7 +31,7 @@ class FixtureRawLoadTest(unittest.TestCase):
 
     def test_missing_or_changed_local_fixture_stops(self):
         with tempfile.TemporaryDirectory() as directory:
-            with patch("scripts.phase2_fixture_raw_load.ROOT", Path(directory)):
+            with patch("scripts.evidence.phase2.phase2_fixture_raw_load.ROOT", Path(directory)):
                 with self.assertRaises(FileNotFoundError):
                     local_plans()
 
@@ -65,11 +65,11 @@ class FixtureRawLoadTest(unittest.TestCase):
             command = cursor.execute.call_args.args[0]
             return ([{"status": "UPLOADED"}] if command.startswith("PUT ")
                     else [{"status": "LOADED", "rows_loaded": 1}])
-        with patch("scripts.phase2_fixture_raw_load.connect_project", return_value=connection), \
-             patch("scripts.phase2_fixture_raw_load._guard_empty",
+        with patch("scripts.evidence.phase2.phase2_fixture_raw_load.connect_project", return_value=connection), \
+             patch("scripts.evidence.phase2.phase2_fixture_raw_load._guard_empty",
                    side_effect=lambda *_: events.append("guard")), \
-             patch("scripts.phase2_fixture_raw_load._result_dicts", side_effect=result_dicts), \
-             patch("scripts.phase2_fixture_raw_load._append_receipt",
+             patch("scripts.evidence.phase2.phase2_fixture_raw_load._result_dicts", side_effect=result_dicts), \
+             patch("scripts.evidence.phase2.phase2_fixture_raw_load._append_receipt",
                    side_effect=lambda *_: events.append("receipt")):
             results = execute_load()
         self.assertEqual(events, ["guard"] + ["receipt"] * 4)

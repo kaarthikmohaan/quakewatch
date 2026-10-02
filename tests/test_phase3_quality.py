@@ -5,14 +5,14 @@ import io
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.phase3_quality import VIEW_NAMES, execute_quality, main, reviewed_sql, view_action
+from scripts.checks.phase3_quality import VIEW_NAMES, execute_quality, main, reviewed_sql, view_action
 
 
 class Phase3QualityTest(unittest.TestCase):
     def test_preview_checks_reviewed_files_without_connecting(self):
         output = io.StringIO()
         with patch("sys.argv", ["phase3_quality.py"]), \
-             patch("scripts.phase3_quality.connect_project",
+             patch("scripts.checks.phase3_quality.connect_project",
                    side_effect=AssertionError("connected")), \
              contextlib.redirect_stdout(output):
             main()
@@ -20,9 +20,9 @@ class Phase3QualityTest(unittest.TestCase):
         self.assertEqual([len(group) for group in reviewed_sql()], [3, 3, 1])
 
     def test_changed_sql_stops_before_connection(self):
-        with patch("scripts.phase3_quality.FILES",
+        with patch("scripts.checks.phase3_quality.FILES",
                    (("phase3_health_views.sql", "wrong", 3),)), \
-             patch("scripts.phase3_quality.connect_project") as connect:
+             patch("scripts.checks.phase3_quality.connect_project") as connect:
             with self.assertRaisesRegex(ValueError, "changed"):
                 execute_quality()
         connect.assert_not_called()
@@ -34,7 +34,7 @@ class Phase3QualityTest(unittest.TestCase):
         connection = MagicMock()
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
-        with patch("scripts.phase3_quality.connect_project", return_value=connection):
+        with patch("scripts.checks.phase3_quality.connect_project", return_value=connection):
             with self.assertRaisesRegex(RuntimeError, "partial or differ"):
                 execute_quality()
         self.assertFalse(any(call.args[0].startswith("CREATE VIEW")
@@ -52,7 +52,7 @@ class Phase3QualityTest(unittest.TestCase):
         connection = MagicMock()
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
-        with patch("scripts.phase3_quality.connect_project", return_value=connection):
+        with patch("scripts.checks.phase3_quality.connect_project", return_value=connection):
             report = execute_quality()
         self.assertEqual(report["status"], "pass")
         self.assertEqual(report["views_created"], list(VIEW_NAMES))
@@ -76,7 +76,7 @@ class Phase3QualityTest(unittest.TestCase):
         connection = MagicMock()
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
-        with patch("scripts.phase3_quality.connect_project", return_value=connection):
+        with patch("scripts.checks.phase3_quality.connect_project", return_value=connection):
             report = execute_quality()
         self.assertEqual(report["views_created"], [])
         self.assertEqual(report["views_reused"], list(VIEW_NAMES))

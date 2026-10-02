@@ -18,7 +18,94 @@ The extractor writes one JSON object per line to `events.jsonl`. Each line conta
 
 ## Warehouse grains
 
-See [design.md](design.md) for the full model. RAW has one source feature per query window and attempt. The revision fact has one distinct canonical event revision. The current-event view selects the latest non-stale revision and hides a latest tombstone. These grains were exercised by the 15-row project pilot, isolated synthetic fixtures, and 177 processed history attempts. Aggregate post-run uniqueness and reject-reason checks remain.
+See [design.md](design.md) for the full model. RAW has one source feature per query window and attempt. The revision fact has one distinct canonical event revision. The current-event view selects the latest non-stale revision and hides a latest tombstone. These grains were exercised by the 15-row project pilot, isolated synthetic fixtures, and 177 processed history attempts. Post-run checks found zero duplicate revision or bridge key groups and grouped all 485 rejects under one reason; see [observed results](results.md).
+
+### Entity relationships
+
+Key columns only; the full column lists are in the linked DDL below. `PK` marks
+each table's grain, which is enforced by SQL uniqueness checks rather than by
+Snowflake constraints. Dimensions join on natural values, and `DIM_DATE` is
+role-played by the dates of `ORIGIN_TIME` and `SOURCE_UPDATED_AT`.
+`EVENT_CURRENT` is a view over `FACT_EVENT_REVISION` that keeps each event's
+latest revision and hides it when that revision is a deleted tombstone.
+
+```mermaid
+erDiagram
+    BATCH_ATTEMPT ||--o{ RAW_EVENT_RECORDS : "loads"
+    BATCH_ATTEMPT ||--o{ BATCH_PROCESS_ATTEMPT : "is processed by"
+    BATCH_ATTEMPT ||--o| FACT_BATCH_RUN : "is summarised in"
+    RAW_EVENT_RECORDS ||--o| STG_EVENT_REVISION : "is typed as"
+    STG_EVENT_REVISION ||--o| FACT_EVENT_REVISION : "valid rows dedupe into"
+    FACT_EVENT_REVISION ||--|{ BRIDGE_EVENT_SITE : "measured against each site"
+    DIM_SITE ||--o{ BRIDGE_EVENT_SITE : "SITE_KEY"
+    DIM_DATE ||--o{ FACT_EVENT_REVISION : "event and update dates"
+    DIM_MAGNITUDE_TYPE ||--o{ FACT_EVENT_REVISION : "MAGNITUDE_TYPE"
+    DIM_EVENT_STATUS ||--o{ FACT_EVENT_REVISION : "SOURCE_STATUS"
+
+    BATCH_ATTEMPT {
+        VARCHAR ATTEMPT_ID PK "one per extract or load run"
+        VARCHAR LOGICAL_BATCH_ID "groups retries"
+        VARIANT WINDOW_AUDIT
+        VARIANT COVERAGE_GAPS
+        VARCHAR LOAD_STATUS
+    }
+    RAW_EVENT_RECORDS {
+        VARCHAR STAGE_FILE_NAME PK
+        NUMBER STAGE_FILE_ROW_NUMBER PK
+        VARCHAR ATTEMPT_ID FK
+        VARIANT PAYLOAD "full GeoJSON feature"
+        VARCHAR PAYLOAD_HASH
+    }
+    STG_EVENT_REVISION {
+        VARCHAR STAGE_FILE_NAME PK
+        NUMBER STAGE_FILE_ROW_NUMBER PK
+        VARCHAR SOURCE_EVENT_ID
+        TIMESTAMP_TZ SOURCE_UPDATED_AT
+        VARCHAR REJECT_REASON "null when valid"
+    }
+    FACT_EVENT_REVISION {
+        VARCHAR CANONICAL_EVENT_ID PK
+        TIMESTAMP_TZ SOURCE_UPDATED_AT PK
+        VARCHAR PAYLOAD_HASH PK
+        TIMESTAMP_TZ ORIGIN_TIME
+        VARCHAR SOURCE_STATUS "deleted means tombstone"
+        FLOAT MAGNITUDE
+        VARCHAR MAGNITUDE_TYPE
+    }
+    BRIDGE_EVENT_SITE {
+        VARCHAR CANONICAL_EVENT_ID PK
+        TIMESTAMP_TZ SOURCE_UPDATED_AT PK
+        VARCHAR PAYLOAD_HASH PK
+        VARCHAR SITE_KEY PK
+        FLOAT EPICENTRAL_DISTANCE_KM
+        BOOLEAN WITHIN_RADIUS
+    }
+    BATCH_PROCESS_ATTEMPT {
+        VARCHAR PROCESS_ATTEMPT_ID PK
+        VARCHAR ATTEMPT_ID FK
+        VARCHAR STATUS
+        NUMBER REVISION_ROWS_MERGED
+    }
+    FACT_BATCH_RUN {
+        VARCHAR ATTEMPT_ID PK
+        NUMBER LOADED_ROWS
+        NUMBER REJECTED_ROWS
+        NUMBER FETCH_TO_CURATED_SECONDS
+    }
+    DIM_SITE {
+        VARCHAR SITE_KEY PK
+        FLOAT RADIUS_KM
+    }
+    DIM_DATE {
+        DATE DATE_KEY PK
+    }
+    DIM_MAGNITUDE_TYPE {
+        VARCHAR MAGNITUDE_TYPE PK
+    }
+    DIM_EVENT_STATUS {
+        VARCHAR SOURCE_STATUS PK
+    }
+```
 
 ## Phase 1 raw tables
 
@@ -81,4 +168,4 @@ The [dimension and bridge writer](../src/quakewatch/snowpark_dimensions_write.py
 
 The [model writer adapter](../src/quakewatch/snowpark_model_writer.py) connects staging, a required canonical-ID resolver, alias rekey, revision fact, dimensions/bridge, batch fact, and processing log in that order under the transaction coordinator. Success writes the batch fact and processing log before commit; failure logs after rollback. The durable alias reader supplies the resolver through the procedure handler. Successful pilot and fixture calls verify the main write path; a live failed-transform retry remains unverified.
 
-The [procedure handler](../src/quakewatch/snowpark_procedure.py) supplies the durable alias reader to that adapter and processes one `ATTEMPT_ID` using Snowflake's injected session. It returns a JSON summary only after the coordinator reports a committed success; exceptions remain visible to the caller after failure audit. The [bundle builder](../scripts/build_procedure_bundle.py) packages only procedure dependency modules into an ignored local ZIP, while the [procedure SQL](../sql/phase2_create_procedure.sql) pins the account-checked Python 3.12 and Snowpark 1.55.0 versions and names its internal-stage import. The bundle and procedure were deployed for the pilot and an isolated fixture copy; see [measured results](results.md).
+The [procedure handler](../src/quakewatch/snowpark_procedure.py) supplies the durable alias reader to that adapter and processes one `ATTEMPT_ID` using Snowflake's injected session. It returns a JSON summary only after the coordinator reports a committed success; exceptions remain visible to the caller after failure audit. The [bundle builder](../scripts/pipeline/build_procedure_bundle.py) packages only procedure dependency modules into an ignored local ZIP, while the [procedure SQL](../sql/phase2_create_procedure.sql) pins the account-checked Python 3.12 and Snowpark 1.55.0 versions and names its internal-stage import. The bundle and procedure were deployed for the pilot and an isolated fixture copy; see [measured results](results.md).
