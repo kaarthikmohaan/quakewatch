@@ -2,7 +2,7 @@
 
 **Date:** 1 October 2026. This page compares the optional Phase 4 plan with
 observed evidence. It does not declare the whole QuakeWatch design complete.
-The owner accepted the original Phase 4 exit on 1 October 2026 with the limits
+I accepted the original Phase 4 exit on 1 October 2026 with the limits
 below. At that point Cortex had not run; the later Cortex evaluation is recorded
 at the end of this page. Usage is a shared warehouse-hour snapshot, not a
 per-demo bill; the three source gaps and update sweep remain open.
@@ -23,7 +23,7 @@ bill or storage charge; do not convert the earlier XS estimate into measured
 per-demo credits. Cortex was deliberately left out of the close-out because
 it is optional and has not passed its factuality and user-value evaluation.
 
-The owner-approved [read-only metering runner](../scripts/phase4_usage.py)
+I approved [read-only metering runner](../scripts/phase4_usage.py)
 queried hourly Account Usage for `QUAKEWATCH_WH` from 08:00 to 12:00 UTC on
 1 October. It returned the two rows above at 09:56 UTC; later hours were not
 yet present. Snowflake says this view can lag by up to three hours. An absent
@@ -55,11 +55,11 @@ The [design](design.md) remains the project plan. The first-backfill p95 was
 
 ## Later Cortex work
 
-After this close-out snapshot, the owner asked to use Cortex. Two bounded
+After this close-out snapshot, I used Cortex. Two bounded
 briefs for one Seattle aggregate were rejected during human fact review; the
 [dated results](results.md) explain why. A [ten-case evaluation plan](phase4-cortex-evaluation.md)
 was then run: ten aggregates were saved, nine later briefs passed human fact
-review, and the owner preferred the Cortex brief in one scan comparison.
+review, and the I preferred the Cortex brief in one scan comparison.
 Account Usage reported 0.003948756 AI credits for eleven completed calls,
 including the two rejected Llama briefs. This later work does not change the
 original accepted Phase 4 exit, measure an isolated warehouse bill, replace
