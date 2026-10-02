@@ -3,7 +3,7 @@
 Use the recorded evidence below. Do not rerun live source or Snowflake work
 for a presentation without a new cost and data-state check.
 
-| Time | Show and say |
+| Time | Present |
 |---|---|
 | 0:00–0:15 | **Problem.** Compare historical USGS earthquake records near three public example cities. QuakeWatch is retrospective batch analysis, not an alert or risk estimate. |
 | 0:15–0:35 | **Source contract.** A bounded FDSN request writes full GeoJSON features and a manifest with query-window counts. The first Seattle UTC-day example reconciled 15 before/fetched/after rows. |
@@ -14,5 +14,4 @@ for a presentation without a new cost and data-state check.
 | 1:50–2:00 | **Evidence and limits.** A dated Seattle sample returned 15 current events. The first-backfill p95 was 35.9 hours against a 24-hour target. The catalog-wide update sweep remains incomplete, so no complete-coverage or current-catalog claim is made. |
 
 Evidence and query IDs: [results](results.md). Architecture and frozen
-boundaries: [design](design.md). For source records in a public presentation,
-credit the U.S. Geological Survey and link to the official event record.
+boundaries: [design](design.md).
