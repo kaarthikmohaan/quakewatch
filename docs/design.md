@@ -216,7 +216,7 @@ Status as of 2 October 2026. Each ticked item links to its evidence.
 - [x] Demonstrate idempotent overlapping batch, old-event update capture, transform retry, and current-key uniqueness. Proven on isolated fixtures; old-event capture by a live sweep is still open.
 - [x] Add data-quality, coverage, and health queries. ([SQL](../sql/README.md))
 - [x] Measure a stated sample; publish actual results with dates and evidence. The latency target was missed and is reported. ([results](results.md))
-- [ ] Ask one target user if historical comparison is useful. ([interview guide](target-user-interview.md) prepared; no session held)
+- [ ] Ask one target user if historical comparison is useful. **Deferred:** no participant has been recruited, so usefulness for facilities analysts is unconfirmed and no usefulness claim is made. The [interview guide](target-user-interview.md) is ready.
 - [x] Complete clone/Time Travel and Cortex only after core batch recovery works. ([close-out](phase4-closeout.md))
 - [x] Run GitHub Actions fixture CI; link only a real status badge.
 

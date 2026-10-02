@@ -92,6 +92,8 @@ over these responsibilities.
   results evidence log, are long and contain many numbers in dense paragraphs,
   which can be tiring to follow with a screen reader or translation tool. The
   [results summary](docs/results.md) gives the main figures in short tables.
+- The README's site-by-year chart is an image; its alt text lists every value,
+  and the same figures appear in a table beside it.
 - The rendered Mermaid diagrams in the README and data dictionary are graphics.
   Screen readers may not describe them; the surrounding text and the data
   dictionary tables carry the same information.

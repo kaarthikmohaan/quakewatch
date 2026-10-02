@@ -16,7 +16,7 @@ official USGS totals.
 | History windows loaded and reconciled | **177 of 180** planned windows; windows 12, 42, and 73 timed out even after splitting and are recorded as gaps | [Capture log](evidence/results-log.md#first-history-window-attempt) |
 | RAW rows loaded | **216,361** history rows, plus an overlapping 15-row Seattle sample | [RAW loads](evidence/results-log.md#first-history-window-attempt) |
 | Batch receipts reconciled | **All 179** receipts (216,391 observations, including two overlapping 15-row Seattle samples): RAW = staged = processed + rejected | [2 October check](evidence/results-log.md#live-end-to-end-seattle-demo-2026-10-02) |
-| Rejected rows | **485**, all `invalid_origin_time`, kept with the original payload | [Quality deployment](evidence/results-log.md#first-phase-3-quality-deployment-attempt) |
+| Rejected rows | **485**, all USGS placeholder ("stub") records; see [reject analysis](#reject-analysis) | [Quality deployment](evidence/results-log.md#first-phase-3-quality-deployment-attempt) |
 | Duplicate revision or site-bridge key groups | **0** | [Uniqueness check](evidence/results-log.md#first-phase-3-uniqueness-check) |
 | First-backfill fetch-to-curated p95 | **35.9 hours, missing the 24-hour target** set before measuring (178 attempts) | [Measurement plan and result](evidence/results-log.md#phase-3-first-backfill-measurement-plan-set-before-live-query) |
 | Failed transform, rollback, and retry from RAW | **Passed**; identical counts before failure, after rollback, and after retry | [Retry drill](evidence/results-log.md#isolated-failed-transform-and-retry-drill) |
@@ -54,6 +54,36 @@ These are the success criteria from the [design](design.md#definition-of-success
 | 3. Quality and evidence | Reconciliation, uniqueness, CI, and sample analysis passed; latency target missed ([exit review](evidence/results-log.md#phase-3-exit-review)) |
 | 4. Optional demos | Clone and Time Travel drill passed; Cortex evaluated; usage measured ([exit review](evidence/results-log.md#phase-4-exit-review), [close-out](phase4-closeout.md)) |
 
+## Reject analysis
+
+All 485 rejected rows were investigated on 2 October 2026 by replaying the
+saved local extracts through the staging parser, without connecting to
+Snowflake. Every one is a USGS placeholder ("stub") feature:
+
+| Property | Finding |
+|---|---|
+| Source network | 481 `ak` (Alaska), 4 `av` (Alaska Volcano Observatory) |
+| Content | Title `M ?`; no origin time, magnitude, or status; coordinates `[0, 0]` |
+| Link to real events | All 485 stub IDs are listed as alias IDs of full records, and all 493 IDs the stubs point to belong to full records |
+| Effect of rejecting them | No earthquake is lost; alias resolution already gets the same links from the full records |
+
+Parser version 1 labelled them `invalid_origin_time`, which described the
+symptom rather than the cause. [Parser version 2](../src/quakewatch/staging.py)
+labels them `source_stub_record` and also rejects an active record whose
+coordinates are the `[0, 0]` placeholder, while keeping a deleted record at
+that placeholder as a tombstone without coordinates. Replaying all 216,591
+local rows through version 2 gives the same 485 rejects, now as
+`source_stub_record`, and no other changes. The rows already in Snowflake keep
+their version 1 label until they are deliberately reprocessed.
+
+## Latency evidence
+
+Fetch-to-curated latency has one measured sample: the 178-attempt first
+backfill, where curation was run manually in bulk after loading (p95 35.9
+hours). It does not describe steady-state latency. A second sample needs
+scheduled runs that process each batch soon after it loads; this is listed
+under [still open](#still-open).
+
 ## Still open
 
 - **Source gaps:** history windows 12, 42, and 73.
@@ -64,6 +94,9 @@ These are the success criteria from the [design](design.md#definition-of-success
 - **Cost:** warehouse credits were captured as a shared hourly snapshot, not
   per run; storage was not measured.
 - **User validation:** no target-analyst session has been held.
+- **Pending deployment:** the parser version 2 procedure and the
+  `UPDATE_WATERMARK` table are in the repository but not yet deployed to
+  Snowflake.
 
 ## Evidence log contents
 

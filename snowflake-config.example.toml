@@ -1,0 +1,24 @@
+# Example Snowflake connection profiles for QuakeWatch.
+#
+# Copy the sections you need into ~/.snowflake/config.toml (outside this
+# repository) and replace every placeholder. Never commit the real file, a
+# private key, or a password. QuakeWatch reads no .env file; secrets stay in
+# this per-user config and the terminal passphrase prompt.
+
+# Used by the RAW loader, Snowpark processing calls, and read-only checks.
+# raw_load.py requires key-pair authentication and QUAKEWATCH_ROLE, and
+# prompts for the private key passphrase at run time.
+[connections.quakewatch_project]
+account = "your-account-identifier"
+user = "YOUR_PROJECT_USER"
+role = "QUAKEWATCH_ROLE"
+authenticator = "SNOWFLAKE_JWT"
+private_key_file = "/path/outside/repo/quakewatch_rsa_key.p8"
+
+# Optional. Used once for sql/phase0_bootstrap.sql and by the account-usage
+# metering scripts, which read SNOWFLAKE.ACCOUNT_USAGE views.
+[connections.quakewatch_admin]
+account = "your-account-identifier"
+user = "YOUR_ADMIN_USER"
+password = "set-locally-never-commit"
+role = "ACCOUNTADMIN"

@@ -176,8 +176,8 @@ day; this terminal run did not fetch or fill those windows.
 
 The catalog-wide `updatedafter` sweep is designed to find changed or deleted
 older records. Earlier live attempts stopped at a source timeout, and no
-complete sweep was loaded or committed. The local update watermark file was
-absent during this demo, so no watermark advanced. See the
+complete sweep was loaded or committed. No update watermark had been committed
+at the time of this demo, so none advanced. See the
 [operations reference](operations-reference.md#update-sweep-preview) for its
 planning, extraction, and guarded load steps.
 

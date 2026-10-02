@@ -17,7 +17,7 @@ Measured on live Snowflake runs between 29 September and 2 October 2026. Full ev
 |---|---|
 | History windows loaded and reconciled | **177 of 180** (3 recorded as USGS source gaps) |
 | Source rows loaded into RAW | **216,361** across Seattle, San Francisco, and Anchorage |
-| Rows rejected with a recorded reason | **485**, all `invalid_origin_time`, kept for review |
+| Rows rejected with a recorded reason | **485**, all traced to USGS placeholder ("stub") records whose events exist as full records under another ID ([analysis](docs/results.md#reject-analysis)) |
 | Duplicate revision or site-bridge keys | **0** |
 | Batch receipts reconciled (RAW = staged = processed + rejected) | **All 179** |
 | Failed-transform retry from RAW, with no refetch | **Passed**, with identical counts after rollback and retry |
@@ -67,7 +67,13 @@ WHERE b.WITHIN_RADIUS
 GROUP BY 1, 2;
 ```
 
-Recorded output on 1 October 2026:
+Recorded output on 1 October 2026 (chart drawn from these values):
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/site-year-counts-dark.png">
+  <img src="docs/images/site-year-counts-light.png" alt="Grouped bar chart of earthquake records within 250 km by site and year. Anchorage: 22,056 in 2022, 21,711 in 2024, 10,685 in 2026 to 29 September. San Francisco: 15,975, 18,859, 16,183. Seattle: 2,651, 3,514, 2,469." width="800">
+</picture>
+
 
 | Site | 2022 | 2024 | 2026 (to 29 Sep) |
 |---|---:|---:|---:|
@@ -130,8 +136,18 @@ PYTHONPATH=src .venv/bin/python -m quakewatch.raw_load \
 ```
 
 That check prints the expected row count and Snowflake stage path. It does not
-upload or process data. A live Snowflake load needs the configured project
-connection and can use warehouse credits; see the [operations reference](docs/operations-reference.md).
+upload or process data.
+
+To run the warehouse path you need your own Snowflake account:
+
+1. Copy the profiles in [`snowflake-config.example.toml`](snowflake-config.example.toml)
+   into `~/.snowflake/config.toml` and fill in your account and key details.
+2. Create the Snowflake objects in the order listed in [`sql/README.md`](sql/README.md).
+3. Follow the pipeline order in [`scripts/README.md`](scripts/README.md).
+
+Live runs use warehouse credits. Command output goes to stdout; operational
+logs go to stderr, and `QUAKEWATCH_LOG_LEVEL=DEBUG` shows more detail. See the
+[operations reference](docs/operations-reference.md) for every command.
 
 ## Known limitations
 
@@ -150,6 +166,34 @@ connection and can use warehouse credits; see the [operations reference](docs/op
   Travel retention is one day.
 - **Runs are manual.** There is no scheduler, and this is not a production
   service with uptime guarantees.
+
+## Lessons learned
+
+- **Test from a clean checkout.** The first CI run failed because tests relied
+  on generated fixture files that existed only on my machine. CI now builds
+  them before testing ([log](docs/evidence/results-log.md#first-github-actions-fixture-run)).
+- **A reject label should name the cause.** All 485 rejects were labelled
+  `invalid_origin_time` until I traced them to USGS placeholder records
+  ([analysis](docs/results.md#reject-analysis)). I should have done that
+  analysis when the count first appeared.
+- **Manual bulk steps hide latency.** Curating the whole backfill in one manual
+  run is why p95 fetch-to-curated reached 35.9 hours against a 24-hour target.
+  Processing each batch as it lands, on a schedule, is the fix.
+- **Guards must match the code they check.** A recovery-drill guard expected
+  zero `MERGE` changes, but the writer counts updates too, so a correct retry
+  was flagged as a failure ([log](docs/evidence/results-log.md#isolated-failed-transform-and-retry-drill)).
+- **Validate model output against the facts.** Cortex briefs misstated a fact
+  in 4 of 13 calls, such as the search radius or the point a distance was
+  measured from. Strict checks with a SQL fallback caught every one.
+- **Splitting a window does not fix a slow source.** Three history windows and
+  the update sweep still time out on single small requests, so a different
+  capture strategy is needed.
+
+**How this was built:** I used AI coding assistants to help draft code, tests,
+and documentation. The design decisions, every live Snowflake and USGS run, and
+the checking of the results recorded here were mine. The
+[decision records](docs/adr/README.md) explain why the project works the way it
+does.
 
 ## What I'd do next
 
@@ -170,23 +214,25 @@ sql/              Reviewed Snowflake DDL and checks, with setup order (sql/READM
 scripts/          Pipeline steps, checks, test-fixture builders, and evidence drills (scripts/README.md)
 tests/            Secret-free unit and fixture tests run in CI
 docs/             Design, data dictionary, demo walkthrough, and results
+docs/adr/         Architecture decision records
 docs/evidence/    Dated results log with query IDs
 docs/plans/       Working plans for individual drills
 ```
 
 ## Docs
 
-- [Design and project plan](docs/design.md)
-- [Data dictionary](docs/data-dictionary.md): tables, grains, keys, and ERD
-- [Operations reference](docs/operations-reference.md) and [live demo walkthrough](docs/runbook.md)
-- [Results summary](docs/results.md) and [evidence log](docs/evidence/results-log.md)
-- [Scripts guide](scripts/README.md) and [SQL setup order](sql/README.md)
-- [Phase 4 close-out and remaining work](docs/phase4-closeout.md)
-- [Cortex evaluation](docs/phase4-cortex-evaluation.md)
-- [Two-minute evidence-based demo](docs/demo.md)
-- [Phase 0 environment check](docs/environment.md)
-- [Target-analyst interview guide](docs/target-user-interview.md)
-- [Contributing](CONTRIBUTING.md) · [Code of conduct](CODE_OF_CONDUCT.md) · [Security policy](SECURITY.md) · [Accessibility](ACCESSIBILITY.md)
+**Start here** (about 15 minutes): the [results summary](docs/results.md), the
+[decision records](docs/adr/README.md), and the
+[data dictionary](docs/data-dictionary.md) with its ERD. Everything else is
+reference material.
+
+| To… | Read |
+|---|---|
+| Run it | [Operations reference](docs/operations-reference.md), [scripts guide](scripts/README.md), [SQL setup order](sql/README.md) |
+| See it run | [Live demo walkthrough](docs/runbook.md), [two-minute demo](docs/demo.md) |
+| Check the evidence | [Evidence log](docs/evidence/results-log.md), [Phase 4 close-out](docs/phase4-closeout.md), [Cortex evaluation](docs/phase4-cortex-evaluation.md), [environment check](docs/environment.md) |
+| See the original plan | [Design](docs/design.md), [target-analyst interview guide](docs/target-user-interview.md) |
+| Contribute | [Contributing](CONTRIBUTING.md), [code of conduct](CODE_OF_CONDUCT.md), [security policy](SECURITY.md), [accessibility](ACCESSIBILITY.md) |
 
 ## Scope, source, and license
 

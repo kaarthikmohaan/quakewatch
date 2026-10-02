@@ -11,6 +11,7 @@ notes. Anything that resumes the warehouse uses credits, so check the
 |---|---|---|---|
 | 1 | [`phase0_bootstrap.sql`](phase0_bootstrap.sql) | Admin, once | Project role, database, `RAW` and `CURATED` schemas, XS warehouse, internal stage |
 | 2 | [`phase1_raw_tables.sql`](phase1_raw_tables.sql) | `QUAKEWATCH_ROLE` | `BATCH_ATTEMPT` and `RAW_EVENT_RECORDS` |
+| 2a | [`phase1_update_watermark.sql`](phase1_update_watermark.sql) | `QUAKEWATCH_ROLE` | `UPDATE_WATERMARK`, the committed update-sweep watermark |
 | 3 | [`phase2_staging_table.sql`](phase2_staging_table.sql) | `QUAKEWATCH_ROLE` | Typed staging table |
 | 4 | [`phase2_process_attempt.sql`](phase2_process_attempt.sql) | `QUAKEWATCH_ROLE` | Transformation audit table |
 | 5 | [`phase2_dimensions_bridge.sql`](phase2_dimensions_bridge.sql) | `QUAKEWATCH_ROLE` | Dimensions and the event-site bridge |
