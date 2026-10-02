@@ -2,7 +2,7 @@
 
 ## Phase 4 ten-case Cortex aggregate snapshot
 
-The owner ran the approved read-only aggregate query on 2026-10-01 under
+I ran the approved read-only aggregate query on 2026-10-01 under
 `QUAKEWATCH_ROLE` and `QUAKEWATCH_WH`. The runner saved ten public-site,
 fixed-window SQL rows to Git-ignored
 `data/cortex/phase4_aggregates.json`. Query ID:
@@ -28,7 +28,7 @@ was measured. No Cortex call was made by this aggregate snapshot step.
 
 ## Phase 4 nine-case Cortex evaluation
 
-The owner ran the approved bounded evaluator on 2026-10-01 for the nine saved
+I ran the approved bounded evaluator on 2026-10-01 for the nine saved
 annual/public-site cases. The Seattle day was excluded because its earlier
 `llama3.1-8b` result had already used one retry. The evaluator used
 `claude-haiku-4-5` under `QUAKEWATCH_ROLE`, issued exactly nine new
@@ -54,13 +54,13 @@ from returned tokens; the later Account Usage query below verified the same
 AI-credit subtotal. Warehouse platform credits are separate and unmeasured
 for these calls.
 
-The owner then compared the Seattle 2024 SQL fact row with its generated
+I then compared the Seattle 2024 SQL fact row with its generated
 Cortex sentence in chat and said **“cortex brief”** was easier to scan. This
-is one owner preference on one example, supporting continued optional use.
+is my preference on one example, supporting continued optional use.
 It is not a target-analyst interview or a measured task-time improvement;
 those product checks remain open.
 
-The owner ran the separately approved read-only Account Usage query at
+I ran the separately approved read-only Account Usage query at
 2026-10-01 13:27:00 UTC (metering query ID
 `01c77087-0002-b1e7-000e-fef200036b0a`).
 `SNOWFLAKE.ACCOUNT_USAGE.CORTEX_AI_FUNCTIONS_USAGE_HISTORY` returned all 11
@@ -75,8 +75,7 @@ Cortex calls, and metering query are not isolated by this AI usage view.
 
 ## Phase 4 Cortex trial attempt
 
-At the owner's request, optional Cortex work was reopened after the Phase 4
-exit review. On 2026-10-01, an approved bounded trial used the public Seattle
+An approved bounded trial used the public Seattle
 2026-09-28 UTC sample, checked modeled events within the site radius, and
 selected one nearest event. The planned `AI_COMPLETE('llama3.1-8b', ...)` call
 was limited to one invocation and 120 output tokens. Snowflake rejected the
@@ -86,13 +85,12 @@ Therefore **no Cortex summary or usefulness result exists**. The SQL checks
 may have consumed warehouse compute; AI-function usage was not measured, so
 no exact cost or zero-charge claim is made. The deterministic SQL result is
 the fallback. Snowflake's current trial-account documentation says AI features
-are disabled by default until a credit card is added. Adding a payment method
-is an owner billing decision; no account billing setting was changed here.
+are disabled by default until a credit card is added. No account billing setting was changed here.
 These early trial calls used the local administrator profile; the saved trial
 runner was later changed to execute as `QUAKEWATCH_ROLE`, matching the
 dedicated-role rule used by the nine-case evaluator.
 
-The owner then ran the bounded command again in the visible terminal. It
+I then ran the bounded command again in the visible terminal. It
 returned `cortex_unavailable_for_trial_account` with the same Snowflake error
 `399258`; no AI summary was generated. The SQL result for the public Seattle
 sample was 15 modeled events within radius. The nearest was event
@@ -101,10 +99,10 @@ source-record age 59.6 hours at query time. The count and nearest query IDs
 were `01c76fc5-0002-afd6-000e-fef200033a4e` and
 `01c76fc5-0002-b113-000e-fef200035d76`. These SQL facts are a bounded
 sample, not a full-source coverage claim. Cortex access was still blocked at
-that point. The owner then verified the payment method in Snowsight before
+that point. I then verified the payment method in Snowsight before
 authorizing another paid attempt.
 
-After the owner confirmed a saved payment method and approved a third bounded
+After I confirmed a saved payment method and approved a third bounded
 attempt, `AI_COMPLETE` returned a `llama3.1-8b` completion (query ID
 `01c76fcf-0002-afd6-000e-fef200033b12`) with 140 prompt tokens and 120
 completion tokens. The count and nearest SQL queries were
@@ -124,7 +122,7 @@ The 260 returned tokens were the first usage evidence; the later Account Usage
 query above measured its AI credits. No usefulness claim is made from this
 failed example.
 
-The owner approved the single bounded retry for that same aggregate. It
+I approved the single bounded retry for that same aggregate. It
 returned query ID `01c76fd2-0002-b113-000e-fef200035e4e` with 141 prompt
 tokens and 82 completion tokens. The contemporaneous SQL queries
 `01c76fd2-0002-afd6-000e-fef200033b1e` and
@@ -141,7 +139,7 @@ these calls.
 
 ## Phase 4 exit review
 
-The owner accepted the Phase 4 optional-demo exit on 2026-10-01. The sandbox
+I accepted the Phase 4 optional-demo exit on 2026-10-01. The sandbox
 clone and Time Travel drill passed and was cleaned up; a read-only metering
 snapshot recorded actual shared warehouse-hour credits with latency and
 attribution limits. Cortex was left optional and not run. This acceptance
@@ -150,7 +148,7 @@ update sweep, the missed Phase 3 latency target, or the target-user interview.
 
 ## Phase 4 sandbox recovery preflight
 
-The owner-approved read-only preflight on 2026-10-01 passed under
+My approved read-only preflight on 2026-10-01 passed under
 `QUAKEWATCH_ROLE` with `QUAKEWATCH_WH`. The isolated fixture
 `QUAKEWATCH_PHASE2_FIXTURE.CURATED.FACT_EVENT_REVISION` had five exact rows,
 five metadata rows, one day of Time Travel retention, and zero duplicate
@@ -178,7 +176,7 @@ the pre-merge magnitude range was 1.08–1.3. The observed result demonstrates
 clone isolation and statement-ID Time Travel for this sandbox case. The
 one-day retention window limits how long the historical read can be repeated.
 
-The owner separately approved cleanup, and the guarded run on 2026-10-01
+I separately approved cleanup, and the guarded run on 2026-10-01
 returned `status=pass`: it dropped only the demo clone (DROP query ID
 `01c76f8f-0002-b113-000e-fef200035cf2`), confirmed the clone was absent
 from fixture metadata, and found the fixture source still had five rows.
@@ -191,7 +189,7 @@ metering snapshot is recorded below, but it cannot isolate the drill's cost.
 
 ## Phase 4 warehouse metering snapshot
 
-The owner-approved read-only Account Usage query on 2026-10-01 at 09:56:08 UTC
+My approved read-only Account Usage query on 2026-10-01 at 09:56:08 UTC
 (query ID `01c76fb4-0002-b136-000e-fef20003822e`) returned these rows for
 the shared `QUAKEWATCH_WH` warehouse:
 
@@ -220,7 +218,7 @@ The first CI run for commit `12a167a` started after the approved push on 2026-10
 
 ## Phase 3 exit review
 
-The owner accepted the Phase 3 design exit on 2026-10-01: live quality counts, CI, a dated sample, and the missed predeclared latency target are documented separately from targets. This phase acceptance did not close the three USGS history gaps, the incomplete catalog-wide update sweep, or the then-pending live failed-transform/retry demonstration.
+I accepted the Phase 3 design exit on 2026-10-01: live quality counts, CI, a dated sample, and the missed predeclared latency target are documented separately from targets. This phase acceptance did not close the three USGS history gaps, the incomplete catalog-wide update sweep, or the then-pending live failed-transform/retry demonstration.
 
 ## Isolated failed-transform and retry drill
 
@@ -303,7 +301,7 @@ The original and stale-replay attempts are also an overlapping-batch fixture: bo
 
 On 2026-10-01, the approved isolated RAW loader staged and copied `fixture-old-origin-original-v1` and `fixture-old-origin-update-v1`. It returned `loaded_rows=1` for each. Its post-check required exactly six one-row RAW attempts and receipts in the fixture database, with both new receipts complete and marked synthetic. These are local test records with a 2020-01-15 origin; no USGS source coverage is claimed. At this load step, neither new attempt had been processed by the copied Snowpark procedure. Warehouse and stage-storage charges were not measured.
 
-The owner then ran the guarded original old-origin procedure call. Its post-check raised `old-origin original model counts differ` after the procedure returned because the guard expected two `DIM_DATE` rows, while the terminal showed three. The three dates are expected: the existing 2026-09-28 date plus the synthetic event's 2020-01-15 origin and 2020-01-16 source-update dates. The same terminal count snapshot showed five staging rows, four revision facts, 12 site bridges, five batch facts, and five processing audits, consistent with a committed first call; the guard did not finish its current-view and history checks. A subsequent attempt to run the combined pair stopped at its initial preflight because the fixture model had already advanced. No second procedure call ran. The local guard now expects three dates after the first call and four after the later 2026-09-29 update. The update-only recovery command must verify the exact first-call state before processing the later update. No phase-exit claim is made yet.
+I then ran the guarded original old-origin procedure call. Its post-check raised `old-origin original model counts differ` after the procedure returned because the guard expected two `DIM_DATE` rows, while the terminal showed three. The three dates are expected: the existing 2026-09-28 date plus the synthetic event's 2020-01-15 origin and 2020-01-16 source-update dates. The same terminal count snapshot showed five staging rows, four revision facts, 12 site bridges, five batch facts, and five processing audits, consistent with a committed first call; the guard did not finish its current-view and history checks. A subsequent attempt to run the combined pair stopped at its initial preflight because the fixture model had already advanced. No second procedure call ran. The local guard now expects three dates after the first call and four after the later 2026-09-29 update. The update-only recovery command must verify the exact first-call state before processing the later update. No phase-exit claim is made yet.
 
 A later read-only diagnostic showed that both old-origin attempts had complete processing audits and that the fixture model had advanced to six staging rows, five revision facts, 15 site bridges, six batch facts, six process audits, and four date rows. The current view contained the old-origin event at magnitude 1.3. A separate read-only final guard then returned `status=verified`, `old_origin_revisions=2`, and `current_magnitude=1.3`. It checked both exact fixture payload hashes, retained 2020-origin history, process audits, total model counts, current-view winner, and unique revision/bridge keys. The original process attempt ID was `f6ca486374984429974cc8f1e1b5ca15`; the update process attempt ID was `78fdae3b5beb47cb8d791a85d8a1eac2`. This establishes the synthetic warehouse model's behavior for an old-origin update. It does not prove the USGS catalog-wide sweep captured such an update or resolve source gaps. Actual Snowflake credits were not measured.
 
@@ -316,7 +314,7 @@ A later read-only diagnostic showed that both old-origin attempts had complete p
 | Tombstone remains in history and hides current event | Synthetic copied-procedure deletion retained three facts and returned zero current rows | Met for the fixture |
 | Rerun does not create duplicate logical revisions | Main 15-row same-attempt rerun merged zero revisions; synthetic cross-attempt overlap retained three facts and unique bridge keys | Met for these fixtures |
 
-The stated Phase 2 exit fixtures now have measured evidence. The owner confirmed the phase-end checklist on 2026-10-01, so Phase 3 quality and evidence work may begin. The broader Snowflake failure/retry integration check and live nonzero reject evidence remain open and should not be inferred from these successful procedure calls. The Phase 1 catalog-wide update sweep and its unresolved source gaps remain separate source-coverage work.
+The stated Phase 2 exit fixtures now have measured evidence. I confirmed the phase-end checklist on 2026-10-01, so Phase 3 quality and evidence work may begin. The broader Snowflake failure/retry integration check and live nonzero reject evidence remain open and should not be inferred from these successful procedure calls. The Phase 1 catalog-wide update sweep and its unresolved source gaps remain separate source-coverage work.
 
 ## Not measured yet
 
@@ -415,7 +413,7 @@ The first checkpoint-enabled one-day retry of San Francisco window 73, attempt `
 
 The next checkpoint-enabled retry, attempt `20260930T074227Z-53dd607fef`, reused all 26 validated daily children and their 1,451 rows without refetching them. It then spent the remaining source budget on child 27 (2022-10-25 through 2022-10-26 UTC), which again timed out. The new manifest is `failed`, records 26 reused children and zero freshly fetched rows, retains the precise unresolved gap, and has no `events.jsonl`. This demonstrates local checkpoint reuse but does not resolve window 73 or establish source availability for that day. No Snowflake call ran.
 
-The later targeted-hour attempt `20261001T142252Z-9e2a269c9a` was stopped at the owner's request. It reused all 26 daily checkpoints (1,451 features) and reconciled six three-hour children of child 27, saving six hourly checkpoints with 26 newly fetched features. Interruption during child `w0001.27.7` (2022-10-25 18:00–21:00 UTC) left the manifest `failed` with `KeyboardInterrupt`, one explicit unresolved child, and zero monthly JSONL rows. The owner requested no further source retries. Window 73 remains an open local capture gap and was not loaded into Snowflake.
+The later targeted-hour attempt `20261001T142252Z-9e2a269c9a` was stopped. It reused all 26 daily checkpoints (1,451 features) and reconciled six three-hour children of child 27, saving six hourly checkpoints with 26 newly fetched features. Interruption during child `w0001.27.7` (2022-10-25 18:00–21:00 UTC) left the manifest `failed` with `KeyboardInterrupt`, one explicit unresolved child, and zero monthly JSONL rows. I requested no further source retries. Window 73 remains an open local capture gap and was not loaded into Snowflake.
 
 The approved bounded RAW loader then ran in the visible terminal on 2026-09-30. It validated 177 complete local history candidates, used the project key-pair profile, and reported 50 windows loaded and reconciled: windows 25, 41, 43–72, and 74–91. Their local manifest totals sum to 53,931 rows; for each window, the loader reported matching COPY and attempt-filtered RAW counts before appending a complete receipt. It reported 89 ready windows remaining, with the earlier 38 already-loaded history windows skipped. The 50 new windows plus the prior 38 give 88 loader-reported loaded history windows and 63,827 history RAW rows; the separate 15-row one-day sample is excluded. This is terminal and loader evidence, not an independent aggregate receipt query. Windows 12, 42, and 73 remain unresolved source gaps. Warehouse credits and stage storage charges have not been measured.
 
