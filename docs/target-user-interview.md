@@ -1,14 +1,11 @@
 # Target-analyst interview guide
 
-**Status:** Prepared on 1 October 2026; no analyst has been interviewed. This
-guide implements the target-user check in [the design](design.md). Do not mark
-it complete from the project owner's Cortex scan comparison. The owner declined
-referral outreach on 1 October; recruitment and validation remain pending.
+**Status:** This guide implements the target-user check in [the design](design.md). Do not mark
+it complete from the project's Cortex scan comparison. Recruitment and validation remain pending.
 
 ## Finding one participant
 
-The owner has no existing target-analyst contact. A practical referral route is
-the [International Association of Emergency Managers' Asia council](https://www.iaem.org/global/iaem-asia/),
+A practical referral route is the [International Association of Emergency Managers' Asia council](https://www.iaem.org/global/iaem-asia/),
 whose public page includes India and invites contact with its leadership. Ask
 for a referral to a practitioner who compares historical hazard records for
 facilities or preparedness work. This is a recruitment lead, not a confirmed
