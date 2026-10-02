@@ -14,7 +14,7 @@ This is a retrospective data project. It is not an earthquake warning, risk scor
 
 4. Quality and recovery: The project has batch reconciliation, reject and health views, duplicate-key checks, and processing audits. Fixture runs verified reruns, old-event updates, deletions, rollback, and retry from existing RAW data. A separate Snowflake clone and Time Travel recovery drill passed. The [results](/Users/karthikmohan/Developer/quakewatch/docs/results.md) record the evidence.
 
-5. Analysis and optional AI brief: SQL supports historical counts and magnitude comparisons around Seattle, San Francisco, and Anchorage. A Cortex evaluation generated nine human-checked factual briefs from saved SQL aggregates.
+5. Analysis and AI brief: SQL supports historical counts and magnitude comparisons around Seattle, San Francisco, and Anchorage. A Cortex evaluation generated nine human-checked factual briefs from saved SQL aggregates.
 
 6. Engineering setup: The repo has a locked Python environment, unit and fixture tests, secret-free GitHub Actions CI, a [runbook](/Users/karthikmohan/Developer/quakewatch/docs/runbook.md), and a [demo](/Users/karthikmohan/Developer/quakewatch/docs/demo.md).
 
