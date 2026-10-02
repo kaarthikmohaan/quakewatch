@@ -64,7 +64,6 @@ USGS FDSN GeoJSON earthquake records
 Separate optional recovery drill: fixture-table clone -> test change
   -> Time Travel check -> remove the demo clone
 GitHub Actions: local fixture tests without Snowflake credentials
-```
 
 Each batch keeps its source records and counts so a failed transformation can
 retry from RAW without fetching again. The catalog-wide update sweep is still
@@ -75,6 +74,7 @@ do not change the regular batch path.
 
 ## Docs
 
+```
 - [Design and project plan](docs/design.md)
 - [Data dictionary](docs/data-dictionary.md)
 - [Runbook](docs/runbook.md)
@@ -82,6 +82,7 @@ do not change the regular batch path.
 - [Observed results](docs/results.md)
 - [Target-analyst interview guide](docs/target-user-interview.md)
 - [Two-minute evidence-based demo](docs/demo.md)
+```
 
 ## Source and responsible use
 
