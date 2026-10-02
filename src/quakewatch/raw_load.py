@@ -125,7 +125,7 @@ def plan_raw_load(manifest_path: Path) -> dict[str, Any]:
         raise LoadReconciliationError("unsafe attempt ID for stage path")
     events_path = (manifest_path.parent / "events.jsonl").resolve()
     stage_path = f"@QUAKEWATCH.RAW.USGS_JSON_STAGE/{attempt_id}"
-    copy_template = Path("sql/phase1_copy_raw.sql").read_text(encoding="utf-8")
+    copy_template = Path("sql/load/copy_raw.sql").read_text(encoding="utf-8")
     return {
         "attempt_id": attempt_id,
         "expected_rows": row_count,

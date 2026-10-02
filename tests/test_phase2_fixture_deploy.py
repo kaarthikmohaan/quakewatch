@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from scripts.evidence.phase2.phase2_fixture_deploy import (
+from scripts.evidence.phase2.fixture_deploy import (
     BUNDLE_SHA256,
     PACKAGE_CHECK_SQL,
     _guard_empty,
@@ -22,7 +22,7 @@ from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 class FixtureDeployTest(unittest.TestCase):
     def test_preview_is_offline_and_artifacts_are_current(self):
         output = io.StringIO()
-        with patch("scripts.evidence.phase2.phase2_fixture_deploy.connect_project",
+        with patch("scripts.evidence.phase2.fixture_deploy.connect_project",
                    side_effect=AssertionError("connected")), contextlib.redirect_stdout(output):
             preview()
         self.assertEqual(len(ddl_statements()), 16)
@@ -32,8 +32,8 @@ class FixtureDeployTest(unittest.TestCase):
 
     def test_stale_generated_sql_stops_before_connection(self):
         with tempfile.TemporaryDirectory() as directory:
-            with patch("scripts.evidence.phase2.phase2_fixture_deploy.DEFAULT_OUTPUT", Path(directory)), \
-                 patch("scripts.evidence.phase2.phase2_fixture_deploy.BUNDLE", Path(directory) / "missing.zip"):
+            with patch("scripts.evidence.phase2.fixture_deploy.DEFAULT_OUTPUT", Path(directory)), \
+                 patch("scripts.evidence.phase2.fixture_deploy.BUNDLE", Path(directory) / "missing.zip"):
                 with self.assertRaisesRegex(ValueError, "ZIP missing"):
                     ddl_statements()
 
@@ -64,9 +64,9 @@ class FixtureDeployTest(unittest.TestCase):
             events.append("empty")
         def guard_package(_cursor):
             events.append("package")
-        with patch("scripts.evidence.phase2.phase2_fixture_deploy.connect_project", return_value=connection), \
-             patch("scripts.evidence.phase2.phase2_fixture_deploy._guard_empty", side_effect=guard_empty), \
-             patch("scripts.evidence.phase2.phase2_fixture_deploy._guard_package", side_effect=guard_package):
+        with patch("scripts.evidence.phase2.fixture_deploy.connect_project", return_value=connection), \
+             patch("scripts.evidence.phase2.fixture_deploy._guard_empty", side_effect=guard_empty), \
+             patch("scripts.evidence.phase2.fixture_deploy._guard_package", side_effect=guard_package):
             outcome = execute_deploy()
         self.assertEqual(events, ["empty", "package"])
         self.assertEqual(outcome["database"], TEST_DATABASE)

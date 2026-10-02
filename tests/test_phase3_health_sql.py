@@ -4,8 +4,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1] / "sql"
-VIEWS = (ROOT / "phase3_health_views.sql").read_text()
-CHECKS = (ROOT / "phase3_reconciliation.sql").read_text()
+VIEWS = (ROOT / "setup/10_health_views.sql").read_text()
+CHECKS = (ROOT / "checks/reconciliation.sql").read_text()
 
 
 class Phase3HealthSqlTest(unittest.TestCase):

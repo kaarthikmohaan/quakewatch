@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SQL = (ROOT / "sql/phase1_copy_raw.sql").read_text(encoding="utf-8")
+SQL = (ROOT / "sql/load/copy_raw.sql").read_text(encoding="utf-8")
 
 
 class CopyContractTests(unittest.TestCase):

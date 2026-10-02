@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.evidence.phase4.phase4_cortex_evaluate import (
+from scripts.evidence.phase4.cortex_evaluate import (
     MODEL,
     check_brief,
     pending_cases,

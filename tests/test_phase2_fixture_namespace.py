@@ -18,7 +18,7 @@ class FixtureNamespaceTest(unittest.TestCase):
         counts = validate_all()
         self.assertGreater(sum(counts.values()), 0)
         self.assertIn("quakewatch/snowpark_revision_write.py", counts)
-        self.assertIn("sql/phase2_create_procedure.sql", counts)
+        self.assertIn("sql/setup/09_create_procedure.sql", counts)
         for path, source in inputs().items():
             rewritten, count = validate_and_rewrite(path, source)
             self.assertNotIn("QUAKEWATCH.RAW.", rewritten)
@@ -34,8 +34,8 @@ class FixtureNamespaceTest(unittest.TestCase):
                 validate_and_rewrite("sample.sql", source)
 
     def test_stage_import_uses_test_database(self):
-        source = inputs()["sql/phase2_create_procedure.sql"]
-        rewritten, _count = validate_and_rewrite("sql/phase2_create_procedure.sql", source)
+        source = inputs()["sql/setup/09_create_procedure.sql"]
+        rewritten, _count = validate_and_rewrite("sql/setup/09_create_procedure.sql", source)
         self.assertIn("@QUAKEWATCH_PHASE2_FIXTURE.RAW.USGS_JSON_STAGE", rewritten)
         self.assertNotIn("@QUAKEWATCH.RAW.USGS_JSON_STAGE", rewritten)
 

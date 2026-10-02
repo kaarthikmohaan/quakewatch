@@ -5,7 +5,7 @@ import io
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.checks.phase3_uniqueness import (
+from scripts.checks.uniqueness import (
     CHECKS,
     execute_checks,
     main,
@@ -17,7 +17,7 @@ class Phase3UniquenessRunnerTest(unittest.TestCase):
     def test_preview_does_not_connect(self):
         output = io.StringIO()
         with patch("sys.argv", ["phase3_uniqueness.py"]), \
-             patch("scripts.checks.phase3_uniqueness.connect_project",
+             patch("scripts.checks.uniqueness.connect_project",
                    side_effect=AssertionError("connected")), \
              contextlib.redirect_stdout(output):
             main()
@@ -25,8 +25,8 @@ class Phase3UniquenessRunnerTest(unittest.TestCase):
         self.assertEqual(len(reviewed_statements()), 2)
 
     def test_changed_sql_stops_before_connection(self):
-        with patch("scripts.checks.phase3_uniqueness.EXPECTED_SHA256", "wrong"), \
-             patch("scripts.checks.phase3_uniqueness.connect_project") as connect:
+        with patch("scripts.checks.uniqueness.EXPECTED_SHA256", "wrong"), \
+             patch("scripts.checks.uniqueness.connect_project") as connect:
             with self.assertRaisesRegex(ValueError, "SQL changed"):
                 execute_checks()
         connect.assert_not_called()
@@ -38,7 +38,7 @@ class Phase3UniquenessRunnerTest(unittest.TestCase):
         connection = MagicMock()
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
-        with patch("scripts.checks.phase3_uniqueness.connect_project", return_value=connection):
+        with patch("scripts.checks.uniqueness.connect_project", return_value=connection):
             result = execute_checks()
         self.assertEqual(result, {"status": "pass", "counts": dict.fromkeys(CHECKS, 0)})
         sql = [call.args[0] for call in cursor.execute.call_args_list]
@@ -53,7 +53,7 @@ class Phase3UniquenessRunnerTest(unittest.TestCase):
         connection = MagicMock()
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
-        with patch("scripts.checks.phase3_uniqueness.connect_project", return_value=connection):
+        with patch("scripts.checks.uniqueness.connect_project", return_value=connection):
             self.assertEqual(execute_checks()["status"], "fail")
 
 

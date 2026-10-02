@@ -31,6 +31,7 @@ def build_fixture_copy(output_dir: Path) -> tuple[str, int]:
     sql_dir.mkdir(exist_ok=True)
     for path, source in rewritten.items():
         if path.startswith("sql/"):
+            (output_dir / path).parent.mkdir(parents=True, exist_ok=True)
             (output_dir / path).write_text(source, encoding="utf-8")
     with ZipFile(bundle_path) as archive:
         for name in archive.namelist():

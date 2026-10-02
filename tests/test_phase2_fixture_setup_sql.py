@@ -6,7 +6,7 @@ import unittest
 from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 from scripts.pipeline.build_procedure_bundle import REPO_ROOT
 
-SQL = (REPO_ROOT / "sql" / "phase2_fixture_setup.sql").read_text()
+SQL = (REPO_ROOT / "sql" / "demos/fixture_setup.sql").read_text()
 
 
 class FixtureSetupSqlTest(unittest.TestCase):

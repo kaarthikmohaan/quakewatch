@@ -6,7 +6,7 @@ import json
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.evidence.phase2.phase2_old_origin_state import main
+from scripts.evidence.phase2.old_origin_state import main
 
 
 class OldOriginStateTest(unittest.TestCase):
@@ -21,9 +21,9 @@ class OldOriginStateTest(unittest.TestCase):
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
         output = io.StringIO()
-        with patch("scripts.evidence.phase2.phase2_old_origin_state.connect_project",
+        with patch("scripts.evidence.phase2.old_origin_state.connect_project",
                    return_value=connection), \
-             patch("scripts.evidence.phase2.phase2_old_origin_state._counts",
+             patch("scripts.evidence.phase2.old_origin_state._counts",
                    return_value={"DIM_DATE": 3}), \
              contextlib.redirect_stdout(output):
             main()

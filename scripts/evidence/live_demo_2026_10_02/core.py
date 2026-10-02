@@ -73,7 +73,7 @@ def main():
                     or after[0][1:5] != (plan["expected_rows"],) * 4):
                 raise RuntimeError("Batch did not reconcile after processing")
 
-            cursor.execute(Path("sql/phase3_sample_analysis.sql").read_text())
+            cursor.execute(Path("sql/analysis/sample_seattle_day.sql").read_text())
             sample = cursor.fetchall()
             show("current_seattle_sample", sample)
             if len(sample) != 1:

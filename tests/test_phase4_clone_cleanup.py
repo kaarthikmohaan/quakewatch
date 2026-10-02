@@ -2,7 +2,7 @@
 
 import unittest
 
-from scripts.evidence.phase4.phase4_clone_cleanup import validate_cleanup
+from scripts.evidence.phase4.clone_cleanup import validate_cleanup
 
 
 class CloneCleanupTests(unittest.TestCase):

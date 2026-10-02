@@ -48,11 +48,11 @@ These are the success criteria from the [design](design.md#definition-of-success
 
 | Phase | Outcome |
 |---|---|
-| 0. Source and account check | Snowflake role, stage, and Snowpark runtime verified; see [environment check](environment.md) |
+| 0. Source and account check | Snowflake role, stage, and Snowpark runtime verified; see [environment check](evidence/phase0-environment-check.md) |
 | 1. Batch extract and raw load | 177 of 180 history windows loaded; 3 source gaps; update sweep incomplete |
 | 2. Warehouse models | Revision, old-event update, tombstone, and rerun fixtures passed ([exit review](evidence/results-log.md#phase-2-exit-review-2026-10-01)) |
 | 3. Quality and evidence | Reconciliation, uniqueness, CI, and sample analysis passed; latency target missed ([exit review](evidence/results-log.md#phase-3-exit-review)) |
-| 4. Optional demos | Clone and Time Travel drill passed; Cortex evaluated; usage measured ([exit review](evidence/results-log.md#phase-4-exit-review), [close-out](phase4-closeout.md)) |
+| 4. Optional demos | Clone and Time Travel drill passed; Cortex evaluated; usage measured ([exit review](evidence/results-log.md#phase-4-exit-review), [close-out](evidence/phase4-closeout.md)) |
 
 ## Reject analysis
 

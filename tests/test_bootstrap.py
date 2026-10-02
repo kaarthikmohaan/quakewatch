@@ -11,7 +11,7 @@ from scripts.pipeline import bootstrap
 class BootstrapTest(unittest.TestCase):
     def test_every_table_file_exists_and_only_creates_missing_tables(self):
         for name in bootstrap.TABLE_FILES:
-            sql = (bootstrap.SQL_DIR / name).read_text()
+            sql = (bootstrap.SETUP_DIR / name).read_text()
             self.assertIn("CREATE TABLE IF NOT EXISTS", sql, name)
 
     def test_preview_does_not_connect(self):
@@ -19,7 +19,7 @@ class BootstrapTest(unittest.TestCase):
                 contextlib.redirect_stdout(io.StringIO()) as out:
             bootstrap.preview()
         connect.assert_not_called()
-        self.assertIn("phase1_update_watermark.sql", out.getvalue())
+        self.assertIn("setup/03_update_watermark.sql", out.getvalue())
 
     def test_execute_applies_tables_then_procedure(self):
         cursor = MagicMock()

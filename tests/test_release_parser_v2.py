@@ -5,7 +5,7 @@ import io
 import unittest
 from unittest.mock import patch
 
-from scripts.pipeline import release_parser_v2 as release
+from scripts.migrations import parser_v2 as release
 
 
 class FakeCursor:

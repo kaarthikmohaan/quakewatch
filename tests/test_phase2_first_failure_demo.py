@@ -5,7 +5,7 @@ import io
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.evidence.phase2.phase2_first_failure_demo import (
+from scripts.evidence.phase2.first_failure_demo import (
     ATTEMPT_ID,
     _plan,
     _retry_counts_match,
@@ -26,7 +26,7 @@ class FirstFailureDemoTest(unittest.TestCase):
 
     def test_preview_builds_only_local_fixture(self):
         output = io.StringIO()
-        with patch("scripts.evidence.phase2.phase2_first_failure_demo.connect_project",
+        with patch("scripts.evidence.phase2.first_failure_demo.connect_project",
                    side_effect=AssertionError("connected")), \
              patch("sys.argv", ["phase2_first_failure_demo.py"]), \
              contextlib.redirect_stdout(output):
@@ -42,8 +42,8 @@ class FirstFailureDemoTest(unittest.TestCase):
         connection = MagicMock()
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
-        with patch("scripts.evidence.phase2.phase2_first_failure_demo.connect_project", return_value=connection), \
-             patch("scripts.evidence.phase2.phase2_first_failure_demo._snapshot",
+        with patch("scripts.evidence.phase2.first_failure_demo.connect_project", return_value=connection), \
+             patch("scripts.evidence.phase2.first_failure_demo._snapshot",
                    return_value={"raw": 1, "receipts": 1}):
             with self.assertRaisesRegex(RuntimeError, "already exists"):
                 execute()

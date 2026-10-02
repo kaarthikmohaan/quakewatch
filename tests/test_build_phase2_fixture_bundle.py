@@ -28,7 +28,7 @@ class FixtureBundleTest(unittest.TestCase):
             self.assertIn(TEST_DATABASE + ".CURATED.FACT_EVENT_REVISION",
                           "\n".join(bodies))
             self.assertIn("@" + TEST_DATABASE + ".RAW.USGS_JSON_STAGE",
-                          (output / "sql" / "phase2_create_procedure.sql").read_text())
+                          (output / "sql" / "setup/09_create_procedure.sql").read_text())
 
 
 if __name__ == "__main__":

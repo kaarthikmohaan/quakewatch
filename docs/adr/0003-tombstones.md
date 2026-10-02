@@ -15,4 +15,4 @@ Store a deletion as the latest revision with `deleted` status. `EVENT_CURRENT` r
 - A stale replay cannot bring back a deleted event; this is covered by a fixture test and an isolated Snowflake drill.
 - Filtering deleted rows before ranking would be wrong, which the view's comment records.
 
-**References:** [EVENT_CURRENT view](../../sql/phase2_revision_current.sql)
+**References:** [EVENT_CURRENT view](../../sql/setup/07_revision_current.sql)

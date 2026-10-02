@@ -81,7 +81,7 @@ GitHub Actions runs the fixture tests without any Snowflake credentials.
 ## Sample analysis
 
 Distinct current earthquake records within 250 km of each public example site,
-by year (simplified from the [reviewed aggregate query](sql/phase4_cortex_aggregates.sql)):
+by year (simplified from the [reviewed aggregate query](sql/analysis/site_year_aggregates.sql)):
 
 ```sql
 SELECT b.SITE_KEY,
@@ -171,7 +171,7 @@ To run the warehouse path you need your own Snowflake account:
 
 1. Copy the profiles in [`snowflake-config.example.toml`](snowflake-config.example.toml)
    into `~/.snowflake/config.toml` and fill in your account and key details.
-2. Run `sql/phase0_bootstrap.sql` once with an admin role, then
+2. Run `sql/setup/01_bootstrap_admin.sql` once with an admin role, then
    `make bootstrap EXECUTE=1` to create the tables and procedure.
 3. Run the pipeline with `make capture-history`, `make load-history`,
    `make process`, and `make quality`, each previewing first and running with
@@ -243,13 +243,13 @@ does.
 
 ```text
 src/quakewatch/   Extractor, loaders, and Snowpark procedure code
-sql/              Reviewed Snowflake DDL and checks, with setup order (sql/README.md)
+sql/              Snowflake SQL by purpose: setup/ (numbered), load/, checks/, analysis/, demos/
 scripts/          Pipeline steps, checks, test-fixture builders, and evidence drills (scripts/README.md)
 tests/            Secret-free unit and fixture tests run in CI
 Makefile          One command per step; `make help` lists them
 docs/             Design, data dictionary, demo walkthrough, and results
 docs/adr/         Architecture decision records
-docs/evidence/    Dated results log with query IDs
+docs/evidence/    Dated results log, environment check, Phase 4 close-out, Cortex evaluation
 docs/plans/       Working plans for individual drills
 ```
 
@@ -263,8 +263,8 @@ reference material.
 | To… | Read |
 |---|---|
 | Run it | [Operations reference](docs/operations-reference.md), [scripts guide](scripts/README.md), [SQL setup order](sql/README.md) |
-| See it run | [Live demo walkthrough](docs/runbook.md), [two-minute demo](docs/demo.md) |
-| Check the evidence | [Evidence log](docs/evidence/results-log.md), [Phase 4 close-out](docs/phase4-closeout.md), [Cortex evaluation](docs/phase4-cortex-evaluation.md), [environment check](docs/environment.md) |
+| See it run | [Live demo walkthrough](docs/live-demo-walkthrough.md), [two-minute demo](docs/demo.md) |
+| Check the evidence | [Evidence log](docs/evidence/results-log.md), [Phase 4 close-out](docs/evidence/phase4-closeout.md), [Cortex evaluation](docs/evidence/phase4-cortex-evaluation.md), [environment check](docs/evidence/phase0-environment-check.md) |
 | See the original plan | [Design](docs/design.md), [target-analyst interview guide](docs/target-user-interview.md) |
 | Contribute | [Contributing](CONTRIBUTING.md), [code of conduct](CODE_OF_CONDUCT.md), [security policy](SECURITY.md), [accessibility](ACCESSIBILITY.md) |
 

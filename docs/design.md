@@ -209,7 +209,7 @@ Status as of 2 October 2026. Each ticked item links to its evidence.
 - [x] Choose public example sites/radii and state limitations. ([settings](../src/quakewatch/settings.py), [README](../README.md))
 - [x] Save normal, revision, deletion, malformed, additive-field, over-limit, count-mismatch, and incomplete-window fixtures. ([fixtures](../tests/fixtures/README.md))
 - [x] Implement initial per-site origin-time windows plus catalog-wide `updatedafter` sweep, overlap, query-window audit, and append-only attempt/process manifests. The sweep is implemented but has not completed live; see [limitations](results.md#still-open).
-- [x] Create Snowflake stage, RAW_EVENT_RECORDS VARIANT table, role, and key-pair auth outside Git. ([environment check](environment.md))
+- [x] Create Snowflake stage, RAW_EVENT_RECORDS VARIANT table, role, and key-pair auth outside Git. ([environment check](evidence/phase0-environment-check.md))
 - [x] Load JSONL files with `COPY INTO`; reconcile files, query windows, and counts. 177 of 180 windows loaded; 3 source gaps.
 - [x] Create typed staging, reject handling, dimensions, revision fact, site bridge, batch fact, and current view. ([data dictionary](data-dictionary.md))
 - [x] Implement alias/tombstone rules, revision ranking, distance, and dedupe-before-`MERGE`.
@@ -217,7 +217,7 @@ Status as of 2 October 2026. Each ticked item links to its evidence.
 - [x] Add data-quality, coverage, and health queries. ([SQL](../sql/README.md))
 - [x] Measure a stated sample; publish actual results with dates and evidence. The latency target was missed and is reported. ([results](results.md))
 - [ ] Ask one target user if historical comparison is useful. **Deferred:** no participant has been recruited, so usefulness for facilities analysts is unconfirmed and no usefulness claim is made. The [interview guide](target-user-interview.md) is ready.
-- [x] Complete clone/Time Travel and Cortex only after core batch recovery works. ([close-out](phase4-closeout.md))
+- [x] Complete clone/Time Travel and Cortex only after core batch recovery works. ([close-out](evidence/phase4-closeout.md))
 - [x] Run GitHub Actions fixture CI; link only a real status badge.
 
 ## Risks and known limits

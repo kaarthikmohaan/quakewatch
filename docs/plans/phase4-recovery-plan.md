@@ -28,8 +28,8 @@ The already verified RAW retry and failed-transform evidence is recorded in
    source table and row count, absence of the intended clone name, account
    edition, and table Time Travel retention. Save the query IDs and timestamp.
    The reviewed statements are in
-   [`sql/phase4_recovery_preflight.sql`](../../sql/phase4_recovery_preflight.sql).
-   The matching [Python runner](../../scripts/evidence/phase4/phase4_recovery_preflight.py) prompts
+   [`sql/demos/recovery_preflight.sql`](../../sql/demos/recovery_preflight.sql).
+   The matching [Python runner](../../scripts/evidence/phase4/recovery_preflight.py) prompts
    locally for the encrypted project key; its default mode is offline preview,
    and `--execute` runs only after warehouse-cost approval.
    Based on the latest documented fixture snapshot, expect one five-row source
@@ -40,7 +40,7 @@ The already verified RAW retry and failed-transform evidence is recorded in
    `CURATED.FACT_EVENT_REVISION`. Compare source and clone counts and the
    selected logical key/value. Change that fixture row in the clone. Verify the
    source still has its original value and count while the clone changed.
-   The [guarded runner](../../scripts/evidence/phase4/phase4_clone_recovery.py) uses the five-row
+   The [guarded runner](../../scripts/evidence/phase4/clone_recovery.py) uses the five-row
    preflight, a new table name without overwrite syntax, and a one-row
    clone-only `MERGE`. Its default command is an offline preview.
 3. **Time Travel.** Suspend all writers to the fixture clone. Capture the inner
@@ -56,7 +56,7 @@ The already verified RAW retry and failed-transform evidence is recorded in
    usage data or an explicit measurement gap, and limitations to `results.md`.
    After separate deletion approval, drop only the demo clone and any recovery
    clone. Report if cleanup is deferred.
-   The [guarded cleanup runner](../../scripts/evidence/phase4/phase4_clone_cleanup.py) checks the
+   The [guarded cleanup runner](../../scripts/evidence/phase4/clone_cleanup.py) checks the
    recorded five-row source/clone and changed magnitude before dropping the
    fixed demo-clone name. It does not drop the fixture source or database.
 

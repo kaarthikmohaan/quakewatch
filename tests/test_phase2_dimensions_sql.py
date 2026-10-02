@@ -3,7 +3,7 @@
 import unittest
 from pathlib import Path
 
-SQL = (Path(__file__).resolve().parents[1] / "sql/phase2_dimensions_bridge.sql").read_text()
+SQL = (Path(__file__).resolve().parents[1] / "sql/setup/06_dimensions_bridge.sql").read_text()
 
 
 class DimensionSqlContractTest(unittest.TestCase):

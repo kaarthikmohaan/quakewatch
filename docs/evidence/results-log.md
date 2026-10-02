@@ -18,7 +18,7 @@ Each entry keeps its query IDs, counts, and limits as originally recorded.
 
 ## Parser version 2 release (2026-10-02)
 
-`make release-parser-v2 EXECUTE=1` ([runner](../../scripts/pipeline/release_parser_v2.py))
+`make release-parser-v2 EXECUTE=1` ([runner](../../scripts/migrations/parser_v2.py))
 ran under `QUAKEWATCH_ROLE` on `QUAKEWATCH_WH`, with the passphrase entered at
 the terminal prompt. Its pre-checks matched the offline replay: 216,391 staging
 rows, 485 `invalid_origin_time` rejects whose RAW payloads were all USGS stub
@@ -80,7 +80,7 @@ touched.
 Local test discovery passed all 303 tests. The demo did not rerun the five-year
 backfill, fill the source gaps, advance the watermark, measure its warehouse
 credits, or run a target-user interview. Step-by-step detail is in the
-[live demo walkthrough](../runbook.md).
+[live demo walkthrough](../live-demo-walkthrough.md).
 
 ## Phase 4 ten-case Cortex aggregate snapshot
 
@@ -240,7 +240,7 @@ request/fetch/curation date range, and min/p50/p95/max
 successful fetch age and newest accepted source-update age separately. This is
 a project acceptance target, not a production SLO; the three source gaps and the
 incomplete sweep are excluded from the latency sample and stay visible in
-coverage reporting. The [reviewed SQL](../../sql/phase3_metrics.sql) and target
+coverage reporting. The [reviewed SQL](../../sql/checks/latency_metrics.sql) and target
 were committed before the measurement ran.
 
 **Result (2026-10-01).** 178 attempts, requested-window bounds 2021-09-29
@@ -303,7 +303,7 @@ synthetic batch `fixture-first-failure-v1` on 2026-10-01 passed its load and
 rollback guards, then raised `first-failure retry did not converge` at its final
 guard, after the `PUT`, `COPY`, complete receipt, intentional failure call, and
 normal retry call. The read-only
-[state diagnostic](../../scripts/evidence/phase2/phase2_first_failure_state.py)
+[state diagnostic](../../scripts/evidence/phase2/first_failure_state.py)
 showed one RAW row and receipt, one failed process audit followed by one
 complete audit, one staged row and batch fact for the attempt, five total
 revision facts, 15 total site bridges, and zero duplicate groups. The RAW hash
@@ -371,7 +371,7 @@ available for review.
 ## First Phase 3 uniqueness check
 
 On 2026-10-01 the read-only
-[uniqueness runner](../../scripts/checks/phase3_uniqueness.py) ran two
+[uniqueness runner](../../scripts/checks/uniqueness.py) ran two
 duplicate-group counts against `QUAKEWATCH.CURATED` and returned
 `status=pass`, `revision_duplicate_groups=0`, and `bridge_duplicate_groups=0`.
 The checks use the full revision key

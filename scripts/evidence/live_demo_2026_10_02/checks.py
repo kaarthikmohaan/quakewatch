@@ -5,9 +5,9 @@ from pathlib import Path
 
 import snowflake.connector
 
-from scripts.checks.phase3_quality import reviewed_sql
-from scripts.checks.phase3_uniqueness import CHECKS, reviewed_statements
-from scripts.checks.phase4_usage import checked_admin_profile
+from scripts.checks.quality import reviewed_sql
+from scripts.checks.uniqueness import CHECKS, reviewed_statements
+from scripts.checks.usage import checked_admin_profile
 
 
 def show(label, value):
@@ -35,7 +35,7 @@ def main():
                 show(name, int(cursor.fetchone()[0]))
             cursor.execute(sample[0])
             show("seattle_sample", cursor.fetchall())
-            cursor.execute(Path("sql/phase4_cortex_aggregates.sql").read_text())
+            cursor.execute(Path("sql/analysis/site_year_aggregates.sql").read_text())
             columns = [column[0] for column in cursor.description]
             rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
             if len(rows) != 10:

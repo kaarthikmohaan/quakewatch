@@ -3,7 +3,7 @@
 import unittest
 from pathlib import Path
 
-SQL = (Path(__file__).resolve().parents[1] / "sql/phase2_revision_current.sql").read_text()
+SQL = (Path(__file__).resolve().parents[1] / "sql/setup/07_revision_current.sql").read_text()
 
 
 class RevisionSqlContractTest(unittest.TestCase):

@@ -69,19 +69,19 @@ load-history:  ## Load up to MAX ready history windows into RAW [EXECUTE=1]
 	$(PY) -m quakewatch.history_raw_load --cutoff $(CUTOFF) --max-windows $(MAX) $(RUN_FLAG)
 
 process:  ## Process up to MAX loaded attempts with the procedure [EXECUTE=1]
-	$(PY) scripts/pipeline/phase3_process_history.py --max-attempts $(MAX) $(RUN_FLAG)
+	$(PY) scripts/pipeline/process_history.py --max-attempts $(MAX) $(RUN_FLAG)
 
 quality:  ## Create health views if absent and run reconciliation [EXECUTE=1]
-	$(PY) scripts/checks/phase3_quality.py $(RUN_FLAG)
+	$(PY) scripts/checks/quality.py $(RUN_FLAG)
 
 uniqueness:  ## Check for duplicate revision and bridge keys [EXECUTE=1]
-	$(PY) scripts/checks/phase3_uniqueness.py $(RUN_FLAG)
+	$(PY) scripts/checks/uniqueness.py $(RUN_FLAG)
 
 postrun:  ## Aggregate quality and reject-reason check [EXECUTE=1]
-	$(PY) scripts/checks/phase3_postrun.py $(RUN_FLAG)
+	$(PY) scripts/checks/postrun.py $(RUN_FLAG)
 
 metrics:  ## Measure fetch-to-curated latency [EXECUTE=1]
-	$(PY) scripts/checks/phase3_metrics.py $(RUN_FLAG)
+	$(PY) scripts/checks/latency_metrics.py $(RUN_FLAG)
 
 release-parser-v2:  ## Relabel stub rejects and deploy parser version 2 [EXECUTE=1]
-	$(PY) scripts/pipeline/release_parser_v2.py $(RUN_FLAG)
+	$(PY) scripts/migrations/parser_v2.py $(RUN_FLAG)

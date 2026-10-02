@@ -10,13 +10,13 @@ SOURCE_DATABASE = "QUAKEWATCH"
 TEST_DATABASE = "QUAKEWATCH_PHASE2_FIXTURE"
 QUALIFIED_OBJECT = re.compile(r"\b([A-Z][A-Z0-9_]*)\.([A-Z][A-Z0-9_]*)\.([A-Z][A-Z0-9_]*)\b")
 SQL_FILES = (
-    "phase1_raw_tables.sql",
-    "phase2_staging_table.sql",
-    "phase2_process_attempt.sql",
-    "phase2_dimensions_bridge.sql",
-    "phase2_revision_current.sql",
-    "phase2_batch_fact.sql",
-    "phase2_create_procedure.sql",
+    "setup/02_raw_tables.sql",
+    "setup/04_staging_table.sql",
+    "setup/05_process_attempt.sql",
+    "setup/06_dimensions_bridge.sql",
+    "setup/07_revision_current.sql",
+    "setup/08_batch_fact.sql",
+    "setup/09_create_procedure.sql",
 )
 
 

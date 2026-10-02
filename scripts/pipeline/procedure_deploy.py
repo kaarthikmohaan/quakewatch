@@ -9,7 +9,7 @@ from scripts.pipeline.build_procedure_bundle import REPO_ROOT
 
 SQL_DIR = REPO_ROOT / "sql"
 STAGE = "@QUAKEWATCH.RAW.USGS_JSON_STAGE/procedure"
-PROCEDURE_SQL = SQL_DIR / "phase2_create_procedure.sql"
+PROCEDURE_SQL = SQL_DIR / "setup/09_create_procedure.sql"
 
 
 def sql_statements(path: Path) -> list[str]:

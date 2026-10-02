@@ -5,13 +5,13 @@ import io
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.checks.phase3_metrics import TARGET_P95_SECONDS, main, measure, reviewed_statements
+from scripts.checks.latency_metrics import TARGET_P95_SECONDS, main, measure, reviewed_statements
 
 
 class Phase3MetricsTest(unittest.TestCase):
     def test_preview_is_offline_and_target_is_fixed(self):
         with patch("sys.argv", ["phase3_metrics.py"]), \
-             patch("scripts.checks.phase3_metrics.connect_project",
+             patch("scripts.checks.latency_metrics.connect_project",
                    side_effect=AssertionError("connected")), \
              contextlib.redirect_stdout(io.StringIO()):
             main()
@@ -33,7 +33,7 @@ class Phase3MetricsTest(unittest.TestCase):
         connection = MagicMock()
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
-        with patch("scripts.checks.phase3_metrics.connect_project", return_value=connection):
+        with patch("scripts.checks.latency_metrics.connect_project", return_value=connection):
             report = measure()
         self.assertTrue(report["target_met"])
         self.assertEqual(report["sample_attempts"], 178)

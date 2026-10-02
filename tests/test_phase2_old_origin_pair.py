@@ -5,8 +5,8 @@ import io
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.evidence.phase2.phase2_old_origin_pair import execute_pair, main
-from scripts.evidence.phase2.phase2_old_origin_update import (
+from scripts.evidence.phase2.old_origin_pair import execute_pair, main
+from scripts.evidence.phase2.old_origin_update import (
     ATTEMPT_ID,
     EXPECTED_AFTER,
     ORIGINAL_COUNTS,
@@ -22,7 +22,7 @@ class OldOriginPairTest(unittest.TestCase):
     def test_preview_does_not_connect(self):
         output = io.StringIO()
         with patch("sys.argv", ["phase2_old_origin_pair.py"]), \
-             patch("scripts.evidence.phase2.phase2_old_origin_pair.connect_project",
+             patch("scripts.evidence.phase2.old_origin_pair.connect_project",
                    side_effect=AssertionError("connected")), \
              contextlib.redirect_stdout(output):
             main()
@@ -31,8 +31,8 @@ class OldOriginPairTest(unittest.TestCase):
 
     def test_update_guard_requires_original_state(self):
         cursor = MagicMock()
-        with patch("scripts.evidence.phase2.phase2_old_origin_update._guard_raw"), \
-             patch("scripts.evidence.phase2.phase2_old_origin_update._counts",
+        with patch("scripts.evidence.phase2.old_origin_update._guard_raw"), \
+             patch("scripts.evidence.phase2.old_origin_update._counts",
                    return_value={**ORIGINAL_COUNTS, "FACT_EVENT_REVISION": 5}):
             with self.assertRaisesRegex(RuntimeError, "old-origin original state"):
                 _guard_before(cursor, "original-process")
@@ -52,11 +52,11 @@ class OldOriginPairTest(unittest.TestCase):
         connection = MagicMock()
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
-        with patch("scripts.evidence.phase2.phase2_old_origin_update.connect_project", return_value=connection), \
-             patch("scripts.evidence.phase2.phase2_old_origin_update._original_process_id",
+        with patch("scripts.evidence.phase2.old_origin_update.connect_project", return_value=connection), \
+             patch("scripts.evidence.phase2.old_origin_update._original_process_id",
                    return_value="original-process"), \
-             patch("scripts.evidence.phase2.phase2_old_origin_update._guard_before", return_value="new") as before, \
-             patch("scripts.evidence.phase2.phase2_old_origin_update._guard_after", return_value=EXPECTED_AFTER):
+             patch("scripts.evidence.phase2.old_origin_update._guard_before", return_value="new") as before, \
+             patch("scripts.evidence.phase2.old_origin_update._guard_after", return_value=EXPECTED_AFTER):
             execute_update()
         before.assert_called_once_with(cursor, "original-process")
         calls = [call.args for call in cursor.execute.call_args_list
@@ -77,9 +77,9 @@ class OldOriginPairTest(unittest.TestCase):
         outcome = {"attempt_id": ATTEMPT_ID, "status": "complete",
                    "loaded_rows": 1, "processed_rows": 1, "rejected_rows": 0,
                    "revision_rows_merged": 1, "process_attempt_id": "update-process"}
-        with patch("scripts.evidence.phase2.phase2_old_origin_update._counts", return_value=EXPECTED_AFTER), \
-             patch("scripts.evidence.phase2.phase2_old_origin_update._expected_hash", return_value="old"), \
-             patch("scripts.evidence.phase2.phase2_old_origin_update._guard_unique_keys"):
+        with patch("scripts.evidence.phase2.old_origin_update._counts", return_value=EXPECTED_AFTER), \
+             patch("scripts.evidence.phase2.old_origin_update._expected_hash", return_value="old"), \
+             patch("scripts.evidence.phase2.old_origin_update._guard_unique_keys"):
             self.assertEqual(_guard_after(cursor, outcome, "new", "original-process"),
                              EXPECTED_AFTER)
 
@@ -94,14 +94,14 @@ class OldOriginPairTest(unittest.TestCase):
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
         events = []
-        with patch("scripts.evidence.phase2.phase2_old_origin_pair.connect_project", return_value=connection), \
-             patch("scripts.evidence.phase2.phase2_old_origin_pair.original_before",
+        with patch("scripts.evidence.phase2.old_origin_pair.connect_project", return_value=connection), \
+             patch("scripts.evidence.phase2.old_origin_pair.original_before",
                    side_effect=lambda *_: events.append("original before") or "old"), \
-             patch("scripts.evidence.phase2.phase2_old_origin_pair.original_after",
+             patch("scripts.evidence.phase2.old_origin_pair.original_after",
                    side_effect=lambda *_: events.append("original after") or {}), \
-             patch("scripts.evidence.phase2.phase2_old_origin_pair.update_before",
+             patch("scripts.evidence.phase2.old_origin_pair.update_before",
                    side_effect=lambda *_: events.append("update before") or "new"), \
-             patch("scripts.evidence.phase2.phase2_old_origin_pair.update_after",
+             patch("scripts.evidence.phase2.old_origin_pair.update_after",
                    side_effect=lambda *_: events.append("update after") or {}), \
              contextlib.redirect_stdout(io.StringIO()):
             execute_pair()
@@ -124,11 +124,11 @@ class OldOriginPairTest(unittest.TestCase):
         connection = MagicMock()
         connection.__enter__.return_value = connection
         connection.cursor.return_value = cursor
-        with patch("scripts.evidence.phase2.phase2_old_origin_pair.connect_project", return_value=connection), \
-             patch("scripts.evidence.phase2.phase2_old_origin_pair.original_before", return_value="old"), \
-             patch("scripts.evidence.phase2.phase2_old_origin_pair.original_after",
+        with patch("scripts.evidence.phase2.old_origin_pair.connect_project", return_value=connection), \
+             patch("scripts.evidence.phase2.old_origin_pair.original_before", return_value="old"), \
+             patch("scripts.evidence.phase2.old_origin_pair.original_after",
                    side_effect=RuntimeError("first check failed")), \
-             patch("scripts.evidence.phase2.phase2_old_origin_pair.update_before") as second:
+             patch("scripts.evidence.phase2.old_origin_pair.update_before") as second:
             with self.assertRaisesRegex(RuntimeError, "first check failed"):
                 execute_pair()
         second.assert_not_called()

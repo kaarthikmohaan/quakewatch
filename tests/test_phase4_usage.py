@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.checks.phase4_usage import checked_admin_profile
+from scripts.checks.usage import checked_admin_profile
 
 
 class Phase4UsageTests(unittest.TestCase):

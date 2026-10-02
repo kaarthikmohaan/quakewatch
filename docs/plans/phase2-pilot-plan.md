@@ -6,7 +6,7 @@ Prepared and executed 2026-09-30. The plan below describes the bounded first run
 
 The first pilot uses only loaded Seattle attempt `20260929T075452Z-26375840ea`. Its local manifest is complete, with 15 returned/written rows and zero coverage gaps. A prior Snowflake read found one complete receipt and 15 RAW rows; the pilot checks those facts again live before writing. It also requires the `QUAKEWATCH.CURATED` schema to have no existing tables, views, or procedures. If it is not empty, stop and inspect its objects instead of applying `IF NOT EXISTS` over an unknown shape.
 
-The local command is `PYTHONPATH=src .venv/bin/python scripts/evidence/phase2/phase2_pilot.py`. Without `--execute`, it only prints the plan and does not connect. The live form adds `--execute` and prompts for the existing encrypted project key passphrase outside Git and chat. Do not run live until the warehouse cost has been approved. The procedure includes conditional duplicate-row deletion; the empty-schema guard means this **first** pilot has no pre-existing curated fact/bridge rows to delete. Any later replay or broader run needs a separate deletion review before it executes.
+The local command is `PYTHONPATH=src .venv/bin/python scripts/evidence/phase2/pilot.py`. Without `--execute`, it only prints the plan and does not connect. The live form adds `--execute` and prompts for the existing encrypted project key passphrase outside Git and chat. Do not run live until the warehouse cost has been approved. The procedure includes conditional duplicate-row deletion; the empty-schema guard means this **first** pilot has no pre-existing curated fact/bridge rows to delete. Any later replay or broader run needs a separate deletion review before it executes.
 
 ## Exact live sequence
 
@@ -17,7 +17,7 @@ The local command is `PYTHONPATH=src .venv/bin/python scripts/evidence/phase2/ph
 5. Call `QUAKEWATCH.CURATED.PROCESS_LOADED_ATTEMPT` once for the 15-row attempt. A complete result must report 15 loaded and processed rows. The procedure records success with model writes in one transaction; on a transform failure it rolls those writes back and records a failed processing attempt separately.
 6. Read curated counts. Require 15 staged rows, at most 15 distinct revision rows, three bridge rows per revision, one batch fact, one process-attempt row, and three public site rows. Stop after this one attempt. Do not start the 177-attempt history run automatically.
 
-The runnable code for this sequence is [scripts/evidence/phase2/phase2_pilot.py](../../scripts/evidence/phase2/phase2_pilot.py). The local test checks its preview, SQL statement splitting, and preflight stops. Snowflake SQL behavior still requires the live pilot to verify.
+The runnable code for this sequence is [scripts/evidence/phase2/pilot.py](../../scripts/evidence/phase2/pilot.py). The local test checks its preview, SQL statement splitting, and preflight stops. Snowflake SQL behavior still requires the live pilot to verify.
 
 ## Expected cost and limits
 

@@ -2,7 +2,7 @@
 
 import unittest
 
-from scripts.evidence.phase4.phase4_cortex_trial import prompt_for, validate_brief
+from scripts.evidence.phase4.cortex_trial import prompt_for, validate_brief
 
 
 class CortexTrialTests(unittest.TestCase):

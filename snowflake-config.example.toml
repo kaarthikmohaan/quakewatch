@@ -15,7 +15,7 @@ role = "QUAKEWATCH_ROLE"
 authenticator = "SNOWFLAKE_JWT"
 private_key_file = "/path/outside/repo/quakewatch_rsa_key.p8"
 
-# Optional. Used once for sql/phase0_bootstrap.sql and by the account-usage
+# Optional. Used once for sql/setup/01_bootstrap_admin.sql and by the account-usage
 # metering scripts, which read SNOWFLAKE.ACCOUNT_USAGE views.
 [connections.quakewatch_admin]
 account = "your-account-identifier"

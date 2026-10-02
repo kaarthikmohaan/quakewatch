@@ -16,4 +16,4 @@ Identify a revision by `(canonical_event_id, source_updated_at, payload_hash)`. 
 - History supports "what changed and when" questions.
 - The fact table grows with every revision; current state needs the ranking view.
 
-**References:** [revisions.py](../../src/quakewatch/revisions.py), [revision DDL](../../sql/phase2_revision_current.sql)
+**References:** [revisions.py](../../src/quakewatch/revisions.py), [revision DDL](../../sql/setup/07_revision_current.sql)

@@ -5,7 +5,7 @@ import io
 import unittest
 from unittest.mock import patch
 
-from scripts.evidence.phase2.phase2_pilot import (
+from scripts.evidence.phase2.pilot import (
     ATTEMPT_ID,
     DDL_FILES,
     _guard_empty_curated,
@@ -45,7 +45,7 @@ class FakeCursor:
 class Phase2PilotTest(unittest.TestCase):
     def test_preview_is_offline_and_names_one_bounded_attempt(self):
         output = io.StringIO()
-        with patch("scripts.evidence.phase2.phase2_pilot.connect_project", side_effect=AssertionError(
+        with patch("scripts.evidence.phase2.pilot.connect_project", side_effect=AssertionError(
             "preview connected"
         )), contextlib.redirect_stdout(output):
             preview()
