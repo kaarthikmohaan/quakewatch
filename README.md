@@ -246,15 +246,20 @@ does.
 
 ## What I'd do next
 
-1. Finish the update sweep by splitting the timed-out request into smaller
-   update-time windows, then advance the watermark.
-2. Retry or formally close the three history gaps.
-3. Schedule regular batches and measure steady-state latency, not just the
-   first backfill.
-4. Run the target-analyst session and compare task time with their manual
-   baseline.
-5. Extend the live integration check to run the procedure end to end in a
-   disposable copy of the warehouse, not only compile its SQL.
+Tracked as issues in the [v0.2.0 milestone](https://github.com/kaarthikmohaan/quakewatch/milestone/1):
+
+1. Finish the catalog-wide update sweep and commit the first watermark
+   ([#4](https://github.com/kaarthikmohaan/quakewatch/issues/4)).
+2. Resolve or formally close the three history gaps
+   ([#5](https://github.com/kaarthikmohaan/quakewatch/issues/5)).
+3. Run the pipeline on a schedule and measure steady-state latency
+   ([#6](https://github.com/kaarthikmohaan/quakewatch/issues/6)).
+4. Run the procedure end to end in a disposable copy of the warehouse
+   ([#7](https://github.com/kaarthikmohaan/quakewatch/issues/7)).
+5. Redeploy the procedure from the formatted code
+   ([#8](https://github.com/kaarthikmohaan/quakewatch/issues/8)).
+6. Run the target-analyst session and compare task time with their manual
+   baseline ([#9](https://github.com/kaarthikmohaan/quakewatch/issues/9)).
 
 ## Repository layout
 

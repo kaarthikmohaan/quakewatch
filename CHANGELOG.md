@@ -7,6 +7,10 @@ are in the [results summary](docs/results.md).
 
 ## [Unreleased]
 
+### Changed
+
+- README next steps now link to the v0.2.0 milestone issues.
+
 ## [0.1.0] - 2026-10-02
 
 The first complete version of the batch path: extraction, loading, modeling,
