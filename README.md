@@ -87,3 +87,5 @@ do not change the regular batch path.
 ## Source and responsible use
 
 Earthquake records come from the U.S. Geological Survey. Credit USGS and link to official records when presenting data. Use public example coordinates only. QuakeWatch must not be used for safety decisions.
+
+QuakeWatch is an MVP (minimum viable product) built to demonstrate Snowflake data engineering skills through an earthquake data pipeline. It is not a complete production system.
