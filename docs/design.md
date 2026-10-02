@@ -178,7 +178,7 @@ Required recovery evidence:
 
 Standard Time Travel retention is one day; longer retention for permanent tables requires Enterprise or higher. Statement-ID access has a separate 14-day limit. Clones start zero-copy, but divergence/history can incur storage. Drop demo clones.
 
-## Optional Cortex brief
+## Cortex brief
 
 Cortex is explicit and on demand. It may turn a bounded analytical result into a short factual summary: event count in a selected window, nearest event, magnitude, record age, and source status. It must not infer risk, shaking, damage, or action. Keep the feature only if a user test shows it is easier to scan than the deterministic SQL result.
 
@@ -239,7 +239,7 @@ All boxes are unchecked because implementation evidence is absent:
 - [ ] Complete clone/Time Travel and Cortex only after core batch recovery works.
 - [ ] Run GitHub Actions fixture CI; link only a real status badge.
 
-## Risks, known limits, and portfolio fit
+## Risks and known limits
 
 | Risk / limit | Mitigation or honest boundary |
 |---|---|
@@ -253,26 +253,13 @@ All boxes are unchecked because implementation evidence is absent:
 | Private site coordinate | Public examples only; private values stay local and ignored |
 | Small sample | State dates and row/batch counts; keep target separate from result |
 
-**Portfolio fit:** QuakeWatch demonstrates a focused batch-warehouse slice: extraction, SQL/data modeling, Python processing, quality, backfills, and reproducibility. It does not by itself prove broad cloud infrastructure, distributed processing, production ownership, cross-team delivery, or sustained product outcomes. Keep the README about the implemented project and measured evidence; tailor role-fit claims to current postings separately.
-
-## Interview questions
-
-1. **Is this a streaming pipeline?** No. FDSN queries return bounded batches; this is a batch warehouse. A one-minute polling interval would not make the source a continuous stream.
-2. **What is the grain of the fact?** One distinct canonical event revision; the site bridge is one revision × configured public site; batch-run fact is one attempt.
-3. **How do you handle revisions and late data?** Preserve event, update, fetch, and curate clocks; rank source updates deterministically, not by origin time alone.
-4. **How do you make overlapping loads idempotent?** Stable batch/file/source keys, dedupe before merge, logical revision identity, and replay assertions.
-5. **How do deletions work?** Request explicit deleted status, retain a tombstone, and ensure older overlapping loads cannot resurrect it.
-6. **How do you model many-to-many event aliases or sites?** Resolve associated IDs to canonical event identity and use a bridge for event revision × site distance.
-7. **How do you prove batch completeness?** “I cannot prove a transactionally consistent USGS snapshot. I split windows below the API cap, compare source counts before and after fetch, repeat the overlap, reconcile loaded/processed/rejected counts, and expose unresolved gaps.”
-8. **What happens when transformation fails?** Raw files and manifests are durable; retry processing without refetching and prove no duplicate logical fact rows.
-9. **Why a star schema here?** It supports historical slices by date, magnitude type, status, and site; if the queries do not use those dimensions, simplify the model.
-10. **How do you keep the claims safe and honest?** Report distance/magnitude as descriptive only, publish measured pipeline metrics separately from targets, and avoid claiming complete coverage or production reliability without evidence.
+QuakeWatch demonstrates a focused batch-warehouse slice: extraction, SQL/data modeling, Python processing, quality, backfills, and reproducibility. It does not by itself prove broad cloud infrastructure, distributed processing, production ownership, cross-team delivery, or sustained product outcomes.
 
 ## Close-out and claim boundary
 
 A strong close-out has a tagged release, reproducible setup, real CI run, measured load/warehouse usage, completed retry evidence, documented coverage, and a retrospective comparing estimates with actual evenings.
 
-Résumé claims must match the repository and captured run evidence. This project demonstrates one focused Snowflake batch warehouse; it does not alone prove production operations, broad cloud infrastructure, distributed processing, cross-team delivery, or long-term product outcomes.
+This project demonstrates one focused Snowflake batch warehouse; it does not alone prove production operations, broad cloud infrastructure, distributed processing, cross-team delivery, or long-term product outcomes.
 
 ## Sources
 
@@ -282,5 +269,5 @@ Official references for implementation planning. Recheck service behavior, versi
 - **Snowflake batch loading and modeling:** [COPY INTO table](https://docs.snowflake.com/en/sql-reference/sql/copy-into-table), [loading local files](https://docs.snowflake.com/en/user-guide/data-load-local-file-system-copy), [Python procedures](https://docs.snowflake.com/en/developer-guide/stored-procedure/python/procedure-python-overview), [Snowpark setup](https://docs.snowflake.com/en/developer-guide/snowpark/python/setup), and [Tasks](https://docs.snowflake.com/en/user-guide/tasks-intro).
 - **Transactions and merge:** [transactions](https://docs.snowflake.com/en/sql-reference/transactions) and [MERGE](https://docs.snowflake.com/en/sql-reference/sql/merge).
 - **Recovery:** [Time Travel](https://docs.snowflake.com/en/user-guide/data-time-travel), [AT/BEFORE](https://docs.snowflake.com/en/sql-reference/constructs/at-before), and [object cloning](https://docs.snowflake.com/en/user-guide/object-clone).
-- **Optional Cortex:** [AI_COMPLETE](https://docs.snowflake.com/en/sql-reference/functions/ai_complete-single-string), [regional availability](https://docs.snowflake.com/en/user-guide/snowflake-cortex/aisql-regional-availability), [usage history](https://docs.snowflake.com/en/sql-reference/account-usage/cortex_ai_functions_usage_history), and [costs](https://docs.snowflake.com/en/user-guide/snowflake-cortex/aisql-cost).
+- **Cortex:** [AI_COMPLETE](https://docs.snowflake.com/en/sql-reference/functions/ai_complete-single-string), [regional availability](https://docs.snowflake.com/en/user-guide/snowflake-cortex/aisql-regional-availability), [usage history](https://docs.snowflake.com/en/sql-reference/account-usage/cortex_ai_functions_usage_history), and [costs](https://docs.snowflake.com/en/user-guide/snowflake-cortex/aisql-cost).
 - **Alternatives:** [NWS API](https://www.weather.gov/documentation/services-web-api) and [OpenAQ API](https://docs.openaq.org/about/about).
