@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and general discussion
+    url: https://github.com/kaarthikmohaan/quakewatch/discussions
+    about: Ask questions or share feedback in GitHub Discussions.
+  - name: Official earthquake information
+    url: https://earthquake.usgs.gov/
+    about: QuakeWatch is not a safety tool. Use USGS and local authorities for current earthquake information.
