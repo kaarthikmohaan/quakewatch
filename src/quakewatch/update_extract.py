@@ -17,6 +17,7 @@ from quakewatch.extract_batch import (
 )
 from quakewatch.settings import PARSER_VERSION, SOURCE_WINDOW_DEADLINE_SECONDS, USER_AGENT
 from quakewatch.update_plan import plan_update_sweep
+from quakewatch.logs import configure_logging
 
 
 def initial_sweep_windows(start, end, years_per_window: int,
@@ -247,6 +248,7 @@ def main():
     parser.add_argument('--resume-children', action='store_true')
     parser.add_argument('--execute', action='store_true')
     args = parser.parse_args()
+    configure_logging()
     values = (args.catalog_start, args.cutoff, args.last_watermark,
               args.sweep_started_at, args.overlap_seconds)
     try:

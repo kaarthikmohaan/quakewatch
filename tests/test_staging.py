@@ -80,5 +80,30 @@ class StagingProjectionTest(unittest.TestCase):
         self.assertEqual(project_feature(feature)["reject_reason"], "invalid_magnitude")
 
 
+    def test_source_stub_record_has_its_own_reason(self) -> None:
+        row = project_feature(fixture("source_stub_event.json"))
+        self.assertEqual(row["reject_reason"], "source_stub_record")
+        self.assertEqual(row["source_event_id"], "ak022bmnemu5")
+        self.assertIsNone(row["origin_time"])
+
+    def test_missing_time_alone_is_still_invalid_origin_time(self) -> None:
+        feature = fixture("normal_event.json")
+        feature["properties"]["time"] = None
+        self.assertEqual(project_feature(feature)["reject_reason"], "invalid_origin_time")
+
+    def test_active_placeholder_location_is_rejected(self) -> None:
+        feature = fixture("normal_event.json")
+        feature["geometry"]["coordinates"] = [0, 0, 5.0]
+        self.assertEqual(project_feature(feature)["reject_reason"], "placeholder_location")
+
+    def test_deleted_placeholder_location_keeps_tombstone(self) -> None:
+        feature = fixture("deleted_event.json")
+        feature["geometry"] = {"type": "Point", "coordinates": [0, 0, None]}
+        row = project_feature(feature)
+        self.assertIsNone(row["reject_reason"])
+        self.assertEqual(row["source_status"], "deleted")
+        self.assertIsNone(row["longitude"])
+        self.assertIsNone(row["latitude"])
+
 if __name__ == "__main__":
     unittest.main()

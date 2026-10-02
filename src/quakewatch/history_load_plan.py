@@ -1,4 +1,4 @@
-"""Inventory locally captured history attempts for a future Snowflake RAW load."""
+"""Inventory locally captured history attempts eligible for a Snowflake RAW load."""
 
 import argparse
 from contextlib import closing
@@ -7,6 +7,7 @@ from pathlib import Path
 from quakewatch.extract_batch import parse_utc
 from quakewatch.history_plan import captured_history_windows
 from quakewatch.raw_load import connect_project, plan_raw_load
+from quakewatch.logs import configure_logging
 
 
 def load_candidates(cutoff, output: Path) -> list[tuple[int, dict]]:
@@ -68,6 +69,7 @@ def main() -> None:
     parser.add_argument("--check-snowflake", action="store_true",
                         help="Read warehouse receipts and RAW counts (may incur cost)")
     args = parser.parse_args()
+    configure_logging()
     candidates = load_candidates(args.cutoff, args.output)
     if args.check_snowflake and candidates:
         with closing(connect_project()) as connection:

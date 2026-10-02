@@ -1,4 +1,4 @@
-"""Read a complete RAW attempt from Snowflake inside a future Snowpark procedure."""
+"""Read a complete RAW attempt from Snowflake inside the Snowpark procedure."""
 
 from __future__ import annotations
 

@@ -8,6 +8,7 @@ from pathlib import Path
 
 from quakewatch.extract_batch import iso_utc, parse_utc, run_batch
 from quakewatch.settings import EVENT_HORIZON_YEARS, MAX_HISTORY_BATCH_WINDOWS, SITES
+from quakewatch.logs import configure_logging
 
 
 def months_before(value: datetime, months: int) -> datetime:
@@ -132,6 +133,7 @@ def main() -> None:
     parser.add_argument("--resume-children", action="store_true",
                         help="Reuse validated local child checkpoints from prior attempts")
     args = parser.parse_args()
+    configure_logging()
     if args.resume_children and args.source_days is None:
         parser.error("--resume-children requires --source-days")
     if args.source_hours is not None and (args.source_days != 1

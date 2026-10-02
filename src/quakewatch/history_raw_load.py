@@ -8,6 +8,7 @@ from quakewatch.extract_batch import parse_utc
 from quakewatch.history_load_plan import check_snowflake, load_candidates
 from quakewatch.raw_load import connect_project, execute_raw_load
 from quakewatch.settings import MAX_HISTORY_BATCH_WINDOWS
+from quakewatch.logs import configure_logging
 
 
 def load_ready(candidates: list[tuple[int, dict]], connection, max_windows: int) -> list[int]:
@@ -37,6 +38,7 @@ def main() -> None:
     parser.add_argument("--max-windows", required=True, type=int, help="Maximum ready windows, 1 to 50")
     parser.add_argument("--execute", action="store_true", help="Connect to Snowflake and run PUT/COPY")
     args = parser.parse_args()
+    configure_logging()
     if not 1 <= args.max_windows <= MAX_HISTORY_BATCH_WINDOWS:
         parser.error(f"max-windows must be between 1 and {MAX_HISTORY_BATCH_WINDOWS}")
     candidates = load_candidates(args.cutoff, args.output)

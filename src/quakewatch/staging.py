@@ -1,4 +1,4 @@
-"""Pure typed projection used by the future in-Snowflake Snowpark procedure."""
+"""Pure typed projection used by the in-Snowflake Snowpark procedure."""
 
 from __future__ import annotations
 
@@ -7,7 +7,8 @@ from datetime import UTC, datetime
 from typing import Any
 
 
-STAGING_PARSER_VERSION = "1"
+# Version 2 adds the source_stub_record and placeholder_location reasons.
+STAGING_PARSER_VERSION = "2"
 
 
 def _epoch_ms(value: Any) -> datetime | None:
@@ -65,6 +66,10 @@ def project_feature(feature: Any) -> dict[str, Any]:
     properties = feature.get("properties")
     if not isinstance(properties, dict):
         return reject("invalid_properties")
+    # USGS returns some placeholder features ("M ?") with no origin time,
+    # magnitude, or status. Each one is listed as an alias of a full record.
+    if all(properties.get(key) is None for key in ("time", "mag", "status")):
+        return reject("source_stub_record")
     for source, target in (("time", "origin_time"), ("updated", "source_updated_at")):
         parsed = _epoch_ms(properties.get(source))
         if parsed is None:
@@ -109,6 +114,12 @@ def project_feature(feature: Any) -> dict[str, Any]:
         return reject("invalid_longitude")
     if latitude is None or not -90 <= latitude <= 90:
         return reject("invalid_latitude")
+    if longitude == 0 and latitude == 0:
+        # (0, 0) is a source placeholder, not a location. Keep a tombstone
+        # without coordinates; reject an active record.
+        if status == "deleted":
+            return result
+        return reject("placeholder_location")
     result["longitude"], result["latitude"] = longitude, latitude
     if len(coordinates) == 3 and coordinates[2] is not None:
         result["depth_km"] = _number(coordinates[2])

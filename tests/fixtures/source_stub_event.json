@@ -1,0 +1,40 @@
+{
+  "geometry": {
+    "coordinates": [
+      0,
+      0,
+      null
+    ],
+    "type": "Point"
+  },
+  "id": "ak022bmnemu5",
+  "properties": {
+    "alert": null,
+    "cdi": null,
+    "code": "022bmnemu5",
+    "detail": "https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=ak022bmnemu5&format=geojson",
+    "dmin": null,
+    "felt": null,
+    "gap": null,
+    "ids": ",av91678406,ak022bmnemu5,",
+    "mag": null,
+    "magType": null,
+    "mmi": null,
+    "net": "ak",
+    "nst": null,
+    "place": "Southern Alaska",
+    "rms": null,
+    "sig": 11,
+    "sources": ",av,ak,",
+    "status": null,
+    "time": null,
+    "title": "M ? - Southern Alaska",
+    "tsunami": 0,
+    "type": "earthquake",
+    "types": ",origin,phase-data,",
+    "tz": null,
+    "updated": 1665773346693,
+    "url": "https://earthquake.usgs.gov/earthquakes/eventpage/ak022bmnemu5"
+  },
+  "type": "Feature"
+}

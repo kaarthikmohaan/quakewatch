@@ -5,6 +5,7 @@ import json
 from datetime import UTC, datetime, timedelta
 
 from quakewatch.extract_batch import iso_utc, parse_utc
+from quakewatch.logs import configure_logging
 
 
 def plan_update_sweep(catalog_start: datetime, cutoff: datetime,
@@ -59,6 +60,7 @@ def main() -> None:
     parser.add_argument("--sweep-started-at", type=parse_utc, required=True)
     parser.add_argument("--overlap-seconds", type=int, required=True)
     args = parser.parse_args()
+    configure_logging()
     try:
         plan = plan_update_sweep(args.catalog_start, args.cutoff, args.last_watermark,
                                  args.sweep_started_at, args.overlap_seconds)

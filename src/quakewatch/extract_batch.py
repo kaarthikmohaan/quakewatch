@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import logging
 import random
 import sys
 import time
@@ -30,6 +31,9 @@ from quakewatch.settings import (
     USGS_QUERY_URL,
     Site,
 )
+from quakewatch.logs import configure_logging
+
+logger = logging.getLogger(__name__)
 
 MAX_HTTP_ATTEMPTS = 4
 MAX_CONSECUTIVE_READ_TIMEOUTS = 2
@@ -112,6 +116,8 @@ def request_with_retry(
                     or consecutive_read_timeouts >= MAX_CONSECUTIVE_READ_TIMEOUTS):
                 raise
             delay = min(2 ** (attempt - 1), 8) + random.random() * 0.25
+            logger.warning("USGS request failed (%s); retry %d of %d in %.1fs",
+                           type(exc).__name__, attempt, MAX_HTTP_ATTEMPTS - 1, delay)
             remaining = remaining_source_time()
             time.sleep(min(delay, remaining) if remaining is not None else delay)
             continue
@@ -128,6 +134,8 @@ def request_with_retry(
         except ValueError:
             delay = min(2 ** (attempt - 1), 8)
         delay += random.random() * 0.25
+        logger.warning("USGS returned HTTP %d; retry %d of %d in %.1fs",
+                       response.status_code, attempt, MAX_HTTP_ATTEMPTS - 1, delay)
         remaining = remaining_source_time()
         time.sleep(min(delay, remaining) if remaining is not None else delay)
 
@@ -212,6 +220,7 @@ def fetch_window(
     last_issue = "source count changed during fetch"
 
     def unresolved(reason: str) -> dict[str, Any]:
+        logger.error("Window %s unresolved: %s", window_id, reason)
         return {
             "window_id": window_id,
             "starttime": iso_utc(start),
@@ -269,6 +278,7 @@ def fetch_window(
         reason = f"{last_issue}; {exc}"
         raise ExtractionError(f"{window_id}: {reason}", [unresolved(reason)]) from exc
 
+    logger.info("Splitting window %s: %s", window_id, last_issue)
     rows: list[tuple[dict[str, Any], str]] = []
     audits: list[dict[str, Any]] = [
         {
@@ -613,6 +623,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
+    configure_logging()
     try:
         manifest = run_batch(args.site, args.start, args.end, args.output)
     except (ExtractionError, httpx.HTTPError, OSError) as exc:

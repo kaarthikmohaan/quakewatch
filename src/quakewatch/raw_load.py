@@ -1,6 +1,7 @@
 """Local safeguards before and after a Snowflake RAW copy."""
 
 import json
+import logging
 import re
 import argparse
 import getpass
@@ -8,6 +9,10 @@ import tomllib
 from contextlib import closing
 from pathlib import Path
 from typing import Any
+
+from quakewatch.logs import configure_logging
+
+logger = logging.getLogger(__name__)
 
 
 class LoadReconciliationError(ValueError):
@@ -209,10 +214,12 @@ def execute_raw_load(plan: dict[str, Any], connection: Any) -> int:
             raw_rows = int(cursor.fetchone()[0])
             reconcile_loaded_rows(plan["expected_rows"], loaded, raw_rows)
         except Exception as exc:
+            logger.error("RAW load failed for attempt %s: %s", attempt_id, exc)
             append_receipt(cursor, plan, "failed", loaded, copy_results, exc)
             raise
 
         append_receipt(cursor, plan, "complete", loaded, copy_results)
+        logger.info("RAW load reconciled for attempt %s: %d rows", attempt_id, loaded)
         return loaded
 
 
@@ -221,6 +228,7 @@ def main() -> None:
     parser.add_argument("manifest", type=Path)
     parser.add_argument("--execute", action="store_true", help="Connect and run PUT/COPY (warehouse cost)")
     args = parser.parse_args()
+    configure_logging()
     plan = plan_raw_load(args.manifest)
     print(f"Attempt: {plan['attempt_id']}")
     print(f"Expected RAW rows: {plan['expected_rows']}")

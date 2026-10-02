@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Callable, Protocol
@@ -10,6 +11,8 @@ from uuid import uuid4
 from quakewatch.process_batch import BatchProjection
 from quakewatch.snowpark_read import read_and_project_attempt
 from quakewatch.staging import STAGING_PARSER_VERSION
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -29,7 +32,7 @@ class ProcessOutcome:
 
 
 class ModelWriter(Protocol):
-    """DML-only writer; the concrete Snowpark implementation comes later."""
+    """DML-only writer interface; SnowparkModelWriter is the Snowflake implementation."""
 
     def write_models(self, session: Any, projection: BatchProjection) -> int: ...
     def record_success(self, session: Any, outcome: ProcessOutcome) -> None: ...
@@ -66,6 +69,8 @@ def process_loaded_attempt(
         writer.record_success(session, outcome)
         committing = True
         session.sql("COMMIT").collect()
+        logger.info("Processed attempt %s: %d rows, %d rejected, %d revisions merged",
+                    attempt_id, outcome.processed_rows, outcome.rejected_rows, merged)
         return outcome
     except Exception as exc:
         if committing:
@@ -87,5 +92,7 @@ def process_loaded_attempt(
             error_type=type(exc).__name__,
             error_message=str(exc) if isinstance(exc, ValueError) else "Transformation failed",
         )
+        logger.error("Processing failed for attempt %s (%s); models rolled back",
+                     attempt_id, type(exc).__name__)
         writer.record_failure(session, failed)
         raise

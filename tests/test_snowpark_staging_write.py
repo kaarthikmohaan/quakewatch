@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 from quakewatch.process_batch import RawObservation, project_raw_attempt
 from quakewatch.snowpark_staging_write import write_staging
+from quakewatch.staging import STAGING_PARSER_VERSION
 
 
 FEATURE = json.loads((Path(__file__).parent / "fixtures/normal_event.json").read_text())
@@ -69,7 +70,7 @@ class StagingWriteTest(unittest.TestCase):
         session = FakeSession(existing=[dict(
             STAGE_FILE_NAME="attempt-1/events.jsonl", STAGE_FILE_ROW_NUMBER=1,
             ATTEMPT_ID="attempt-1", PAYLOAD_HASH="a" * 64,
-            RAW_PARSER_VERSION="1", STAGING_PARSER_VERSION="1",
+            RAW_PARSER_VERSION="1", STAGING_PARSER_VERSION=STAGING_PARSER_VERSION,
         )], final_count=1)
         self.assertEqual(write_staging(session, p), 1)
 
@@ -77,7 +78,7 @@ class StagingWriteTest(unittest.TestCase):
         session = FakeSession(existing=[dict(
             STAGE_FILE_NAME="attempt-1/events.jsonl", STAGE_FILE_ROW_NUMBER=1,
             ATTEMPT_ID="attempt-1", PAYLOAD_HASH="b" * 64,
-            RAW_PARSER_VERSION="1", STAGING_PARSER_VERSION="1",
+            RAW_PARSER_VERSION="1", STAGING_PARSER_VERSION=STAGING_PARSER_VERSION,
         )])
         with self.assertRaisesRegex(ValueError, "conflicts"):
             write_staging(session, projection())
