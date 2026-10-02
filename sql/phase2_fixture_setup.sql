@@ -1,4 +1,4 @@
--- Phase 2 fixture database setup: REVIEW ONLY. Do not run without owner
+-- Phase 2 fixture database setup: REVIEW ONLY. Do not run without approval
 -- approval for account changes and possible Snowflake charges.
 -- CREATE DATABASE has no IF NOT EXISTS guard: stop if the name is occupied.
 -- The project role receives only privileges needed to own fixture objects.
