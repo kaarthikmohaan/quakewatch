@@ -6,14 +6,17 @@ QuakeWatch is a compact Snowflake batch warehouse for studying historical USGS e
 
 This is a retrospective data project. It is not an earthquake warning, risk score, shaking estimate, or damage assessment. Distance and magnitude alone do not estimate impact.
 
-## Status
+USGS extraction: A Python command fetches earthquake records for an explicit site and UTC time window. It saves the full GeoJSON records as JSONL, plus a manifest with query parameters, counts, and fetch status. The [extractor](/Users/karthikmohan/Developer/quakewatch/src/quakewatch/extract_batch.py) uses bounded requests so failed windows remain visible.
 
-The Python 3.12 environment and bounded USGS extractor are in place. The loader reported 177 of 180 planned history windows loaded and reconciled into Snowflake RAW, totaling 216,361 history rows; windows 12, 42, and 73 remain explicit USGS source gaps. All 177 loaded history attempts passed guarded Snowpark processing; 216,361 RAW rows were processed and 485 were rejected as `invalid_origin_time`. Phase 2 revision, old-event update, tombstone, rerun, and failed-transform/retry fixtures passed in an isolated database. Phase 3's post-run checks found all 178 receipts reconciled, with zero loaded-window anomalies or duplicate revision/bridge keys. Its 178-attempt first-backfill sample missed the predeclared 24-hour p95 fetch-to-curated target (35.9 hours observed).
+Snowflake loading: Python uploads the files to a Snowflake internal stage and uses COPY INTO to retain the source payload and batch metadata in RAW tables. The historical backfill loaded 177 of 180 planned windows, containing 216,361 source rows. Three windows remain USGS source gaps. See the [README](/Users/karthikmohan/Developer/quakewatch/README.md).
 
-The Phase 4 fixture-table clone and Time Travel drill passed, and the demo clone was dropped. A later bounded Cortex evaluation produced nine human-reviewed factual briefs from saved SQL aggregates; The catalog-wide update sweep remains incomplete because a bounded source request times out; its watermark has not advanced. Secret-free [GitHub CI passed for the published closeout](https://github.com/kaarthikmohaan/quakewatch/actions/runs/36878134767) at commit `626e4d3`. See [observed results](docs/results.md), the [Cortex evaluation](docs/phase4-cortex-evaluation.md), and the [Phase 4 close-out](docs/phase4-closeout.md) for evidence and limits.
+Warehouse modeling: A Snowpark procedure validates rows and builds revision history, a latest-current-event view, site distances, dimensions, and batch facts. It preserves updates and deletion records instead of simply overwriting an event. All 177 loaded history attempts were processed; 485 rows were rejected for invalid origin times. The [data dictionary](/Users/karthikmohan/Developer/quakewatch/docs/data-dictionary.md) lists the tables and their row grains.
 
-The Phase 4 metering snapshot reports actual shared warehouse-hour credits,
-with lag and attribution limits; it is not a per-demo bill.
+Quality and recovery: The project has batch reconciliation, reject and health views, duplicate-key checks, and processing audits. Fixture runs verified reruns, old-event updates, deletions, rollback, and retry from existing RAW data. A separate Snowflake clone and Time Travel recovery drill passed. The [results](/Users/karthikmohan/Developer/quakewatch/docs/results.md) record the evidence.
+
+Analysis and optional AI brief: SQL supports historical counts and magnitude comparisons around Seattle, San Francisco, and Anchorage. A Cortex evaluation generated nine human-checked factual briefs from saved SQL aggregates.
+
+Engineering setup: The repo has a locked Python environment, unit and fixture tests, secret-free GitHub Actions CI, a [runbook](/Users/karthikmohan/Developer/quakewatch/docs/runbook.md), and a [demo](/Users/karthikmohan/Developer/quakewatch/docs/demo.md).
 
 ## Quickstart
 
