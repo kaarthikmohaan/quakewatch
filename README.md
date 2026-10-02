@@ -20,7 +20,7 @@ This is a retrospective data project. It is not an earthquake warning, risk scor
 
 ## Quickstart
 
-Requirements: Python 3.12 and [uv](https://docs.astral.sh/uv/).
+From the repository root, use Python 3.12 and [uv](https://docs.astral.sh/uv/):
 
 ```sh
 uv sync --locked --no-editable
@@ -30,7 +30,23 @@ uv run quakewatch-extract \
   --end 2026-09-29T00:00:00Z
 ```
 
-The command requires an explicit location and time range. It writes `events.jsonl` and `manifest.json` under `data/raw/<attempt-id>/`; `data/` is excluded from Git. See [the runbook](docs/runbook.md) for more details.
+This is a dated example. Change the site and UTC time range for a new batch;
+supported sites are `seattle`, `san-francisco`, and `anchorage`. Each run prints
+a new attempt ID and saves `events.jsonl` plus `manifest.json` under
+`data/raw/<attempt-id>/`. The `data/` directory is excluded from Git.
+
+To check a saved batch locally, replace `PASTE_ATTEMPT_ID_HERE` with the ID
+printed by the extractor:
+
+```sh
+attempt_id=PASTE_ATTEMPT_ID_HERE
+PYTHONPATH=src .venv/bin/python -m quakewatch.raw_load \
+  "data/raw/$attempt_id/manifest.json"
+```
+
+That check prints the expected row count and Snowflake stage path. It does not
+upload or process data. A live Snowflake load needs the configured project
+connection and can use warehouse credits
 
 ## Architecture
 
