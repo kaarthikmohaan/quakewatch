@@ -4,7 +4,7 @@ The core pipeline lives in the `quakewatch` package under [`src/`](../src/quakew
 The scripts here build artifacts, run checks, or reproduce recorded evidence.
 Most connect to Snowflake only with `--execute`; without it they print a plan
 and change nothing. Live runs use warehouse credits, so check the
-[runbook](../docs/runbook.md) first.
+[operations reference](../docs/operations-reference.md) first.
 
 Run everything from the repository root:
 

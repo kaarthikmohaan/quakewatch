@@ -12,8 +12,9 @@ we have and have not checked, and how to tell us about a barrier.
 ## Priorities
 
 - **Readable documentation.** Documents use real headings, descriptive link
-  text, plain language, and text instead of images. The architecture diagram in
-  the README is plain text, not a picture.
+  text, plain language, and text instead of images. Diagrams are written in
+  Mermaid, so their source is readable text, and the README describes the
+  pipeline in words below its diagram.
 - **Terminal output that works as text.** Commands print plain text that does
   not rely on colour, animation, or special symbols to convey meaning.
 - **Information that does not depend on visuals.** Results are given as
@@ -87,9 +88,13 @@ over these responsibilities.
 
 ## Known limitations
 
-- Some documents, such as the results and design pages, are long and contain
-  many numbers in dense paragraphs, which can be tiring to follow with a screen
-  reader or translation tool.
+- Some documents, such as the design page, the operations reference, and the
+  results evidence log, are long and contain many numbers in dense paragraphs,
+  which can be tiring to follow with a screen reader or translation tool. The
+  [results summary](docs/results.md) gives the main figures in short tables.
+- The rendered Mermaid diagrams in the README and data dictionary are graphics.
+  Screen readers may not describe them; the surrounding text and the data
+  dictionary tables carry the same information.
 - Some tables are wide and may need horizontal scrolling on small screens or
   at high magnification.
 - The supported-versions table in the security policy uses check-mark and cross

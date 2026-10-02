@@ -1,14 +1,11 @@
-# Runbook
+# Live demo walkthrough (2 October 2026)
 
-## Local setup
-
-1. Install Python 3.12 and `uv`.
-2. From the repository root, run `uv sync --locked --no-editable`.
-3. Run a small, explicit time range before requesting a multi-year history.
-
-This records the terminal output for an existing Seattle batch, one Cortex call, an isolated recovery
-exercise, warehouse checks, and local tests. The batch was already loaded and
-processed when these commands ran. The demo drivers below contain fixed names and dates.
+This page walks through one recorded end-to-end run: an existing Seattle batch,
+warehouse checks, one Cortex call, an isolated recovery drill, and the local
+tests. The batch had already been loaded and processed when these commands ran,
+and the demo drivers contain fixed names and dates. For setup and the full set
+of operating commands, see the [README](../README.md#quickstart) and the
+[operations reference](operations-reference.md).
 
 ## The path in one view
 
@@ -78,9 +75,7 @@ It reported 15 expected rows, the local file path, and the stage path
 `@QUAKEWATCH.RAW.USGS_JSON_STAGE/20261002T045249Z-ee3a351be3`. It said
 `No upload, COPY, or account connection performed.` The
 [fixed-input core driver](../scripts/evidence/live_demo_2026_10_02/core.py)
-ran as `PYTHONPATH=src:. .venv/bin/python /private/tmp/quakewatch_live_demo.py`.
-Its archived source is linked above; the temporary path is not part of the
-repository. It printed `already_loaded` with 15 rows. It did not upload,
+then ran from a temporary copy of that file. It printed `already_loaded` with 15 rows. It did not upload,
 `COPY INTO`, or append another receipt in this run. The original loader logic
 and [COPY mapping](../sql/phase1_copy_raw.sql) are in the repository.
 
@@ -120,9 +115,8 @@ The main warehouse objects are described in the [data dictionary](data-dictionar
 
 ## 5. Query and check the warehouse
 
-The [fixed-input live checks](../scripts/evidence/live_demo_2026_10_02/checks.py) ran as
-`PYTHONPATH=src:. .venv/bin/python /private/tmp/quakewatch_live_checks.py`.
-They used the reviewed
+The [fixed-input live checks](../scripts/evidence/live_demo_2026_10_02/checks.py)
+ran from a temporary copy of that file. They used the reviewed
 [Seattle analysis](../sql/phase3_sample_analysis.sql),
 [reconciliation checks](../sql/phase3_reconciliation.sql), and
 [duplicate-key checks](../sql/phase3_uniqueness.sql). The Seattle result was
@@ -198,17 +192,21 @@ credentials. The SQL facts said 15 modelled Seattle-day events; nearest event
 `uw714111042` was **42.1 km from the site**, magnitude **1.23**, status
 `reviewed`, and **78.6 hours old** at query time.
 
+**The brief was rejected.** The generated sentence described the distance as
+measured from the event ID rather than from the site. Local fact validation
+caught the error, so the SQL facts above were shown instead. The same error had
+caused an earlier rejection that day.
+
 Query ID: `01c77438-0002-b28e-000e-fef20003c0ca`; the call
-used 141 prompt and 76 completion tokens. The supporting count and nearest
-query IDs were `01c77438-0002-b28e-000e-fef20003c0c6` and
+used 141 prompt and 76 completion tokens, and its credits have not been
+measured. The supporting count and nearest query IDs were
+`01c77438-0002-b28e-000e-fef20003c0c6` and
 `01c77438-0002-b3cf-000e-fef20004108a`.
 
 ## 9. Clone and Time Travel recovery
 
 The [fixed-input recovery driver](../scripts/evidence/live_demo_2026_10_02/recovery.py)
-ran as `PYTHONPATH=src:. .venv/bin/python /private/tmp/quakewatch_live_recovery.py`.
-The archived source is linked above. It
-used only the isolated five-row fixture table. It created a uniquely named
+ran from a temporary copy of that file. It used only the isolated five-row fixture table. It created a uniquely named
 clone, changed one clone magnitude from **1.1 to 1001.1**, and checked that
 the source table still held **1.1**. Snowflake Time Travel returned the clone's
 original **1.1** from before the change.
@@ -228,9 +226,8 @@ PYTHONPATH=src:. .venv/bin/python -m unittest discover -s tests
 ```
 
 All **303** tests passed. The [GitHub Actions workflow](../.github/workflows/ci.yml)
-installs locked dependencies, builds synthetic fixtures, and runs secret-free
-tests. Its published close-out run passed before this 2 October demo; the
-later documentation edits have not been pushed or checked by GitHub.
+installs locked dependencies, builds synthetic fixtures, and runs the same
+secret-free tests on every push.
 The 50-window preview and two small RAW-load messages printed during the test
 run came from test cases, not new USGS requests or Snowflake loads.
 
@@ -255,5 +252,6 @@ Any new Snowflake or Cortex run can incur credits; check
 the current account state. This demo did not rerun the five-year backfill, complete the update sweep, measure a
 new credit bill, or conduct the target-analyst interview.
 
-For exact counts and query IDs, see [results](results.md). For the model and
+For exact counts and query IDs, see the
+[2 October evidence entry](evidence/results-log.md#live-end-to-end-seattle-demo-2026-10-02). For the model and
 source limits, see [design](design.md) and the [data dictionary](data-dictionary.md).

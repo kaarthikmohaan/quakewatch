@@ -3,7 +3,7 @@
 Reviewed Snowflake SQL for QuakeWatch, named by the phase that introduced it.
 Each file's header comments describe its grain, owner, and cost or approval
 notes. Anything that resumes the warehouse uses credits, so check the
-[runbook](../docs/runbook.md) before running it.
+[operations reference](../docs/operations-reference.md) before running it.
 
 ## Setup order
 

@@ -1,6 +1,6 @@
 # Phase 0 environment check
 
-Checked 2026-09-29. This records Phase 0 source and account checks; raw loading and warehouse models are still future phases.
+Checked 2026-09-29. This records the Phase 0 source and account checks as they stood on that date, before raw loading and warehouse models were built. See the [results summary](results.md) for later work.
 
 ## Verified
 
@@ -13,7 +13,7 @@ Checked 2026-09-29. This records Phase 0 source and account checks; raw loading 
 - The account's package catalog lists Python runtime 3.12 and `snowflake-snowpark-python` for that runtime, including version 1.55.0. The Phase 2 procedure definition pins that runtime and package version; its first 15-row pilot executed successfully on 2026-09-30 (see [results](results.md)).
 - On 2026-09-29, `sql/phase0_bootstrap.sql` completed through the `quakewatch_admin` CLI profile. Snowflake reported creation of `QUAKEWATCH_ROLE`, database `QUAKEWATCH`, schemas `RAW` and `CURATED`, warehouse `QUAKEWATCH_WH`, and stage `QUAKEWATCH.RAW.USGS_JSON_STAGE`.
 - Metadata verification showed `QUAKEWATCH_WH` as `SUSPENDED`, X-Small, with 60-second auto-suspend and auto-resume enabled. `USGS_JSON_STAGE` is an internal stage. `SHOW GRANTS TO ROLE QUAKEWATCH_ROLE` confirmed database/schema/warehouse `USAGE`, stage `READ`/`WRITE`, `CREATE TABLE` on both project schemas, and `CREATE VIEW`/`CREATE PROCEDURE` on `CURATED`.
-- On 2026-09-29, an encrypted local private key and its public key were created outside Git under the user's Snowflake key directory. Snowflake registered the named `QUAKEWATCH_KEY` public key for `KARTHIK12MOHAN`. `SHOW USER KEY PAIRS` reported it `ACTIVE` with `ROLE_SCOPE = QUAKEWATCH_ROLE`. The private key and passphrase were not recorded here.
+- On 2026-09-29, an encrypted local private key and its public key were created outside Git under the user's Snowflake key directory. Snowflake registered the named `QUAKEWATCH_KEY` public key for the project's Snowflake user. `SHOW USER KEY PAIRS` reported it `ACTIVE` with `ROLE_SCOPE = QUAKEWATCH_ROLE`. The private key and passphrase were not recorded here.
 - `snow connection test -c quakewatch_project` returned `Status: OK` with role `QUAKEWATCH_ROLE`, database `QUAKEWATCH`, and warehouse `QUAKEWATCH_WH`. A subsequent `SHOW WAREHOUSES` reported `QUAKEWATCH_WH` still `SUSPENDED`.
 - The Phase 0 exit audit reran five offline extractor tests successfully, parsed all seven JSON fixtures, and checked the ignored live capture: one reconciled query window (`15` before, `15` returned, `15` after), 15 saved JSONL rows, and an exact match between the first row's `source_feature` and `tests/fixtures/normal_event.json`.
 

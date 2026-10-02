@@ -2,6 +2,61 @@
 
 The dated record behind the [results summary](../results.md), newest first. Each entry keeps its query IDs, counts, and limits as originally recorded.
 
+## Live end-to-end Seattle demo (2026-10-02)
+
+A new bounded USGS capture was run for the public Seattle point and
+2026-09-28 UTC. The first request failed at local DNS resolution and produced
+no loadable batch. The retry saved complete attempt
+`20261002T045249Z-ee3a351be3` under Git-ignored `data/raw/`. Its one window
+reconciled 15 count-before, 15 returned, and 15 count-after rows, and the
+manifest and JSONL both contain 15 rows. This is one source observation, not
+proof of complete catalog coverage.
+
+**Load and process.** The guarded live loader and Snowpark procedure processed
+the new attempt. `COPY INTO` and attempt-filtered RAW each reported 15 rows.
+The health row moved from `PENDING_PROCESS` (15 loaded and RAW rows) to
+`RECONCILED` with 15 loaded, RAW, staged, and processed rows and zero rejects.
+The procedure returned `status=complete`, 15 processed, zero rejected, and 15
+revision rows merged; a MERGE count can include updates to already known
+revisions, so it is not a count of new earthquakes. Process attempt ID:
+`530ff2a08e23448ca2d0d931a87bd264`.
+
+**Warehouse checks.** The Seattle current-event query returned 15 modeled
+events within the public radius, with magnitudes from 0.66 to 2.56. The
+read-only quality check found **179 reconciled receipts** and **216,391**
+loaded, RAW, staged, and processed source observations: the 177 history
+attempts plus two overlapping 15-row Seattle samples. It found 485 rejects,
+zero batch or window anomalies, and zero duplicate revision or bridge-key
+groups. The ten-case public-site aggregate query returned counts matching the
+earlier saved snapshot. The update sweep still has no committed watermark, and
+history windows 12, 42, and 73 remain source gaps.
+
+**Cortex: two briefs rejected.** One `llama3.1-8b` call (query ID
+`01c7742a-0002-b28e-000e-fef20003c0aa`, 141 prompt and 76 completion tokens)
+summarised the Seattle-day facts: 15 modeled events, nearest event
+`uw714111042` 42.1 km from the site, magnitude 1.23, `reviewed`, 78.3 hours
+old. The generated sentence described the distance as measured from the event
+ID rather than from the site, so local validation rejected it and the SQL facts
+remained the output. A later walkthrough repeated the call (query ID
+`01c77438-0002-b28e-000e-fef20003c0ca`, record age 78.6 hours) with the same
+error and the same rejection. These are the twelfth and thirteenth completed
+Cortex calls; their credits have not been measured.
+
+**Recovery drill.** Two runs of the uniquely named fixture clone drill passed.
+Each cloned the five-row fixture fact, changed one clone magnitude from 1.1 to
+1001.1, confirmed the source still held 1.1, read 1.1 from before the change
+with Time Travel, and dropped the clone. Clone, MERGE, and DROP query IDs were
+`01c7742b-0002-b423-000e-fef200044012`, `01c7742b-0002-b2f7-000e-fef20004008a`,
+and `01c7742b-0002-b3cf-000e-fef200041072` for the first run, and
+`01c77439-0002-b28e-000e-fef20003c0d6`, `01c77439-0002-b2f7-000e-fef2000400aa`,
+and `01c77439-0002-b2f7-000e-fef2000400b2` for the second. Only the isolated
+fixture database was touched.
+
+Local test discovery passed all 303 tests. This demo did not rerun the
+five-year backfill, fill the source gaps, advance the update watermark, measure
+its warehouse credits, or run a target-user interview. The step-by-step
+walkthrough is in the [live demo walkthrough](../runbook.md).
+
 ## Phase 4 ten-case Cortex aggregate snapshot
 
 I ran the approved read-only aggregate query on 2026-10-01 under
@@ -56,8 +111,8 @@ from returned tokens; the later Account Usage query below verified the same
 AI-credit subtotal. Warehouse platform credits are separate and unmeasured
 for these calls.
 
-I then compared the Seattle 2024 SQL fact row with its generated
-Cortex sentence in chat and said **“cortex brief”** was easier to scan. This
+I then compared the Seattle 2024 SQL fact row side by side with its
+generated Cortex sentence and found the brief easier to scan. This
 is my preference on one example, supporting continued optional use.
 It is not a target-analyst interview or a measured task-time improvement;
 those product checks remain open.

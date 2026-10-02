@@ -11,7 +11,7 @@
 
 ## Key results
 
-Measured on live Snowflake runs between 29 September and 1 October 2026. Full evidence, query IDs, and caveats are in [observed results](docs/results.md).
+Measured on live Snowflake runs between 29 September and 2 October 2026. Full evidence, query IDs, and caveats are in [observed results](docs/results.md).
 
 | Measure | Result |
 |---|---|
@@ -19,11 +19,11 @@ Measured on live Snowflake runs between 29 September and 1 October 2026. Full ev
 | Source rows loaded into RAW | **216,361** across Seattle, San Francisco, and Anchorage |
 | Rows rejected with a recorded reason | **485**, all `invalid_origin_time`, kept for review |
 | Duplicate revision or site-bridge keys | **0** |
-| Batch receipts reconciled (RAW = staged = processed + rejected) | **All 178** |
+| Batch receipts reconciled (RAW = staged = processed + rejected) | **All 179** |
 | Failed-transform retry from RAW, with no refetch | **Passed**, with identical counts after rollback and retry |
 | Clone and Time Travel recovery drill | **Passed** on an isolated fixture table |
 | Secret-free unit and fixture tests in CI | **303** |
-| Cortex summaries passing human fact review | **9 of 9** evaluated (2 earlier briefs rejected); **0.0039** AI credits for 11 calls |
+| Cortex summaries passing human fact review | **9 of 9** in the evaluation; 4 other briefs rejected and replaced by SQL facts. **0.0039** AI credits measured for the first 11 calls |
 | First-backfill fetch-to-curated p95 | **35.9 h, missing the 24 h target** set before measuring |
 
 ## Architecture
@@ -131,7 +131,7 @@ PYTHONPATH=src .venv/bin/python -m quakewatch.raw_load \
 
 That check prints the expected row count and Snowflake stage path. It does not
 upload or process data. A live Snowflake load needs the configured project
-connection and can use warehouse credits; see the [runbook](docs/runbook.md).
+connection and can use warehouse credits; see the [operations reference](docs/operations-reference.md).
 
 ## Known limitations
 
@@ -169,7 +169,7 @@ src/quakewatch/   Extractor, loaders, and Snowpark procedure code
 sql/              Reviewed Snowflake DDL and checks, with setup order (sql/README.md)
 scripts/          Pipeline steps, checks, test-fixture builders, and evidence drills (scripts/README.md)
 tests/            Secret-free unit and fixture tests run in CI
-docs/             Design, data dictionary, runbook, and results
+docs/             Design, data dictionary, demo walkthrough, and results
 docs/evidence/    Dated results log with query IDs
 docs/plans/       Working plans for individual drills
 ```
@@ -178,7 +178,7 @@ docs/plans/       Working plans for individual drills
 
 - [Design and project plan](docs/design.md)
 - [Data dictionary](docs/data-dictionary.md): tables, grains, keys, and ERD
-- [Runbook](docs/runbook.md) and [operations reference](docs/operations-reference.md)
+- [Operations reference](docs/operations-reference.md) and [live demo walkthrough](docs/runbook.md)
 - [Results summary](docs/results.md) and [evidence log](docs/evidence/results-log.md)
 - [Scripts guide](scripts/README.md) and [SQL setup order](sql/README.md)
 - [Phase 4 close-out and remaining work](docs/phase4-closeout.md)

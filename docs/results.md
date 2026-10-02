@@ -5,7 +5,7 @@ next to the evidence for it. The dated, step-by-step record, including
 Snowflake query IDs, hashes, and every failed attempt, is in the
 [results evidence log](evidence/results-log.md).
 
-Live work ran between 29 September and 1 October 2026 on a personal Snowflake
+Live work ran between 29 September and 2 October 2026 on a personal Snowflake
 account. Counts are source observations, not unique earthquakes, and are not
 official USGS totals.
 
@@ -15,14 +15,14 @@ official USGS totals.
 |---|---|---|
 | History windows loaded and reconciled | **177 of 180** planned windows; windows 12, 42, and 73 timed out even after splitting and are recorded as gaps | [Capture log](evidence/results-log.md#first-history-window-attempt) |
 | RAW rows loaded | **216,361** history rows, plus an overlapping 15-row Seattle sample | [RAW loads](evidence/results-log.md#first-history-window-attempt) |
-| Batch receipts reconciled | **All 178** receipts: RAW = staged = processed + rejected | [Quality deployment](evidence/results-log.md#first-phase-3-quality-deployment-attempt) |
+| Batch receipts reconciled | **All 179** receipts (216,391 observations, including two overlapping 15-row Seattle samples): RAW = staged = processed + rejected | [2 October check](evidence/results-log.md#live-end-to-end-seattle-demo-2026-10-02) |
 | Rejected rows | **485**, all `invalid_origin_time`, kept with the original payload | [Quality deployment](evidence/results-log.md#first-phase-3-quality-deployment-attempt) |
 | Duplicate revision or site-bridge key groups | **0** | [Uniqueness check](evidence/results-log.md#first-phase-3-uniqueness-check) |
 | First-backfill fetch-to-curated p95 | **35.9 hours, missing the 24-hour target** set before measuring (178 attempts) | [Measurement plan and result](evidence/results-log.md#phase-3-first-backfill-measurement-plan-set-before-live-query) |
 | Failed transform, rollback, and retry from RAW | **Passed**; identical counts before failure, after rollback, and after retry | [Retry drill](evidence/results-log.md#isolated-failed-transform-and-retry-drill) |
 | Clone isolation and Time Travel recovery | **Passed** on a five-row fixture table; demo clone dropped | [Recovery drill](evidence/results-log.md#phase-4-clone-isolation-and-time-travel-drill) |
-| Cortex briefs passing human fact review | **9 of 9** evaluated, after 2 earlier briefs were rejected | [Cortex evaluation](evidence/results-log.md#phase-4-nine-case-cortex-evaluation) |
-| Measured Cortex cost | **0.003948756** AI credits for 11 completed calls, separate from warehouse compute | [Cortex evaluation](evidence/results-log.md#phase-4-nine-case-cortex-evaluation) |
+| Cortex briefs passing human fact review | **9 of 9** in the evaluation; **4 other briefs rejected** by fact checks (2 before it, 2 in the [2 October demo](evidence/results-log.md#live-end-to-end-seattle-demo-2026-10-02)), with SQL used instead | [Cortex evaluation](evidence/results-log.md#phase-4-nine-case-cortex-evaluation) |
+| Measured Cortex cost | **0.003948756** AI credits for the first 11 completed calls, separate from warehouse compute; the 2 October calls are unmeasured | [Cortex evaluation](evidence/results-log.md#phase-4-nine-case-cortex-evaluation) |
 | Warehouse usage snapshot | **0.088875** credits for one fully reported hour (shared warehouse; not a per-demo bill) | [Metering snapshot](evidence/results-log.md#phase-4-warehouse-metering-snapshot) |
 | Secret-free tests in GitHub Actions | **303** passing | [First CI run](evidence/results-log.md#first-github-actions-fixture-run) |
 
@@ -70,6 +70,7 @@ These are the success criteria from the [design](design.md#definition-of-success
 The [evidence log](evidence/results-log.md) is ordered newest first. Its
 sections are:
 
+- [Live end-to-end Seattle demo (2026-10-02)](evidence/results-log.md#live-end-to-end-seattle-demo-2026-10-02)
 - [Phase 4 ten-case Cortex aggregate snapshot](evidence/results-log.md#phase-4-ten-case-cortex-aggregate-snapshot)
 - [Phase 4 nine-case Cortex evaluation](evidence/results-log.md#phase-4-nine-case-cortex-evaluation)
 - [Phase 4 Cortex trial attempt](evidence/results-log.md#phase-4-cortex-trial-attempt)

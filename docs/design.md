@@ -4,7 +4,7 @@
 
 > A compact batch data warehouse for analyzing USGS earthquake records and revisions across public example locations. QuakeWatch is retrospective analysis, not an earthquake warning, risk score, or damage assessment. Distance and magnitude alone do not estimate shaking or impact.
 
-**Status:** implementation in progress. A bounded USGS batch extractor has completed one live Seattle query for 2026-09-28 UTC: the USGS count was 15 before and after the fetch, and all 15 returned features were saved. Snowflake loading, warehouse models, CI, and repeated-run performance evidence are not implemented yet. All estimates and acceptance criteria below are targets until supported by evidence.
+**Status (updated 2 October 2026):** this page is the frozen planning baseline written before implementation. Its plan, targets, and estimates are unchanged below. The batch path has since been built and measured; see the [results summary](results.md) for what was met, missed, and still open, and the checklist at the end of this page for a quick view.
 
 ### Run the current extractor
 
@@ -196,48 +196,29 @@ Controls: cap rows/tokens; allow one bounded retry; cache by aggregate hash; per
 
 **Cost:** Local extraction is effectively zero. Estimate Snowflake warehouse, storage, stage, and optional Cortex use from measured query/account history. `COPY INTO` and Snowpark transformations require warehouse compute. Use XS compute, auto-suspend, short sessions, keep optional Tasks suspended while idle, and drop temporary clones. Any hours or credits in the plan are a usage scenario, not a bill forecast; account region, edition, trial balance, compute minimums, pricing, and activity vary. Cortex usage history and warehouse credit consumption are separate.
 
-## Repository layout and build status
+## Repository layout
 
-The initial package, extractor, and environment are in place. The following files are planned and will be added in phases:
-
-    quakewatch/
-    ├── README.md
-    ├── pyproject.toml
-    ├── uv.lock
-    ├── .python-version
-    ├── .env.example
-    ├── .gitignore
-    ├── src/quakewatch/
-    │   ├── extract_batch.py
-    │   ├── settings.py
-    │   └── contract.py
-    ├── sql/
-    ├── tests/fixtures/
-    ├── docs/results.md
-    ├── docs/runbook.md
-    └── .github/workflows/ci.yml
-
-Snowflake loading, typed contracts, warehouse objects, tests, CI workflow, and operational evidence are still to be built.
+The layout planned here was superseded during implementation. See the [README](../README.md#repository-layout) for the current layout.
 
 ## Demo and acceptance checklist
 
 Two-minute demo: 0:00–0:15 problem and safe claim; 0:15–0:35 bounded request and manifest; 0:35–0:55 staged JSONL and raw VARIANT row; 0:55–1:15 Snowpark fact/dimension build and current view; 1:15–1:35 overlapping rerun and revision history; 1:35–1:50 failed transform retry or clone/Time Travel if complete; 1:50–2:00 analytical query, actual evidence, and limitations. Planned steps must not be shown as completed.
 
-All boxes are unchecked because implementation evidence is absent:
+Status as of 2 October 2026. Each ticked item links to its evidence.
 
-- [ ] Choose public example sites/radii and state limitations.
-- [ ] Save normal, revision, deletion, malformed, additive-field, over-limit, count-mismatch, and incomplete-window fixtures.
-- [ ] Implement initial per-site origin-time windows plus catalog-wide `updatedafter` sweep, overlap, query-window audit, and append-only attempt/process manifests.
-- [ ] Create Snowflake stage, RAW_EVENT_RECORDS VARIANT table, role, and key-pair auth outside Git.
-- [ ] Load JSONL files with `COPY INTO`; reconcile files, query windows, and counts.
-- [ ] Create typed staging, reject handling, dimensions, revision fact, site bridge, batch fact, and current view.
-- [ ] Implement alias/tombstone rules, revision ranking, distance, and dedupe-before-`MERGE`.
-- [ ] Demonstrate idempotent overlapping batch, old-event update capture, transform retry, and current-key uniqueness.
-- [ ] Add data-quality, coverage, and health queries.
-- [ ] Measure a stated sample; publish actual results with dates and evidence.
-- [ ] Ask one target user if historical comparison is useful.
-- [ ] Complete clone/Time Travel and Cortex only after core batch recovery works.
-- [ ] Run GitHub Actions fixture CI; link only a real status badge.
+- [x] Choose public example sites/radii and state limitations. ([settings](../src/quakewatch/settings.py), [README](../README.md))
+- [x] Save normal, revision, deletion, malformed, additive-field, over-limit, count-mismatch, and incomplete-window fixtures. ([fixtures](../tests/fixtures/README.md))
+- [x] Implement initial per-site origin-time windows plus catalog-wide `updatedafter` sweep, overlap, query-window audit, and append-only attempt/process manifests. The sweep is implemented but has not completed live; see [limitations](results.md#still-open).
+- [x] Create Snowflake stage, RAW_EVENT_RECORDS VARIANT table, role, and key-pair auth outside Git. ([environment check](environment.md))
+- [x] Load JSONL files with `COPY INTO`; reconcile files, query windows, and counts. 177 of 180 windows loaded; 3 source gaps.
+- [x] Create typed staging, reject handling, dimensions, revision fact, site bridge, batch fact, and current view. ([data dictionary](data-dictionary.md))
+- [x] Implement alias/tombstone rules, revision ranking, distance, and dedupe-before-`MERGE`.
+- [x] Demonstrate idempotent overlapping batch, old-event update capture, transform retry, and current-key uniqueness. Proven on isolated fixtures; old-event capture by a live sweep is still open.
+- [x] Add data-quality, coverage, and health queries. ([SQL](../sql/README.md))
+- [x] Measure a stated sample; publish actual results with dates and evidence. The latency target was missed and is reported. ([results](results.md))
+- [ ] Ask one target user if historical comparison is useful. ([interview guide](target-user-interview.md) prepared; no session held)
+- [x] Complete clone/Time Travel and Cortex only after core batch recovery works. ([close-out](phase4-closeout.md))
+- [x] Run GitHub Actions fixture CI; link only a real status badge.
 
 ## Risks and known limits
 

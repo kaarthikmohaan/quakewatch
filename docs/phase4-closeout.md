@@ -13,7 +13,7 @@ per-demo bill; the three source gaps and update sweep remain open.
 | Time Travel | `BEFORE` the captured `MERGE` query ID returned the original value and five rows | One-day table retention; statement-ID evidence ages out |
 | Demo cleanup | Guarded `DROP` removed the demo clone; source remained five rows | Fixture database and test-only failure procedure remain |
 | Cortex brief | Not run | Optional feature; no user comparison or token/credit measurement, so no usefulness or cost claim |
-| Documentation | README, runbook, recovery plan, dated results, and two-minute demo updated | Current local commits are ahead of the last pushed CI run |
+| Documentation | README, runbook, recovery plan, dated results, and two-minute demo updated | Later documentation changes are tracked in Git history |
 | Actual account usage | Read-only Account Usage snapshot returned 0.088875 compute credits for 08:00–09:00 UTC and 0.0705 for the still-running 09:00–10:00 hour | Shared warehouse, lagged data; no per-demo or dollar cost and no storage measurement |
 
 The full [query IDs, counts, and limitations](results.md) remain the evidence
