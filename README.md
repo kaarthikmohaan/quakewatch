@@ -40,20 +40,26 @@ The analyst use case is a hypothesis: no target user has tested it yet (see
 
 ## Key results
 
-Measured on live Snowflake runs between 29 September and 2 October 2026. Full evidence, query IDs, and caveats are in [observed results](docs/results.md).
+Verified on 2 October 2026 by re-running the checks from a clean clone:
+read-only queries against the live warehouse plus the full local suite.
+Query IDs, method, and earlier dated runs are in the
+[evidence log](docs/evidence/results-log.md#verification-audit-2026-10-02).
 
 | Measure | Result |
 |---|---|
-| History windows loaded and reconciled | **177 of 180** (3 recorded as USGS source gaps) |
-| Source rows loaded into RAW | **216,361** across Seattle, San Francisco, and Anchorage |
-| Rows rejected with a recorded reason | **485**, all traced to USGS placeholder ("stub") records whose events exist as full records under another ID ([analysis](docs/results.md#reject-analysis)) |
+| History windows loaded and reconciled | **177 of 180**; windows 12, 42, and 73 are recorded USGS source gaps |
+| Rows reconciled in the warehouse | **216,391** across **179** batch receipts: RAW = staged = processed + rejected (216,361 history rows plus two 15-row Seattle samples) |
+| Rows rejected with a recorded reason | **485**, all USGS placeholder ("stub") records whose events exist as full records under another ID ([analysis](docs/results.md#reject-analysis)) |
 | Duplicate revision or site-bridge keys | **0** |
-| Batch receipts reconciled (RAW = staged = processed + rejected) | **All 179** |
-| Failed-transform retry from RAW, with no refetch | **Passed** in a recorded live drill, with identical counts after rollback and retry; the logic is also covered by offline tests |
-| Clone and Time Travel recovery drill | **Passed** on an isolated fixture table |
-| Secret-free unit and fixture tests, run in CI with lint, format, and type checks | **340**, covering 86% of `src/` |
-| Cortex summaries passing human fact review | **9 of 9** in the evaluation; 4 other briefs rejected and replaced by SQL facts. **0.0039** AI credits measured for the first 11 calls |
-| First-backfill fetch-to-curated p95 | **35.9 h, missing the 24 h target** set before measuring; a single batch processed as it landed took 293 s |
+| Fetch-to-curated latency, 179 attempts | p95 **35.9 h**, missing the 24 h target set before measuring; the one batch processed as it landed took **293 s** |
+| Live SQL compile check | **35 of 35** procedure and query statements compile against the live schema |
+| Tests, run in CI with lint, format, and type checks | **340** passing, covering **86%** of `src/` |
+| Clean clone to first successful run | **3 min 15 s**, following this README |
+
+Also demonstrated in earlier recorded runs, not repeated on 2 October: a
+failed transform retried from RAW without refetching, a clone and Time Travel
+recovery, and a Cortex summary evaluation with SQL fact checks. Their results
+are in the [evidence log](docs/evidence/results-log.md).
 
 ## Architecture
 
@@ -96,7 +102,7 @@ WHERE b.WITHIN_RADIUS
 GROUP BY 1, 2;
 ```
 
-Recorded output on 1 October 2026 (chart drawn from these values):
+Output of the 2 October 2026 verification run (chart drawn from these values):
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/site-year-counts-dark.png">
@@ -258,9 +264,9 @@ sql/              Snowflake SQL by purpose: setup/ (numbered), load/, checks/, a
 scripts/          Pipeline steps, checks, test-fixture builders, and evidence drills (scripts/README.md)
 tests/            Secret-free unit and fixture tests run in CI
 Makefile          One command per step; `make help` lists them
-docs/             Design, data dictionary, demo walkthrough, and results
+docs/             Design, data dictionary, results summary, and operations reference
 docs/adr/         Architecture decision records
-docs/evidence/    Dated results log, environment check, Phase 4 close-out, Cortex evaluation
+docs/evidence/    Dated records: results log, live demo, environment check, Phase 4 close-out, Cortex evaluation
 docs/plans/       Working plans for individual drills
 ```
 
@@ -274,7 +280,7 @@ reference material.
 | To… | Read |
 |---|---|
 | Run it | [Operations reference](docs/operations-reference.md), [scripts guide](scripts/README.md), [SQL setup order](sql/README.md) |
-| See it run | [Live demo walkthrough](docs/live-demo-walkthrough.md), [two-minute demo](docs/demo.md) |
+| See it run | [Live demo walkthrough](docs/evidence/live-demo-2026-10-02.md), [two-minute demo](docs/demo.md) |
 | Check the evidence | [Evidence log](docs/evidence/results-log.md), [Phase 4 close-out](docs/evidence/phase4-closeout.md), [Cortex evaluation](docs/evidence/phase4-cortex-evaluation.md), [environment check](docs/evidence/phase0-environment-check.md) |
 | See the original plan | [Design](docs/design.md), [target-analyst interview guide](docs/target-user-interview.md) |
 | Contribute | [Contributing](CONTRIBUTING.md), [code of conduct](CODE_OF_CONDUCT.md), [security policy](SECURITY.md), [accessibility](ACCESSIBILITY.md) |

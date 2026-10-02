@@ -114,7 +114,7 @@ touched.
 Local test discovery passed all 303 tests. The demo did not rerun the five-year
 backfill, fill the source gaps, advance the watermark, measure its warehouse
 credits, or run a target-user interview. Step-by-step detail is in the
-[live demo walkthrough](../live-demo-walkthrough.md).
+[live demo walkthrough](live-demo-2026-10-02.md).
 
 ## Phase 4 ten-case Cortex aggregate snapshot
 
@@ -430,6 +430,11 @@ performance claim. The manifest and rows are under ignored `data/raw/`.
 
 ## First RAW load
 
+The [raw-table SQL](../../sql/setup/02_raw_tables.sql) created
+`QUAKEWATCH.RAW.BATCH_ATTEMPT` and `QUAKEWATCH.RAW.RAW_EVENT_RECORDS` under
+`QUAKEWATCH_ROLE` on 2026-09-29; `DESCRIBE TABLE` confirmed 21 and 10 columns
+respectively, including the full-source `PAYLOAD VARIANT`.
+
 On 2026-09-29 the Python loader ran for attempt `20260929T075452Z-26375840ea`,
 whose manifest and JSONL each held 15 rows. The terminal reported
 `Loaded and reconciled RAW rows: 15` after the COPY result and attempt-filtered
@@ -670,6 +675,12 @@ This completed loading the captured history, not Phase 1: windows 12, 42, and
 73 remain gaps, and the catalog-wide update sweep is outstanding.
 
 ## First update-sweep bootstrap preparation
+
+**Offline sweep tests (2026-09-30).** The update-sweep test modules
+(`tests.test_update_extract`, `tests.test_update_plan`, `tests.test_extract_batch`,
+`tests.test_raw_load`) passed 38 tests, including mocked over-limit splitting
+with an old deleted record, source failure and deadline evidence, and loader
+compatibility.
 
 **Bootstrap watermark (2026-09-30).** The earliest successful capture was the
 one-day sample at `2026-09-29T07:54:52.786Z`; the earliest complete planned

@@ -14,11 +14,11 @@ The extractor writes one JSON object per line to `events.jsonl`. Each line conta
 | `metadata.payload_hash` | SHA-256 of canonicalized source-feature JSON |
 | `metadata.parser_version` | Version of the local raw-record envelope; currently `1` |
 
-`manifest.json` records the requested site and time range, query parameters, per-window counts before and after retrieval, returned and written row counts, and final status. Local raw output is ignored by Git. The 15-row Seattle sample and 177 complete planned history windows have been loaded into the Snowflake RAW table; three planned history windows remain source gaps. See [observed results](results.md) for verified counts.
+`manifest.json` records the requested site and time range, query parameters, per-window counts before and after retrieval, returned and written row counts, and final status. Local raw output is ignored by Git. At the 2 October 2026 verification, RAW held 179 batches: 177 complete planned history windows and two 15-row Seattle samples. Three planned history windows remain source gaps. See [observed results](results.md) for verified counts.
 
 ## Warehouse grains
 
-See [design.md](design.md) for the full model. RAW has one source feature per query window and attempt. The revision fact has one distinct canonical event revision. The current-event view selects the latest non-stale revision and hides a latest tombstone. These grains were exercised by the 15-row project pilot, isolated synthetic fixtures, and 177 processed history attempts. Post-run checks found zero duplicate revision or bridge key groups and grouped all 485 rejects under one reason; see [observed results](results.md).
+See [design.md](design.md) for the full model. RAW has one source feature per query window and attempt. The revision fact has one distinct canonical event revision. The current-event view selects the latest non-stale revision and hides a latest tombstone. The 2 October verification found zero duplicate revision or bridge key groups across all 179 processed batches, and all 485 rejects under one reason (`source_stub_record`); see [observed results](results.md).
 
 ### Entity relationships
 
@@ -116,7 +116,7 @@ erDiagram
 
 ## Phase 1 raw tables
 
-The [raw-table SQL](../sql/setup/02_raw_tables.sql) created two tables in `QUAKEWATCH.RAW` on 2026-09-29. `DESCRIBE TABLE` verified their columns and types. The subsequent read-only receipt check confirmed 177 complete history attempts loaded with matching RAW counts:
+The [raw-table SQL](../sql/setup/02_raw_tables.sql) defines two tables in `QUAKEWATCH.RAW`:
 
 | Table | Grain and important fields |
 |---|---|
@@ -152,9 +152,9 @@ The local [alias helper](../src/quakewatch/aliases.py) connects each preferred `
 
 The local [current-revision selector](../src/quakewatch/revisions.py) ranks each canonical event's revisions by source update time, then fetch time, then payload hash, with the staged file-row key as a final stable tie-breaker. It retains a latest `deleted` tombstone in history but hides that event from the visible current set. A later stale replay cannot override the tombstone. Origin time is retained but never used to decide the winner, so an old event updated recently is still eligible.
 
-The [revision fact and current-view SQL](../sql/setup/07_revision_current.sql) defines `FACT_EVENT_REVISION` at `(CANONICAL_EVENT_ID, SOURCE_UPDATED_AT, PAYLOAD_HASH)` grain and an `EVENT_CURRENT` view. The view ranks all revisions first and then removes a latest `deleted` tombstone. The fact keeps source, fetch, and curated clocks, source IDs, typed attributes, and source file-row lineage. The project objects were created for the 15-row pilot on 2026-09-30, and the isolated fixture copy verified later update, tombstone, stale replay, and old-origin update behavior. See [measured results](results.md). The Snowpark procedure enforces fact grain during `MERGE` and handles alias rekeys in one transaction.
+The [revision fact and current-view SQL](../sql/setup/07_revision_current.sql) defines `FACT_EVENT_REVISION` at `(CANONICAL_EVENT_ID, SOURCE_UPDATED_AT, PAYLOAD_HASH)` grain and an `EVENT_CURRENT` view. The view ranks all revisions first and then removes a latest `deleted` tombstone. The fact keeps source, fetch, and curated clocks, source IDs, typed attributes, and source file-row lineage. Isolated fixture runs verified later-update, tombstone, stale-replay, and old-origin update behavior; see the [evidence log](evidence/results-log.md#phase-2-exit-review-2026-10-01). See [measured results](results.md). The Snowpark procedure enforces fact grain during `MERGE` and handles alias rekeys in one transaction.
 
-The local [dimension and bridge DDL](../sql/setup/06_dimensions_bridge.sql) defines one row per UTC date, public example site, observed magnitude type, and observed status. `BRIDGE_EVENT_SITE` has one row per `(CANONICAL_EVENT_ID, SOURCE_UPDATED_AT, PAYLOAD_HASH, SITE_KEY)` and holds horizontal epicentral distance plus a within-radius flag. A deleted record without coordinates retains a bridge row with null distance and flag. The Snowpark procedure populates the public sites from `settings.py` and enforces these grains during `MERGE`; these tables were created for the pilot and populated during the 177 history processing calls.
+The local [dimension and bridge DDL](../sql/setup/06_dimensions_bridge.sql) defines one row per UTC date, public example site, observed magnitude type, and observed status. `BRIDGE_EVENT_SITE` has one row per `(CANONICAL_EVENT_ID, SOURCE_UPDATED_AT, PAYLOAD_HASH, SITE_KEY)` and holds horizontal epicentral distance plus a within-radius flag. A deleted record without coordinates retains a bridge row with null distance and flag. The Snowpark procedure populates the public sites from `settings.py` and enforces these grains during `MERGE`; these tables hold the 179 processed batches.
 
 The [distance helper](../src/quakewatch/site_distance.py) uses the haversine great-circle formula with a 6,371.0088 km mean Earth radius and the public centers/radii in `settings.py`. The Snowpark procedure uses it to create one bridge value for each configured site. A boundary distance counts as within radius; absent tombstone coordinates yield null distance and flag for all three sites. This is horizontal epicentral distance only; it does not use earthquake depth or estimate shaking.
 

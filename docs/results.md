@@ -5,26 +5,34 @@ next to the evidence for it. The dated, step-by-step record, including
 Snowflake query IDs, hashes, and every failed attempt, is in the
 [results evidence log](evidence/results-log.md).
 
-Live work ran between 29 September and 2 October 2026 on a personal Snowflake
-account. Counts are source observations, not unique earthquakes, and are not
-official USGS totals.
+The figures below come from the 2 October 2026 verification run: read-only
+queries against the live warehouse and the full local suite, re-run from a
+clean clone. Counts are source observations, not unique earthquakes, and are
+not official USGS totals.
 
 ## Headline numbers
 
-| Measure | Result | Evidence |
+| Measure | Result (2 October 2026) | Evidence |
 |---|---|---|
-| History windows loaded and reconciled | **177 of 180** planned windows; windows 12, 42, and 73 timed out even after splitting and are recorded as gaps | [Capture log](evidence/results-log.md#first-history-window-attempt) |
-| RAW rows loaded | **216,361** history rows, plus an overlapping 15-row Seattle sample | [RAW loads](evidence/results-log.md#first-history-window-attempt) |
-| Batch receipts reconciled | **All 179** receipts (216,391 observations, including two overlapping 15-row Seattle samples): RAW = staged = processed + rejected | [2 October check](evidence/results-log.md#live-end-to-end-seattle-demo-2026-10-02) |
-| Rejected rows | **485**, all USGS placeholder ("stub") records, stored as `source_stub_record`; see [reject analysis](#reject-analysis) | [Quality deployment](evidence/results-log.md#first-phase-3-quality-deployment-attempt) |
-| Duplicate revision or site-bridge key groups | **0** | [Uniqueness check](evidence/results-log.md#first-phase-3-uniqueness-check) |
-| First-backfill fetch-to-curated p95 | **35.9 hours, missing the 24-hour target** set before measuring (178 attempts); a 2 October recheck with 179 attempts gave the same p95 | [Measurement plan and result](evidence/results-log.md#phase-3-first-backfill-measurement-plan-set-before-live-query), [recheck](evidence/results-log.md#verification-audit-2026-10-02) |
-| Failed transform, rollback, and retry from RAW | **Passed**; identical counts before failure, after rollback, and after retry | [Retry drill](evidence/results-log.md#isolated-failed-transform-and-retry-drill) |
-| Clone isolation and Time Travel recovery | **Passed** on a five-row fixture table; demo clone dropped | [Recovery drill](evidence/results-log.md#phase-4-clone-isolation-and-time-travel-drill) |
-| Cortex briefs passing human fact review | **9 of 9** in the evaluation; **4 other briefs rejected** by fact checks (2 before it, 2 in the [2 October demo](evidence/results-log.md#live-end-to-end-seattle-demo-2026-10-02)), with SQL used instead | [Cortex evaluation](evidence/results-log.md#phase-4-nine-case-cortex-evaluation) |
-| Measured Cortex cost | **0.003948756** AI credits for the first 11 completed calls, separate from warehouse compute; the 2 October calls are unmeasured | [Cortex evaluation](evidence/results-log.md#phase-4-nine-case-cortex-evaluation) |
-| Warehouse usage snapshot | **0.088875** credits for one fully reported hour (shared warehouse; not a per-demo bill) | [Metering snapshot](evidence/results-log.md#phase-4-warehouse-metering-snapshot) |
-| Secret-free tests | **340**, run in GitHub Actions with ruff lint and format checks, mypy, and coverage (86% of `src/`, minimum 80%) on every push | [CI workflow](../.github/workflows/ci.yml), [first CI run](evidence/results-log.md#first-github-actions-fixture-run) |
+| History windows loaded and reconciled | **177 of 180** planned windows; windows 12, 42, and 73 timed out even after splitting and are recorded as gaps | [Verification](evidence/results-log.md#verification-audit-2026-10-02), [capture log](evidence/results-log.md#first-history-window-attempt) |
+| Batch receipts reconciled | **All 179** receipts; **216,391** rows at every layer (216,361 history rows plus two overlapping 15-row Seattle samples): RAW = staged = processed + rejected | [Verification](evidence/results-log.md#verification-audit-2026-10-02) |
+| Rejected rows | **485**, all USGS placeholder ("stub") records, stored as `source_stub_record`; see [reject analysis](#reject-analysis) | [Verification](evidence/results-log.md#verification-audit-2026-10-02) |
+| Duplicate revision or site-bridge key groups | **0** | [Verification](evidence/results-log.md#verification-audit-2026-10-02) |
+| Fetch-to-curated latency | **179** attempts: p95 **35.9 hours**, missing the 24-hour target set before measuring; minimum **293 seconds** | [Verification](evidence/results-log.md#verification-audit-2026-10-02), [measurement plan](evidence/results-log.md#phase-3-first-backfill-measurement-plan-set-before-live-query) |
+| Site-by-year counts | All nine counts and the Seattle-day sample match the README table | [Verification](evidence/results-log.md#verification-audit-2026-10-02) |
+| Live SQL compile check | **35 of 35** statements compile against the live schema; procedure present | [Verification](evidence/results-log.md#verification-audit-2026-10-02) |
+| Secret-free tests | **340** passing, with ruff lint and format checks, mypy, and coverage (**86%** of `src/`, minimum 80%) | [CI workflow](../.github/workflows/ci.yml) |
+
+### Earlier recorded runs
+
+These were not repeated on 2 October. Their dated results, query IDs, and
+limits are in the evidence log:
+
+- [Failed transform, rollback, and retry from RAW](evidence/results-log.md#isolated-failed-transform-and-retry-drill)
+- [Clone isolation and Time Travel recovery](evidence/results-log.md#phase-4-clone-isolation-and-time-travel-drill)
+- [Cortex brief evaluation and measured AI credits](evidence/results-log.md#phase-4-nine-case-cortex-evaluation)
+- [Warehouse metering snapshot](evidence/results-log.md#phase-4-warehouse-metering-snapshot)
+- [Parser version 2 release](evidence/results-log.md#parser-version-2-release-2026-10-02)
 
 ## Design targets and status
 
@@ -32,7 +40,7 @@ These are the success criteria from the [design](design.md#definition-of-success
 
 | Target | Status | Evidence |
 |---|---|---|
-| Every batch records its range, parameters, counts, fetch time, outcome, and gaps | **Met** | Manifests and `BATCH_ATTEMPT` receipts for all 178 attempts |
+| Every batch records its range, parameters, counts, fetch time, outcome, and gaps | **Met** | Manifests and `BATCH_ATTEMPT` receipts for all 179 attempts |
 | RAW keeps the full source record and batch metadata | **Met** | Full GeoJSON payload stored as VARIANT with attempt and file metadata |
 | Re-running a batch adds no duplicate logical revisions | **Met** for tested cases | Same-attempt rerun merged zero revisions; cross-attempt overlap fixture kept unique keys |
 | An old-event revision found by the update sweep updates history and the current view | **Partly met** | Proven on synthetic fixtures; the live catalog-wide sweep has not completed |
@@ -80,15 +88,13 @@ staging and fact rows as version 2 ([release record](evidence/results-log.md#par
 
 ## Latency evidence
 
-Fetch-to-curated latency was first measured on the 178-attempt first
-backfill, where curation was run manually in bulk after loading (p95 35.9
-hours). A recheck on 2 October covered 179 attempts, including the 2 October
-demo batch, and gave the same p95 (129,167.9 seconds, 35.9 hours) and a minimum
-of **293 seconds**. That minimum is the one batch processed straight after it
-was fetched: a single data point for what scheduled, per-batch processing could
-achieve, not a measured steady state. A real steady-state sample needs
-scheduled runs; this is listed under [still open](#still-open)
-([audit record](evidence/results-log.md#verification-audit-2026-10-02)).
+The 2 October run measured 179 attempts: p95 129,167.9 seconds (35.9 hours),
+minimum 293 seconds. Almost all attempts belong to the first backfill, whose
+curation was run manually in bulk after loading, which is why the target was
+missed. The 293-second minimum is the one batch processed straight after it
+was fetched: a single data point for scheduled, per-batch processing, not a
+measured steady state. A steady-state sample needs scheduled runs; this is
+listed under [still open](#still-open) ([verification](evidence/results-log.md#verification-audit-2026-10-02)).
 
 ## Still open
 

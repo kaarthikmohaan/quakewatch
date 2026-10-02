@@ -1,10 +1,13 @@
 # Operations reference
 
-This preserves the detailed operating procedures that preceded the
-[2 October 2026 live demo](live-demo-walkthrough.md). Some status statements describe the
-state at the time of the original run. Use [results](results.md) for later
-measured outcomes, and check current account and source state before running
-any command that connects to Snowflake or USGS.
+How to run every QuakeWatch command, what each one checks, and which ones must
+not be rerun. Measured results are in the [results summary](results.md) and the
+dated [evidence log](evidence/results-log.md). Check current account and source
+state before running anything that connects to Snowflake or USGS.
+
+Most commands below have a `make` target (`make help` lists them). Commands that
+reach USGS or Snowflake preview by default and act only with `--execute` (or
+`EXECUTE=1` for `make`). Every Snowflake run uses warehouse credits.
 
 ## Local setup
 
@@ -12,9 +15,13 @@ any command that connects to Snowflake or USGS.
 2. From the repository root, run `uv sync --locked --no-editable`.
 3. Run a small, explicit time range before requesting a multi-year history.
 
-The non-editable install is used because the editable-package path was not loading correctly in this local environment. After changing package code, run `uv sync --locked --no-editable --reinstall-package quakewatch` to rebuild the installed wheel; a plain `uv sync` can report everything checked while leaving an older wheel installed.
+The non-editable install is used because the editable-package path did not load
+correctly in this local environment. After changing package code, run
+`uv sync --locked --no-editable --reinstall-package quakewatch`; a plain
+`uv sync` can report everything checked while leaving an older wheel installed.
 
-Phase 1 also locks the Snowflake Python Connector for the planned batch loader. Installing it locally does not connect to Snowflake or start warehouse compute. The loader will read the existing project key-pair profile outside Git and ask for the encrypted key passphrase locally; do not put that passphrase in a command, config file, or chat.
+Installing the Snowflake Python Connector does not connect to Snowflake or start
+warehouse compute.
 
 ## Fetch a bounded batch
 
@@ -25,137 +32,156 @@ Phase 1 also locks the Snowflake Python Connector for the planned batch loader. 
   --end 2026-09-29T00:00:00Z
 ```
 
-Supported public demo sites are `seattle`, `san-francisco`, and `anchorage`. Times without an explicit zone are interpreted as UTC. Output goes to `data/raw/<attempt-id>/` unless `--output` is provided. Keep private coordinates and credentials out of the repository.
+Supported public demo sites are `seattle`, `san-francisco`, and `anchorage`.
+Times without an explicit zone are UTC. Output goes to `data/raw/<attempt-id>/`
+unless `--output` is provided. Keep private coordinates and credentials out of
+the repository. This command fetches immediately; it has no preview mode.
 
-Before the five-year initial history, preview its fixed origin-time requests with `PYTHONPATH=src .venv/bin/python -m quakewatch.history_plan --cutoff 2026-09-29T00:00:00Z`. It prints 60 contiguous month-sized windows for each public site (180 total) without contacting USGS or Snowflake. The earlier year-sized Seattle count request timed out, while its first month reconciled, so the initial request size was reduced. The extractor still checks each request's USGS count and splits a window when needed. The previously loaded one-day Seattle sample overlaps the final history window; later revision processing must deduplicate source observations across attempts.
+## Capture the five-year history
 
-Use `PYTHONPATH=src .venv/bin/python -m quakewatch.history_plan --cutoff 2026-09-29T00:00:00Z --resume-preview` to see the first month without a complete local manifest and event file. This is a local capture inventory only; it does not query Snowflake or prove a capture was loaded. Failed manifests remain visible in their attempt folders and are not counted as complete.
+`PYTHONPATH=src .venv/bin/python -m quakewatch.history_plan --cutoff 2026-09-29T00:00:00Z`
+prints 60 contiguous month-sized windows per public site (180 in total) without
+contacting USGS or Snowflake (`make plan-history`). Month-sized windows replaced
+year-sized ones after a year-long count request timed out.
 
-Preview a bounded extraction run with `PYTHONPATH=src .venv/bin/python -m quakewatch.history_plan --cutoff 2026-09-29T00:00:00Z --resume --max-windows 50`. Add `--execute` only when ready to contact USGS. The limit must be 1–50 windows per invocation. The command stops at the first failed manifest and reports its path; rerun after inspecting the coverage gap. It does not upload to Snowflake or check which captures were loaded there.
+| Option | Effect |
+|---|---|
+| `--resume-preview` | Shows the first month without a complete local manifest and event file. Local inventory only; failed manifests stay visible and are not counted as complete. |
+| `--resume --max-windows N` | Previews a run of up to N windows (1–50); add `--execute` to contact USGS (`make capture-history`). Stops at the first failed manifest and reports its path. Does not load Snowflake. |
+| `--start-window N` | With `--resume`, continues from a later month. Skipped windows stay uncaptured and visible; the history must be reported as incomplete until they reconcile. |
+| `--window N` | Previews one window; with `--execute`, fetches just that window. `--execute` without `--window` or `--resume` is refused, so the full history cannot start by accident. |
+| `--source-days 7` or `1` | Starts a slow month as contiguous child requests of at most that many days. Every child must reconcile before the month is complete; a failed child writes no partial file. |
+| `--resume-children` | Saves each reconciled child under `data/raw/<attempt-id>/children/` and reuses a checkpoint only when its logical batch, slice size, query parameters, content hash, and counts all match. Reused rows keep their original fetch time. |
+| `--source-hours 3 --hourly-child N` | With `--source-days 1 --resume-children`, splits only daily child N (1-based, from the failed manifest) into three-hour requests, each with its own checkpoint. |
 
-When a month remains unresolved after bounded retries, use an explicit `--start-window 13` with `--resume` to continue from a later month. The skipped window stays uncaptured and visible in `--resume-preview`; the resulting history must be reported as incomplete until that gap is reconciled. This option does not mark skipped windows complete or change existing manifests.
+How the extractor protects coverage:
 
-Inventory and validate the local files eligible for a RAW load with `PYTHONPATH=src .venv/bin/python -m quakewatch.history_load_plan --cutoff 2026-09-29T00:00:00Z`. It prints one selected attempt and expected row count per captured history window. Every line is a **candidate**, not proof of an outstanding load: this command makes no Snowflake connection, so previously loaded attempts may appear. Check Snowflake receipts before any future bulk load.
-
-To also check Snowflake, which uses warehouse credits, add `--check-snowflake` to that command. It prompts locally for the project key passphrase, reads `BATCH_ATTEMPT` and attempt-filtered RAW counts, and labels candidates `loaded`, `ready`, or `investigate`. `loaded` requires one complete receipt and matching receipt/RAW/local row counts; `ready` requires no receipt and no RAW rows. Any failed or duplicate receipt, or count mismatch, is `investigate` and must not be bulk loaded. The check performs SELECT only, with no PUT or COPY.
-
-Preview the bounded RAW loader with `PYTHONPATH=src .venv/bin/python -m quakewatch.history_raw_load --cutoff 2026-09-29T00:00:00Z --max-windows 50`. This only validates local candidates. To run it, which uses warehouse credits, add `--execute`; it connects once, checks all candidate receipts and RAW counts, and loads at most 50 `ready` attempts in window order. It rechecks each selected attempt immediately before PUT/COPY and stops on any `investigate` state or load error. The limit must be 1–50; rerunning skips attempts with matching complete receipts. This command does not extract new USGS windows.
-
-Add `--window 1` to preview only the first Seattle month, 2021-09-29 through 2021-10-29. Add `--execute` with an explicit window number to fetch just that one range into an attempt-specific `data/raw/` directory; it does not load Snowflake. Inspect its manifest and counts before choosing another window. The command refuses `--execute` without `--window` so the full history cannot start accidentally. The first month is already captured as attempt `20260929T161003Z-5d0e466a47`; do not re-fetch it just to advance the plan.
-
-The extractor targets fewer than 10,000 features per leaf request, giving headroom below the USGS 20,000-result service limit. At a count of 10,000 or more it splits the time window before fetching features; the source may still change between count and fetch, so before/after count reconciliation remains required.
-
-If the source count or feature request repeatedly times out, the extractor now splits that time window into smaller audited requests, up to three timeout split levels. It still compares before/fetched/after counts on each leaf. If a leaf continues timing out, the attempt fails with an unresolved coverage gap; partial sibling rows are not written as a complete capture. This responds to the two saved window-12 timeout attempts without erasing them.
-
-For a known slow month, add `--source-days 7` to an explicit `history_plan --window N --execute` (or a bounded `--resume --max-windows N --execute`) command. The logical monthly batch stays the same, while the extractor begins with contiguous, overlapping-at-boundary source calls of at most seven days. The manifest records the planned parent split and every child count/fetch result. Every child must reconcile before the monthly attempt is complete; a failed child leaves the month unresolved and writes no partial file. This option is based on the exact-parameter seven-day San Francisco count that returned 341 on 2026-09-30; its live feature capture has not yet been verified.
-
-For repeated daily retries, add `--source-days 1 --resume-children` to an explicit history window. Each successfully reconciled child is saved atomically under its attempt's ignored `data/raw/<attempt-id>/children/` folder. A later attempt reuses only a checkpoint with the same logical batch, slice size, query parameters, intact content hash, and reconciled child counts. The new manifest labels reused children with their original attempt ID, and records fresh and reused row totals separately; each output row keeps its original child fetch time. A failed monthly attempt still writes no `events.jsonl` and remains an explicit coverage gap. A successful month can combine prior reconciled children with newly fetched children; this is best-effort source reconciliation across times, not a transactionally consistent USGS snapshot. The update sweep must still detect later source changes. Earlier attempts made without `--resume-children` have no feature checkpoints and must be fetched again once before later reuse is possible.
-
-When a specific daily child repeatedly times out, add `--source-hours 3 --hourly-child N` alongside `--source-days 1 --resume-children`, where `N` is the 1-based daily child number from the failed manifest (for example, `11` for Seattle history window 12). Already reconciled daily checkpoints are reused. Only that uncached daily child is planned as contiguous three-hour source requests; every reconciled hourly child gets its own hashed checkpoint. Other uncached days remain daily requests. A retry with the same options can reuse completed hourly children. The full logical month still writes no `events.jsonl` and cannot load until every child reconciles. Hourly slicing is an extraction retry strategy within the frozen batch design, not streaming or proof of a transactionally consistent source snapshot.
-
-During a week-sliced capture, `manifest.json` now records `active_window` and saves each completed child audit before beginning the next. If the deadline or an interruption occurs, the failed manifest retains the reconciled child audits and marks the active child as unresolved. The attempt still writes no partial `events.jsonl`; rerun it as a new attempt after investigating the gap.
-
-After the one-day-sliced window-73 attempt spent its remaining deadline on repeated reads of October 25–26, consecutive HTTP read timeouts were capped at two attempts. This gives recursive time splitting a chance before the monthly budget expires. Other temporary transport errors and retryable HTTP statuses retain the four-attempt cap. A completed month still requires before/fetch/after reconciliation for every leaf.
-
-Each source window has a 180-second wall-clock budget shared by its HTTP retries and splits. Before each request and retry wait, the extractor checks the remaining time and caps the request timeout to it. If the budget expires, the attempt is marked failed with zero written rows and an explicit full-window unresolved gap. An interrupted command is audited the same way. A 50-window run still stops at that failed month; use an explicit later `--start-window` to continue while keeping the gap visible.
+- It targets fewer than 10,000 features per leaf request, below the USGS
+  20,000-result limit, and splits a window at a count of 10,000 or more before
+  fetching features.
+- Repeated timeouts split a window into smaller audited requests, up to three
+  timeout split levels. Consecutive HTTP read timeouts are capped at two; other
+  temporary errors and retryable statuses at four attempts.
+- Each source window has a 180-second wall-clock budget shared by its retries
+  and splits. When it expires, or the command is interrupted or terminated, the
+  attempt is marked `failed` with zero written rows and an explicit gap.
+- The manifest records `active_window` and saves each completed child audit
+  before the next begins, so a failed manifest shows exactly which child failed.
+- A combined month is best-effort reconciliation across fetch times, not a
+  transactionally consistent USGS snapshot; the update sweep must still detect
+  later changes.
 
 ## Inspect a run
 
-Read `manifest.json` first. A successful manifest has status `complete`; each leaf query window should show matching `count_before`, `returned_rows`, and `count_after`. A failed source window appears in `coverage_gaps` with its ID, bounds, and reason; `window_audit` also retains parent split and earlier sibling results. A failed run writes no event file and needs investigation and retry. The source is not a durable event log, and a successful response does not prove gap-free catalog coverage.
+Read `manifest.json` first. A successful manifest has status `complete`, and
+each leaf window shows matching `count_before`, `returned_rows`, and
+`count_after`. A failed window appears in `coverage_gaps` with its ID, bounds,
+and reason; `window_audit` also keeps parent splits and earlier siblings. A
+failed run writes no event file. A successful response does not prove gap-free
+catalog coverage.
 
 ## Snowflake access
 
-The local Snowflake CLI admin connection works. The [Phase 0 bootstrap SQL](../sql/setup/01_bootstrap_admin.sql) created the dedicated role, empty database/schemas/internal stage, and XS warehouse on 2026-09-29. Metadata checks confirmed the warehouse is suspended and the role has the intended grants. The named public key `QUAKEWATCH_KEY` is registered and restricted to `QUAKEWATCH_ROLE`; `snow connection test -c quakewatch_project` succeeded with the encrypted local private key. See the [Phase 0 environment check](evidence/phase0-environment-check.md) for evidence and remaining Phase 1/2 checks. Store authentication material outside Git. Do not paste private keys or passwords into chat or commit them.
+Commands read the `quakewatch_project` profile from `~/.snowflake/config.toml`
+(see [`snowflake-config.example.toml`](../snowflake-config.example.toml)),
+require key-pair authentication and `QUAKEWATCH_ROLE`, and prompt for the
+encrypted key passphrase in the terminal. They never read the admin profile or
+take the passphrase from a command-line argument. The key is restricted to
+`QUAKEWATCH_ROLE`. Store authentication material outside Git and never paste it
+into chat.
 
-## Phase 1 raw tables
+In CI, the same commands read four `QUAKEWATCH_SNOWFLAKE_*` environment
+variables instead; see [CONTRIBUTING](../CONTRIBUTING.md#live-integration-check).
 
-The [raw-table SQL](../sql/setup/02_raw_tables.sql) created `QUAKEWATCH.RAW.BATCH_ATTEMPT` and `QUAKEWATCH.RAW.RAW_EVENT_RECORDS` under `QUAKEWATCH_ROLE` on 2026-09-29. `DESCRIBE TABLE` confirmed 21 and 10 columns respectively, including the full-source `PAYLOAD VARIANT`. Seattle attempts with 15, 167, and 185 rows were loaded on 2026-09-29; see [results](results.md). Repeat-run and wider history evidence remain pending.
+The admin profile is used only for the one-time
+[bootstrap SQL](../sql/setup/01_bootstrap_admin.sql) and the read-only
+account-usage metering script. The Snowflake CLI `snow sql -c quakewatch_project`
+does not prompt for the key passphrase, so use the Python commands for
+project-role queries. See the [Phase 0 environment check](evidence/phase0-environment-check.md).
 
-The [RAW COPY mapping](../sql/load/copy_raw.sql) selects each JSONL record's capture metadata and full `source_feature`, plus Snowflake's staged filename and file row number. It ran for the first Seattle attempt. Its `attempt_id` template value names the unique stage directory containing that attempt's `events.jsonl`. Reconcile the COPY result and RAW row count against the completed manifest before recording a successful load.
+## Create the Snowflake objects
 
-Before staging, `validate_local_batch` checks that the manifest is complete, has no coverage gaps, and matches every local JSONL row and its count. After COPY, `reconcile_loaded_rows` requires both the COPY loaded-row count and the attempt-filtered RAW row count to equal that local count. The loader invokes both checks and appends a batch receipt after reconciliation.
+Apply [`sql/setup/`](../sql/README.md) in number order: `01` once with an admin
+role, then `make bootstrap EXECUTE=1` for the project tables and procedure, and
+`make quality EXECUTE=1` to create the health views when absent. The procedure
+bundle is built offline with
+`PYTHONPATH=src .venv/bin/python scripts/pipeline/build_procedure_bundle.py`,
+which writes the ignored `data/procedure/quakewatch_procedure.zip` and prints its
+SHA-256; the [procedure definition](../sql/setup/09_create_procedure.sql) expects
+it at `@QUAKEWATCH.RAW.USGS_JSON_STAGE/procedure/quakewatch_procedure.zip`.
 
-To inspect the first upload plan without connecting to Snowflake, run `PYTHONPATH=src .venv/bin/python -m quakewatch.raw_load data/raw/20260929T075452Z-26375840ea/manifest.json`. It checks the local envelope and prints the attempt-specific stage path and expected row count. The generated PUT/COPY statements are prepared for the later loader; this command does not execute them.
+## Load RAW
 
-The Python Connector boundary reads only `quakewatch_project` from the local Snowflake CLI config, verifies its key-pair authenticator and `QUAKEWATCH_ROLE`, and prompts for the encrypted key passphrase in the terminal when a live run is explicitly started. It never reads the admin profile or takes the passphrase from a command-line argument.
+- **Inventory:** `PYTHONPATH=src .venv/bin/python -m quakewatch.history_load_plan --cutoff 2026-09-29T00:00:00Z`
+  prints one candidate attempt and expected row count per captured window. It
+  makes no Snowflake connection, so already loaded attempts may appear. Add
+  `--check-snowflake` to label each candidate `loaded` (one complete receipt and
+  matching receipt, RAW, and local counts), `ready` (no receipt and no RAW
+  rows), or `investigate` (anything else, which must not be bulk loaded). This is
+  SELECT only.
+- **Bulk load:** `PYTHONPATH=src .venv/bin/python -m quakewatch.history_raw_load --cutoff 2026-09-29T00:00:00Z --max-windows 50`
+  validates local candidates (`make load-history`); with `--execute` it loads at
+  most 1–50 `ready` attempts in window order, rechecking each immediately before
+  PUT and COPY and stopping on any `investigate` state or load error. Rerunning
+  skips attempts with matching complete receipts.
+- **One batch:** `PYTHONPATH=src .venv/bin/python -m quakewatch.raw_load <manifest>`
+  prints the expected row count and stage path (`make load-preview`); with
+  `--execute` it refuses an attempt that already has a receipt or RAW rows,
+  uploads one file, runs the [COPY mapping](../sql/load/copy_raw.sql), compares
+  COPY and attempt-filtered RAW counts with the manifest, and appends a
+  `BATCH_ATTEMPT` receipt. A failure appends a failed receipt when the connection
+  allows; a retry needs a new extraction attempt ID. The COPY mapping selects each
+  record's capture metadata and full `source_feature`, plus Snowflake's staged
+  filename and row number; its `attempt_id` value names the attempt's unique
+  stage directory.
 
-For read-only row checks, use this Python Connector boundary too. The installed Snowflake CLI `snow sql -c quakewatch_project` does not prompt for the encrypted key passphrase and fails unless that passphrase is supplied through CLI configuration or environment; do not place it in shell history or any shared text. The connector prompts privately in the terminal. The first independent check found one complete receipt and 15 RAW rows for the Seattle attempt.
+Before staging, `validate_local_batch` requires a complete manifest with no
+coverage gaps whose JSONL rows match its count; after COPY,
+`reconcile_loaded_rows` requires both the COPY count and the attempt-filtered RAW
+count to equal it. Incomplete, failed, or terminated attempts are refused.
 
-The loader has an explicit `--execute` path. It checks for an existing attempt receipt or RAW rows, uploads one new file, runs the COPY mapping, compares COPY and attempt-filtered RAW counts with the local manifest, then appends a `BATCH_ATTEMPT` receipt. A COPY or count failure appends a failed receipt if the connection still permits it; a retry needs a new extraction attempt ID. The command without `--execute` remains read-only. Each live run uses warehouse credits.
+## Process loaded attempts
 
-## Phase 2 procedure bundle
+`PYTHONPATH=src:. .venv/bin/python scripts/pipeline/process_history.py --max-attempts 5`
+previews (`make process`). With `--execute` it selects at most 1–200 pending
+origin attempts, checks each RAW and receipt count before its procedure call,
+requires a reconciled health row afterwards, prints progress per attempt, and
+stops on the first mismatch. Each call uses warehouse compute, and the
+procedure's alias-collision handler can delete curated rows, so check the cost
+first.
 
-The Phase 2 procedure can be bundled offline with `PYTHONPATH=src .venv/bin/python scripts/pipeline/build_procedure_bundle.py`. It writes `data/procedure/quakewatch_procedure.zip`, an ignored local artifact, and prints its SHA-256. The [procedure definition](../sql/setup/09_create_procedure.sql) expects that ZIP at `@QUAKEWATCH.RAW.USGS_JSON_STAGE/procedure/quakewatch_procedure.zip`. Uploading it, creating the procedure, and calling it are separate live steps; each uses warehouse credits, and the collision handler can delete curated rows. Do not run the SQL before the stage import exists.
+## Quality checks
 
-The [first pilot plan](plans/phase2-pilot-plan.md) narrows deployment to the already loaded 15-row Seattle attempt. `PYTHONPATH=src .venv/bin/python scripts/evidence/phase2/pilot.py` prints its checks and DDL order without connecting. Its `--execute` mode uses warehouse credits; it stops unless the curated schema is empty and the RAW receipt/count reconcile, then performs one procedure call and count check.
+All read-only. Each previews without connecting and runs with `--execute`.
 
-The first pilot completed on 2026-09-30: 15 staged rows, 15 revision rows, 45 bridge rows, one batch fact, one process attempt, and three public sites. See [measured results](results.md). The pilot command is intentionally first-run only; its empty-schema guard now stops a second execution. Do not rerun it to process more attempts. A separate, guarded processing command and acceptance checks are needed before wider history processing.
+| Command | What it checks |
+|---|---|
+| [`checks/quality.py`](../scripts/checks/quality.py) (`make quality`) | Hashes the three reviewed SQL files; creates the [health views](../sql/setup/10_health_views.sql) only when all are absent, or reuses them when the stored definitions match byte for byte; reports health and anomaly counts and runs the Seattle sample. It never deletes or replaces a view; after a partial DDL failure, inspect before retrying. |
+| [`checks/view_state.py`](../scripts/checks/view_state.py) | Prints the stored view definitions and their hashes. |
+| [`checks/uniqueness.py`](../scripts/checks/uniqueness.py) (`make uniqueness`) | Duplicate revision and bridge keys from the [reviewed SQL](../sql/checks/uniqueness.sql); every query should return zero rows. |
+| [`checks/postrun.py`](../scripts/checks/postrun.py) (`make postrun`) | Checks the view definitions, summarises batch health, counts loaded-window anomalies and duplicate keys, and groups rejects by reason. `pass` requires every receipt reconciled, zero anomalies and duplicates, and grouped rejects matching the health total. |
+| [`checks/latency_metrics.py`](../scripts/checks/latency_metrics.py) (`make metrics`) | Fetch-to-curated distribution and fetch and source ages from the [metrics SQL](../sql/checks/latency_metrics.sql), whose sample and 24-hour p95 target were fixed before the first measurement. |
+| [`checks/analysis.py`](../scripts/checks/analysis.py) (`make analysis`) | Runs the site-by-year and [Seattle-day](../sql/analysis/sample_seattle_day.sql) queries and prints the rows without saving them. |
+| [`checks/integration.py`](../scripts/checks/integration.py) (`make integration`) | Compiles every SQL statement the procedure issues, and every reviewed check and analysis query, against the live schema with `EXPLAIN USING TEXT`; confirms the procedure exists; runs the post-run and uniqueness checks. Also runs from the manual **Snowflake integration** workflow ([ADR 0010](adr/0010-live-integration-check.md)). |
 
-The [one-attempt rerun plan](plans/phase2-rerun-plan.md) uses `PYTHONPATH=src:. .venv/bin/python scripts/evidence/phase2/rerun_check.py` for an offline preview. Its `--execute` run completed on 2026-09-30: zero revisions merged, model counts unchanged, and a second processing audit appended. See [measured results](results.md). Its first-pilot-state guard now prevents another live execution.
+`PROCESSED_ROWS` includes rejected projections, so a complete attempt expects
+`PROCESSED_ROWS = LOADED_ROWS` and checks the reject count separately. A loaded
+attempt without a process audit is `PENDING_PROCESS`, not a count mismatch. The
+views cannot see local source attempts that were never loaded; those gaps stay
+in the local manifests.
 
-Preview the [isolated current-view fixture check](plans/phase2-current-fixture-plan.md) with `PYTHONPATH=src:. .venv/bin/python scripts/evidence/phase2/current_fixture.py`. It does not connect or modify Snowflake. The `--execute` mode used a temporary revision table for a synthetic update, tombstone, and stale replay; it did not load fixtures into permanent RAW or curated tables or call the procedure. The 2026-09-30 run passed; see [measured results](results.md).
+The [CI workflow](../.github/workflows/ci.yml) runs the locked install, lint,
+format and type checks, builds the deterministic synthetic fixtures, and runs the
+tests under coverage on Python 3.12. It never connects to Snowflake.
 
-The [procedure-level fixture plan](plans/phase2-procedure-fixture-plan.md) uses a separate test database because the deployed Snowpark code uses fully qualified project table names. Validate the namespace with `PYTHONPATH=src:. .venv/bin/python scripts/fixtures/phase2_fixture_namespace.py`, then build the ignored local test-only ZIP and SQL with `PYTHONPATH=src:. .venv/bin/python scripts/fixtures/build_phase2_fixture_bundle.py`. Neither command connects. The separate database and copied procedure now exist.
+## Update sweep
 
-The reviewed [fixture database setup SQL](../sql/demos/fixture_setup.sql) created the new database, two schemas, and narrow project-role grants. Its guarded runner deliberately stops on a name collision, so it should not be rerun.
-
-Preview the [fixture name check](../scripts/evidence/phase2/fixture_name_check.py) with `PYTHONPATH=src:. .venv/bin/python scripts/evidence/phase2/fixture_name_check.py`. Its `--execute` mode performed one metadata-only `SHOW DATABASES LIKE` through the existing admin profile on 2026-09-30 and reported the exact test database name available. It did not create objects. Recheck before live setup; this result is a point-in-time snapshot.
-
-Preview the [guarded fixture setup](../scripts/evidence/phase2/fixture_setup.py) with `PYTHONPATH=src:. .venv/bin/python scripts/evidence/phase2/fixture_setup.py`. It checks the 12 reviewed SQL statements offline. The `--execute` call completed on 2026-09-30: it created the isolated database and schemas, granted project-role access, and verified visibility. The name guard now prevents a second run. The later fixture-object deployment created the stage, tables, view, and copied procedure.
-
-Preview [fixture object deployment](../scripts/evidence/phase2/fixture_deploy.py) with `PYTHONPATH=src:. .venv/bin/python scripts/evidence/phase2/fixture_deploy.py`. It validates the reviewed ZIP hash and generated SQL without connecting. Its live mode completed on 2026-09-30 after empty-schema and package-catalog checks: the terminal reported the ZIP uploaded and 16 SQL statements executed. It made no procedure call or fixture RAW load. Its empty-schema guard now prevents rerunning the deployment command.
-
-Build the four ignored, synthetic RAW attempts locally with `PYTHONPATH=src:. .venv/bin/python scripts/fixtures/build_phase2_fixture_attempts.py`. The [fixture plan](plans/phase2-procedure-fixture-plan.md) explains their provenance and order. Each attempt has one source feature and an internally reconciled synthetic manifest; no USGS count or coverage claim is made. These files were loaded into the isolated fixture RAW schema on 2026-09-30.
-
-Preview the [isolated fixture RAW loader](../scripts/evidence/phase2/fixture_raw_load.py) with `PYTHONPATH=src:. .venv/bin/python scripts/evidence/phase2/fixture_raw_load.py`. It validates all four local attempts without connecting. Its live run on 2026-09-30 loaded and reconciled one row in each test RAW attempt and appended synthetic receipts. The empty-table guard now prevents rerunning this loader; the original fixture was subsequently processed.
-
-Preview the [original fixture procedure check](../scripts/evidence/phase2/fixture_original.py) with `PYTHONPATH=src:. .venv/bin/python scripts/evidence/phase2/fixture_original.py`. Its live run on 2026-09-30 processed `fixture-original-v1` and checked a single active magnitude-1.08 revision plus batch/process audits. Its empty-curated guard now prevents rerunning this command. The update and tombstone were subsequently processed; stale replay remains.
-
-Preview the [later-update fixture check](../scripts/evidence/phase2/fixture_update.py) with `PYTHONPATH=src:. .venv/bin/python scripts/evidence/phase2/fixture_update.py`. It does not connect. The live run on 2026-10-01 processed only `fixture-update-v1` and checked that the original and later revisions remained in history while the current row moved to magnitude 1.28. Its exact-original-state guard now prevents rerunning the command.
-
-Preview the [deletion fixture check](../scripts/evidence/phase2/fixture_deletion.py) with `PYTHONPATH=src:. .venv/bin/python scripts/evidence/phase2/fixture_deletion.py`. It does not connect. Its live run on 2026-10-01 required the exact measured update result, processed only `fixture-deletion-v1`, and checked a retained third revision with `deleted` status while `EVENT_CURRENT` returned no row. Its exact-update-state guard now prevents rerunning the command.
-
-Preview the [stale-replay fixture check](../scripts/evidence/phase2/fixture_stale_replay.py) with `PYTHONPATH=src:. .venv/bin/python scripts/evidence/phase2/fixture_stale_replay.py`. The preview does not connect. Its live run on 2026-10-01 processed only `fixture-stale-replay-v1` and confirmed that the old replay did not resurrect the tombstoned current event. Its exact-deletion-state guard now prevents rerunning the command.
-
-Build the next [old-origin synthetic attempts](../scripts/fixtures/build_phase2_old_origin_attempts.py) with `PYTHONPATH=src:. .venv/bin/python scripts/fixtures/build_phase2_old_origin_attempts.py`. This writes two ignored local attempts only; no USGS or Snowflake request is made. They require a separately reviewed RAW loader and procedure guard before live processing.
-
-Preview the [old-origin RAW loader](../scripts/evidence/phase2/old_origin_raw_load.py) with `PYTHONPATH=src:. .venv/bin/python scripts/evidence/phase2/old_origin_raw_load.py`. The preview checks the two local synthetic attempts without connecting. Its live run on 2026-10-01 staged, copied, and reconciled one row per attempt in the isolated database. The exact-baseline preflight now prevents rerunning it. Both rows were subsequently processed; see the final fixture check below.
-
-Preview the [old-origin original procedure guard](../scripts/evidence/phase2/old_origin_original.py) with `PYTHONPATH=src:. .venv/bin/python scripts/evidence/phase2/old_origin_original.py`. The preview does not connect. Its live run committed on 2026-10-01; the later update and final fixture check also passed. Do not rerun the original guard.
-
-Preview the [combined old-origin runner](../scripts/evidence/phase2/old_origin_pair.py) with `PYTHONPATH=src:. .venv/bin/python scripts/evidence/phase2/old_origin_pair.py`. The preview does not connect. Its live `--execute` mode makes two warehouse calls and may conditionally delete curated rows. The original call and post-check must pass before the update call starts. If the first succeeds and the second fails, do not rerun the pair; use the separate update guard with the printed original process ID after investigation.
-
-The original old-origin procedure call committed on 2026-10-01, but its post-check expected two date rows instead of the three produced by origin and source-update dates. A subsequent combined-run attempt stopped before any CALL. Do not rerun the original or pair. Preview the corrected [update-only recovery guard](../scripts/evidence/phase2/old_origin_update.py) with `PYTHONPATH=src:. .venv/bin/python scripts/evidence/phase2/old_origin_update.py`. With `--execute`, which uses warehouse credits and may conditionally delete curated rows, the runner discovers and validates the original process audit, checks the exact original model, calls only the later update, and verifies both 2020-origin revisions and the current magnitude 1.3.
-
-The update-only recovery attempt stopped before its CALL because the full curated count snapshot did not match the recorded original state. Use the read-only [fixture state diagnostic](../scripts/evidence/phase2/old_origin_state.py) to print only model counts, old-origin process statuses, and current-event IDs/magnitudes before deciding the smallest correction. It has no write statements. Do not retry the update blindly.
-
-The later state diagnostic showed the old-origin update already complete: six process audits, five revision facts, and current magnitude 1.3. Do not call the procedure again. The read-only [final fixture check](../scripts/evidence/phase2/old_origin_final_check.py) verifies both process audits, exact old-origin revision hashes/history, current view, model counts, and unique fact/bridge keys before recording Phase 2 exit evidence.
-The final read-only check passed on 2026-10-01: two old-origin revisions remain, the current magnitude is 1.3, and the fixture has six processing audits. The four Phase 2 exit fixtures now have measured evidence in [results](results.md). The isolated fixture database is kept until it is deliberately cleaned up.
-
-For failed-transform/retry evidence, preview the [isolated recovery drill](../scripts/evidence/phase2/recovery_demo.py) with `PYTHONPATH=src:. .venv/bin/python scripts/evidence/phase2/recovery_demo.py`. Preview is offline. Its `--execute` run on 2026-10-01 required the existing one-row fixture RAW receipt and prior successful processing, created a test-only failure procedure in `QUAKEWATCH_PHASE2_FIXTURE`, and deliberately raised after model writes. It verified unchanged RAW/model counts and one new failed audit before retrying the same attempt through the normal procedure; the retry added no logical revision or bridge rows and left zero duplicate groups. This demonstrates recovery of a later processing invocation for an already processed batch, not a first-ever processing failure. The drill is one-shot: the test-only procedure now exists, so do not rerun it blindly. See [results](results.md).
-
-For a first-ever transform failure on a newly loaded attempt, preview the [new-batch recovery drill](../scripts/evidence/phase2/first_failure_demo.py) with `PYTHONPATH=src:. .venv/bin/python scripts/evidence/phase2/first_failure_demo.py`. This builds one ignored synthetic manifest and JSONL locally, validates them, and does not connect. With `--execute`, which uses warehouse compute, inserts fixture RAW rows, and may conditionally delete curated rows, the runner guards against an existing attempt/stage file, loads one row with `PUT`/`COPY`, reconciles the immutable RAW receipt, invokes the existing failure procedure before any successful processing of that attempt, verifies model rollback and one failure audit, then retries the same RAW row. It requires one complete audit, unchanged RAW hash, no new logical revision/bridge rows, and zero duplicate groups. A partial load or failed guard needs inspection rather than blind rerun. The first-ever run reached the final guard and raised `first-failure retry did not converge` after the retry procedure call. Do not rerun the one-shot drill. The [read-only state diagnostic](../scripts/evidence/phase2/first_failure_state.py) confirmed the committed load, one failed and one complete process audit, unchanged logical revision and bridge counts, matching RAW hash, and zero duplicate groups. The guard was too strict about `REVISION_ROWS_MERGED`: an existing revision with a newer fetch time is updated and counts as a MERGE change without increasing logical rows. The local guard is corrected; see [results](results.md). Any future state check uses warehouse credits.
-
-Phase 3 begins with the read-only [revision and bridge uniqueness checks](../sql/checks/uniqueness.sql). Each query should return zero rows when the model grains are unique. Review the SQL locally before any future warehouse rerun.
-Preview the [guarded uniqueness runner](../scripts/checks/uniqueness.py) with `PYTHONPATH=src:. .venv/bin/python scripts/checks/uniqueness.py`. The preview verifies the reviewed SQL hash without connecting. Its live run on 2026-10-01 returned `status: pass` with zero duplicate revision-key groups and zero duplicate bridge-key groups in `QUAKEWATCH.CURATED`. This is a point-in-time result; rerunning it later uses warehouse credits. See [measured results](results.md).
-
-The next Phase 3 local SQL defines [batch health, loaded-window audit, and reject views](../sql/setup/10_health_views.sql) plus [read-only reconciliation queries](../sql/checks/reconciliation.sql). `PROCESSED_ROWS` includes rejected projections, so a complete processed attempt expects `PROCESSED_ROWS = LOADED_ROWS` and separately checks the reject count. A loaded RAW attempt without a process audit is `PENDING_PROCESS`, not a false count mismatch. The Snowflake receipt views cannot see failed local source attempts that were never loaded; keep those gaps in local manifests and [results](results.md). The views and queries have not been applied to Snowflake yet.
-
-The [CI workflow](../.github/workflows/ci.yml) uses a locked uv install, builds ignored deterministic synthetic fixture ZIP/SQL and attempts, then runs secret-free unittest discovery on Python 3.12. It does not connect to Snowflake. The first GitHub run exposed missing generated artifacts; the corrected workflow [passed](https://github.com/kaarthikmohaan/quakewatch/actions/runs/36831735945) at `bc69dde` on 2026-10-01. See [results](results.md). The [bounded sample analysis](../sql/analysis/sample_seattle_day.sql) is limited to the public Seattle example point and the 2026-09-28 UTC day, and joins the full event revision key. Its first live result is recorded in [results](results.md).
-
-The Phase 3 quality reuse run initially reported 177 history RAW attempts as `PENDING_PROCESS`, totaling 216,361 loaded rows, and one reconciled 15-row Seattle sample. Both anomaly counts were zero; see [results](results.md). The bounded [history processor](../scripts/pipeline/process_history.py) previews locally with `PYTHONPATH=src:. .venv/bin/python scripts/pipeline/process_history.py --max-attempts 5`. Its live `--execute` mode selects at most 1–200 eligible pending origin attempts, checks each RAW and receipt count before its procedure call, then requires a reconciled health row afterward. It prints progress per attempt and stops on the first mismatch. A later run selects remaining pending attempts. Each call can incur warehouse compute and the procedure can conditionally delete curated alias-collision rows, so check the cost before executing. The five-attempt trial processed 6,789 rows with zero rejects; the next run processed the remaining 172 attempts and 209,572 rows with 485 rejects. All 177 loaded history attempts have now passed per-attempt health checks; aggregate post-run checks and reject-reason review remain.
-
-Preview the read-only [post-run quality runner](../scripts/checks/postrun.py) with `PYTHONPATH=src:. .venv/bin/python scripts/checks/postrun.py`. Using warehouse credits, `--execute` checks all three stored view definitions against the reviewed SQL, summarizes batch health, counts loaded-window anomalies and duplicate fact/bridge keys, and groups reject rows by reason. It reports `pass` only when all receipts are reconciled, anomaly/duplicate counts are zero, and grouped reject rows match the health total. It does not modify Snowflake data. Its live run on 2026-10-01 passed; all 485 rejects were `invalid_origin_time`, relabelled `source_stub_record` by the [parser version 2 release](evidence/results-log.md#parser-version-2-release-2026-10-02). See [results](results.md).
-
-The first-backfill [metrics SQL](../sql/checks/latency_metrics.sql) fixed a five-year request-window sample and a p95 fetch-to-curated target of 24 hours before measurement. Preview the guarded [metrics runner](../scripts/checks/latency_metrics.py) with `PYTHONPATH=src:. .venv/bin/python scripts/checks/latency_metrics.py`. Using warehouse credits, `--execute` runs two read-only queries, prints their Snowflake query IDs, latency distribution, date bounds, and separate fetch/source age measures. The first live sample had 178 attempts and **missed** the target: p95 was 35.9 hours. See [results](results.md).
-
-Preview the [combined Phase 3 quality runner](../scripts/checks/quality.py) with `PYTHONPATH=src:. .venv/bin/python scripts/checks/quality.py`. It hashes and checks the three SQL files locally without connecting. Using warehouse credits, `--execute` creates all three views only when all names are absent, or reuses them when all three stored definitions match the reviewed SQL byte for byte. It then reports health statuses and anomaly counts and runs the bounded Seattle sample. It does not delete or replace a view. A partial DDL failure can leave some new views in place; inspect those before retrying. The first live attempt stopped at the old existing-view guard before any DDL or quality query ran. The read-only [view-state diagnostic](../scripts/checks/view_state.py) showed all three definitions and their hashes exactly matched the local reviewed SQL; the guarded reuse run passed the reconciliation queries and Seattle sample.
-
-## Update-sweep preview
-
-`quakewatch.update_plan` prints a local plan only. Supply the catalog origin-time lower bound, a fixed origin-time cutoff, the prior committed update watermark, the sweep start, and a positive overlap in seconds. The resulting `updatedafter` is the prior watermark minus overlap; no spatial or magnitude filters are added. The proposed next watermark is the fixed sweep start. The planner does not persist or advance any watermark and does not count-size, extract, or load windows yet. Execution must verify all bounded source windows and their RAW loads before a later implementation can commit that watermark; failed or incomplete sweeps must retain the previous one.
-
-This offline example uses illustrative inputs, **not an established production watermark or an approved catalog coverage boundary**. The first live sweep still needs an explicit bootstrap watermark and catalog lower-bound decision based on the history capture dates and required source coverage.
+**Plan.** `PYTHONPATH=src .venv/bin/python -m quakewatch.update_plan` prints a
+local plan from five required inputs: the catalog origin-time lower bound, a
+fixed origin-time cutoff, the prior committed watermark, the sweep start, and a
+positive overlap in seconds. `updatedafter` is the prior watermark minus the
+overlap, with no spatial or magnitude filters; the proposed next watermark is the
+sweep start. Example, with illustrative inputs only:
 
 ```bash
 PYTHONPATH=src .venv/bin/python -m quakewatch.update_plan \
@@ -166,15 +192,45 @@ PYTHONPATH=src .venv/bin/python -m quakewatch.update_plan \
   --overlap-seconds 86400
 ```
 
-Expect `status: preview`, `updatedafter: 2026-09-28T00:00:00.000Z`, and `watermark_advanced: false`. Dates before the configured catalog lower bound are outside this plan. The source does not provide a transactionally consistent snapshot. See the [USGS parameter contract](https://earthquake.usgs.gov/fdsnws/event/1/) for the distinction between origin time and update time.
+Expect `status: preview`, `updatedafter: 2026-09-28T00:00:00.000Z`, and
+`watermark_advanced: false`. The first live sweep needs an explicit bootstrap
+watermark and catalog lower bound; see the
+[evidence log](evidence/results-log.md#first-update-sweep-bootstrap-preparation).
+See the [USGS parameter contract](https://earthquake.usgs.gov/fdsnws/event/1/)
+for origin time versus update time.
 
-## Update-sweep extraction
+**Extract.** `PYTHONPATH=src .venv/bin/python -m quakewatch.update_extract`
+takes the same five inputs and only prints the plan unless `--execute` is added.
+It splits origin-time windows by counts, keeps the same `updatedafter` on every
+child, includes deletions, reconciles every leaf, and bounds the whole attempt
+with one three-minute deadline. Each run writes a unique manifest under
+`data/raw/` with `batch_kind: update_sweep`; only a complete extraction publishes
+`events.jsonl`, and extraction never advances the watermark: the manifest's
+`last_committed_watermark` stays as planned and `watermark_advanced` stays
+`false`. History loading commands exclude sweep attempts.
 
-`PYTHONPATH=src .venv/bin/python -m quakewatch.update_extract` accepts the same five required planning arguments. Without `--execute` it only prints the plan. Adding `--execute` performs a bounded source capture: it uses the shared extractor to split origin-time windows by counts, preserves the same `updatedafter` on every child, includes deletions, and applies no spatial or magnitude filters. Every leaf compares source counts before/after against returned features. One three-minute deadline bounds the entire attempt. Split boundaries overlap deliberately; later revision processing must deduplicate observations.
+| Option | Effect |
+|---|---|
+| `--years-per-window N` (1–100) | Initial origin-time slice size; default 50 years |
+| `--recent-start-year 2001 --recent-years-per-window 5` | Smaller slices for recent, denser years; with a year-0001 lower bound and a 2026 cutoff this makes 46 contiguous windows |
+| `--monthly-start-year 2023 --recent-months-per-window 1` | Month-sized slices from that year onward |
+| `--daily-month 2023-10` | One-day initial windows for a single slow month |
+| `--resume-children` | Reuses a saved child only when its window ID, query parameters, checksum, row counts, and frozen sweep start all match; keep the same cutoff, sweep start, lower bound, prior watermark, and overlap on retries |
 
-Each execution writes a unique attempt manifest under ignored `data/raw/`, with `batch_kind: update_sweep`. A successful extraction atomically publishes `events.jsonl` in the existing RAW-loader format. Failure records an explicit coverage gap and cannot be loaded as complete. A deadline failure may conservatively identify the whole requested range when no completed recursive audit is available. `last_committed_watermark` and `watermark_advanced: false` remain unchanged on success and failure: extraction alone does not authorize a watermark commit. The load-and-commit workflow below is implemented and tested offline, but no live sweep has completed or committed its watermark. History loading commands intentionally exclude catalog-wide sweep attempts.
+**Load and commit.** `PYTHONPATH=src .venv/bin/python -m quakewatch.update_load <sweep-manifest>`
+validates a completed sweep locally. With `--execute` (and, for the first commit,
+`--initial-watermark` matching the chosen bootstrap) it checks contiguous
+coverage, every leaf's counts, and local rows per window; checks the prior
+committed watermark; loads the attempt or recognises an earlier load; compares
+the stored receipt manifest and per-window RAW counts; and only then advances
+`QUAKEWATCH.RAW.UPDATE_WATERMARK` ([DDL](../sql/setup/03_update_watermark.sql))
+by compare-and-set inside a transaction (`WHERE COMMITTED_WATERMARK = <previous>`), so two runners cannot both advance it
+([ADR 0004](adr/0004-watermark-after-reconciliation.md)). If loading fails or
+counts disagree, the watermark is unchanged; if the commit itself fails, rerunning
+the same attempt completes it without another COPY. A stale sweep, a changed
+lower bound, or a backward cutoff is rejected.
 
-Offline verification:
+Offline verification of the sweep path:
 
 ```bash
 PYTHONPATH=src .venv/bin/python -m unittest \
@@ -182,62 +238,39 @@ PYTHONPATH=src .venv/bin/python -m unittest \
   tests.test_extract_batch tests.test_raw_load -q
 ```
 
-On 2026-09-30 these 38 tests passed, including mocked over-limit splitting with an old deleted record, source failure/deadline evidence, and local loader compatibility. Live extraction retries have retained explicit gaps; no complete sweep, Snowflake sweep load, or watermark commit has been demonstrated.
+## One-shot evidence drills
 
-## Sweep load and watermark completion
+These scripts produced the recorded Phase 2 and Phase 4 evidence. Each previews
+offline with `PYTHONPATH=src:. .venv/bin/python <script>` and acts only with
+`--execute`. Most guard against a second run; **do not rerun them** to present
+the project. Use their recorded results in the evidence log instead.
 
-Use `PYTHONPATH=src .venv/bin/python -m quakewatch.update_load <sweep-manifest>` to validate a completed sweep locally. Preview mode does not connect or write state. Execution uses warehouse credits and requires `--execute`; the first committed sweep also requires `--initial-watermark` matching its explicitly chosen bootstrap watermark.
+| Script | Purpose and guard |
+|---|---|
+| [`evidence/phase2/pilot.py`](../scripts/evidence/phase2/pilot.py) ([plan](plans/phase2-pilot-plan.md)) | First procedure deployment and one call for the 15-row Seattle attempt; stops unless the curated schema is empty |
+| [`evidence/phase2/rerun_check.py`](../scripts/evidence/phase2/rerun_check.py) ([plan](plans/phase2-rerun-plan.md)) | Same-attempt idempotency rerun; guarded by the first-pilot state |
+| [`evidence/phase2/current_fixture.py`](../scripts/evidence/phase2/current_fixture.py) ([plan](plans/phase2-current-fixture-plan.md)) | Current-view logic on a session-only table; writes no permanent rows |
+| [`fixtures/phase2_fixture_namespace.py`](../scripts/fixtures/phase2_fixture_namespace.py), [`fixtures/build_phase2_fixture_bundle.py`](../scripts/fixtures/build_phase2_fixture_bundle.py) | Offline: validate the fixture namespace and build the test-only ZIP and SQL ([plan](plans/phase2-procedure-fixture-plan.md)) |
+| [`evidence/phase2/fixture_name_check.py`](../scripts/evidence/phase2/fixture_name_check.py) | Metadata-only check that the fixture database name is free (admin profile) |
+| [`evidence/phase2/fixture_setup.py`](../scripts/evidence/phase2/fixture_setup.py) | Creates the fixture database from the [reviewed SQL](../sql/demos/fixture_setup.sql) (12 statements); stops on a name collision |
+| [`evidence/phase2/fixture_deploy.py`](../scripts/evidence/phase2/fixture_deploy.py) | Deploys fixture objects after checking the pinned ZIP hash; stops unless the schemas are empty |
+| [`fixtures/build_phase2_fixture_attempts.py`](../scripts/fixtures/build_phase2_fixture_attempts.py), [`evidence/phase2/fixture_raw_load.py`](../scripts/evidence/phase2/fixture_raw_load.py) | Builds and loads four synthetic one-row attempts; the loader stops unless the fixture tables are empty |
+| [`evidence/phase2/fixture_original.py`](../scripts/evidence/phase2/fixture_original.py), [`fixture_update.py`](../scripts/evidence/phase2/fixture_update.py), [`fixture_deletion.py`](../scripts/evidence/phase2/fixture_deletion.py), [`fixture_stale_replay.py`](../scripts/evidence/phase2/fixture_stale_replay.py) | Process the original, later update, tombstone, and stale replay in order; each requires the exact state left by the previous step |
+| [`fixtures/build_phase2_old_origin_attempts.py`](../scripts/fixtures/build_phase2_old_origin_attempts.py), [`evidence/phase2/old_origin_raw_load.py`](../scripts/evidence/phase2/old_origin_raw_load.py) | Builds and loads two synthetic 2020-origin attempts; guarded by an exact baseline |
+| [`evidence/phase2/old_origin_original.py`](../scripts/evidence/phase2/old_origin_original.py), [`old_origin_pair.py`](../scripts/evidence/phase2/old_origin_pair.py), [`old_origin_update.py`](../scripts/evidence/phase2/old_origin_update.py) | Process the old-origin original and update. If the original succeeds and the update fails, do not rerun the pair; use the update-only guard after investigating |
+| [`evidence/phase2/old_origin_state.py`](../scripts/evidence/phase2/old_origin_state.py), [`old_origin_final_check.py`](../scripts/evidence/phase2/old_origin_final_check.py) | Read-only state diagnostic and final check of the old-origin history, current view, counts, and keys |
+| [`evidence/phase2/recovery_demo.py`](../scripts/evidence/phase2/recovery_demo.py) | Failed transform and retry for an already processed fixture batch, using a test-only failure procedure |
+| [`evidence/phase2/first_failure_demo.py`](../scripts/evidence/phase2/first_failure_demo.py), [`first_failure_state.py`](../scripts/evidence/phase2/first_failure_state.py) | First-ever failure of a newly loaded synthetic batch, then a read-only state diagnostic |
+| [`evidence/phase4/recovery_preflight.py`](../scripts/evidence/phase4/recovery_preflight.py) ([plan](plans/phase4-recovery-plan.md)) | Read-only preflight for the clone drill |
+| [`evidence/phase4/clone_recovery.py`](../scripts/evidence/phase4/clone_recovery.py), [`clone_cleanup.py`](../scripts/evidence/phase4/clone_cleanup.py) | Clone and Time Travel drill on the fixture table, then drop of the demo clone. Never run the clone DDL against the main `QUAKEWATCH` database |
+| [`checks/usage.py`](../scripts/checks/usage.py) | Read-only account-usage metering with the admin profile |
+| [`evidence/live_demo_2026_10_02/`](../scripts/evidence/live_demo_2026_10_02) | Fixed-input drivers for the 2 October live demo; the core driver accepts a manifest path |
 
-The runner validates contiguous audited origin-time coverage, each leaf's before/returned/after counts, and local rows per window. It checks the prior committed watermark before loading. It then loads a ready attempt or recognizes a previously loaded attempt, rereads its complete receipt and RAW total, compares the stored receipt manifest with the local manifest, and checks RAW counts per window. Only after all checks pass does it advance the watermark in the Snowflake table `QUAKEWATCH.RAW.UPDATE_WATERMARK` ([DDL](../sql/setup/03_update_watermark.sql)), recording the sweep start as the committed watermark with the prior watermark and source attempt ID. The update is a compare-and-set inside a transaction (`WHERE COMMITTED_WATERMARK = <previous>`), so two runners on different hosts cannot both advance it; the loser rolls back and changes nothing. Each attempt's original manifest remains unchanged. Until 2 October 2026 this state was a local JSON file with a single-host file lock; it moved to Snowflake so a scheduler or another machine can share it. No local watermark had been committed, so nothing needed migrating. A changed catalog lower bound or backward cutoff requires investigation, not silent reuse.
+The isolated fixture database `QUAKEWATCH_PHASE2_FIXTURE` is kept until it is
+deliberately cleaned up.
 
-If loading fails or counts disagree, the prior state remains. If loading succeeds but the watermark commit fails, rerunning the same attempt verifies its existing receipt and completes the commit without another COPY. A stale sweep whose prior watermark no longer matches is rejected. No automatic watermark is inferred from the history load. This workflow has offline evidence only; no live sweep load or watermark commit has run.
+## Migrations
 
-For a catalog sweep with a broad origin-time lower bound, `update_extract` now starts with contiguous origin-time slices of at most 50 years (`--years-per-window 1..100` changes the initial size). Each slice retains the same fixed `updatedafter`, deletion, and ordering parameters. The extractor still recursively splits any over-limit, mismatched, or timed-out slice and reconciles all leaves. It saves completed child audits as it goes. If the three-minute attempt deadline expires, the failed manifest names the active planned slice and retains earlier completed audits; it still writes no partial `events.jsonl`, so the entire sweep remains incomplete and its watermark unchanged. This initial partition is an operational request size, not a change to the catalog lower bound. As of 2026-09-30 it is tested offline; no live partitioned sweep result is claimed.
-
-After the live sweep narrowed the slow request to 2001–2026, initial partitioning was refined: the default remains 50-year slices before `--recent-start-year 2001`, then uses `--recent-years-per-window 5`. For the year-0001 lower bound and a 2026 cutoff this makes 46 contiguous windows, with five-year recent slices and a final partial slice. These are initial source request sizes; source count limits, recursive splitting, the fixed update filter, and full-sweep reconciliation still apply. The values are configurable through `--years-per-window`, `--recent-start-year`, and `--recent-years-per-window`. Live five-year and one-year attempts both left explicit source gaps; see `docs/results.md`.
-
-Live retries narrowed the timeout to origin year 2023. Set `--recent-years-per-window 1 --monthly-start-year 2023 --recent-months-per-window 1` to request one-year slices from 2001 through 2022 and month-sized slices from 2023 onward. The optional monthly mode changes initial request boundaries only; a complete sweep still needs every child reconciled before RAW loading or watermark advancement. Its boundary behavior has offline tests; the first live monthly attempt narrowed the gap to October 2023, as recorded in `docs/results.md`.
-
-For future live update-sweep attempts, add `--resume-children` and keep the same frozen `--cutoff`, `--sweep-started-at`, catalog lower bound, prior watermark, and overlap on retries. Each completed initial child saves its reconciled feature rows, audit, source fetch time, and checksum under the ignored attempt directory. A retry reuses a child only when its window ID and full bounded query parameters match, its saved checksum and row counts validate, and the frozen sweep start matches. A changed or damaged child is fetched again. Reused rows retain their original source fetch time; failed attempts still have no `events.jsonl` and cannot load or advance the watermark. Attempts made before this option existed saved audits but no feature checkpoints, so their nonzero windows cannot be reconstructed from those audits. The reuse path passed offline tests and a live retry reused 71 validated children; see `docs/results.md`.
-
-For the measured October 2023 timeout, add `--daily-month 2023-10` to split that calendar month into one-day initial windows. Earlier initial window IDs and query bounds stay the same, so a retry of the frozen `2026-09-30T09:59:00.481Z` sweep reused its 71 saved children. Any October day that fails still leaves an explicit gap and prevents a completed sweep or watermark commit. The live retry saved October 1–8 and timed out on October 9; see `docs/results.md`.
-
-## Phase 4 optional recovery demo
-
-The [recovery plan](plans/phase4-recovery-plan.md) and its
-[read-only preflight](../scripts/evidence/phase4/recovery_preflight.py) govern the
-isolated fixture drill. The preflight passed with five fact
-rows, one-day retention, and no demo clone. The
-[clone/Time Travel runner](../scripts/evidence/phase4/clone_recovery.py) passed on
-2026-10-01: one clone-only `MERGE` changed a magnitude, the source stayed
-unchanged, and `BEFORE (STATEMENT => ...)` returned the earlier clone value.
-See [results](results.md) for query IDs and limits. **Do not rerun the
-one-shot clone runner:** its fixed name was used for the completed drill.
-Never run its DDL against the main `QUAKEWATCH` database.
-The [cleanup runner](../scripts/evidence/phase4/clone_cleanup.py) previews locally by
-default. Its `--execute` run on 2026-10-01 checked the five-row
-source and clone state, dropped only `QW_PHASE4_REVISION_DEMO`, and confirmed
-the source still had five rows. The clone is no longer present; do not rerun
-the one-shot clone or cleanup commands. See [results](results.md) for the drop
-query ID and cost measurement limit.
-The [metering runner](../scripts/checks/usage.py) read
-`QUAKEWATCH_WH` Account Usage hours on 2026-10-01. It uses the locally stored
-admin billing profile for a read-only account view, not for pipeline writes.
-The snapshot and its lag/shared-warehouse limits are in [results](results.md).
-
-## Live integration check
-
-`make integration EXECUTE=1` ([runner](../scripts/checks/integration.py)) is a
-read-only check of the code against the live schema. It compiles every SQL
-statement the Snowpark procedure issues, plus each reviewed check and analysis
-query, with `EXPLAIN USING TEXT`, confirms the procedure exists, and runs the
-post-run and uniqueness checks. It writes nothing. The same check runs on GitHub
-from the manual **Snowflake integration** workflow, which connects with four
-repository secrets instead of the passphrase prompt; see
-[CONTRIBUTING](../CONTRIBUTING.md#live-integration-check) and
-[ADR 0010](adr/0010-live-integration-check.md). Its first live run on
-2026-10-02 compiled 35 statements with no failures.
-
-`make analysis EXECUTE=1` ([runner](../scripts/checks/analysis.py)) runs the
-reviewed site-by-year and Seattle-day queries read-only and prints the rows
-without saving them.
+`make release-parser-v2` previews the
+[parser version 2 release](../scripts/migrations/parser_v2.py). It has already
+run; a rerun detects the migrated state and skips the data change.
