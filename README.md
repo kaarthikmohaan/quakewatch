@@ -16,7 +16,7 @@ This is a retrospective data project. It is not an earthquake warning, risk scor
 
 5. Analysis and AI brief: SQL supports historical counts and magnitude comparisons around Seattle, San Francisco, and Anchorage. A Cortex evaluation generated nine human-checked factual briefs from saved SQL aggregates.
 
-6. Engineering setup: The repo has a locked Python environment, unit and fixture tests, secret-free GitHub Actions CI, a [runbook](https://github.com/kaarthikmohaan/quakewatch/docs/runbook.md), and a [demo](https://github.com/kaarthikmohaan/quakewatch/blob/main/docs/demo.md).
+6. Engineering setup: The repo has a locked Python environment, unit and fixture tests, secret-free GitHub Actions CI, a [runbook](https://github.com/kaarthikmohaan/quakewatch/blob/main/docs/runbook.md), and a [demo](https://github.com/kaarthikmohaan/quakewatch/blob/main/docs/demo.md).
 
 ## Quickstart
 
