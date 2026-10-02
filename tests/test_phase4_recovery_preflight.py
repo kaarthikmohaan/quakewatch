@@ -4,7 +4,6 @@ import unittest
 
 from scripts.evidence.phase4.phase4_recovery_preflight import validate
 
-
 SOURCE = ("FACT_EVENT_REVISION", "BASE TABLE", "QUAKEWATCH_ROLE", 5, 1, "NO")
 
 

@@ -8,16 +8,23 @@ import re
 import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import httpx
 
 from quakewatch.extract_batch import (
-    ExtractionError, fetch_window, iso_utc, parse_utc,
-    read_child_checkpoint, save_child_checkpoint, source_deadline, stable_json,
+    ExtractionError,
+    fetch_window,
+    iso_utc,
+    parse_utc,
+    read_child_checkpoint,
+    save_child_checkpoint,
+    source_deadline,
+    stable_json,
 )
+from quakewatch.logs import configure_logging
 from quakewatch.settings import PARSER_VERSION, SOURCE_WINDOW_DEADLINE_SECONDS, USER_AGENT
 from quakewatch.update_plan import plan_update_sweep
-from quakewatch.logs import configure_logging
 
 
 def initial_sweep_windows(start, end, years_per_window: int,
@@ -95,7 +102,7 @@ def run_update_sweep(catalog_start, cutoff, last_watermark, sweep_started_at,
                                             monthly_start_year, recent_months_per_window,
                                             daily_month)
     logical_id = hashlib.sha256(stable_json(plan['query_parameters']).encode()).hexdigest()[:20]
-    checkpoints = {}
+    checkpoints: dict[str, Any] = {}
     if resume_children:
         for prior_path in sorted(output_root.glob('*/manifest.json'), reverse=True):
             try:
@@ -150,7 +157,7 @@ def run_update_sweep(catalog_start, cutoff, last_watermark, sweep_started_at,
                        'endtime': iso_utc(cutoff), 'status': 'split',
                        'reason': sizing_note})
     try:
-        rows = []
+        rows: list[Any] = []
         with source_deadline(SOURCE_WINDOW_DEADLINE_SECONDS):
             with httpx.Client(headers={'User-Agent': USER_AGENT}, follow_redirects=True) as client:
                 for index, (child_start, child_end) in enumerate(initial_windows, start=1):

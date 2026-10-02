@@ -7,7 +7,6 @@ from dataclasses import dataclass
 
 from quakewatch.settings import SITES
 
-
 # IUGG mean Earth radius. This is a spherical horizontal approximation.
 MEAN_EARTH_RADIUS_KM = 6371.0088
 

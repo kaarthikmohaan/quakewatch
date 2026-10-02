@@ -6,7 +6,6 @@ import re
 
 from scripts.pipeline.build_procedure_bundle import MODULES, REPO_ROOT
 
-
 SOURCE_DATABASE = "QUAKEWATCH"
 TEST_DATABASE = "QUAKEWATCH_PHASE2_FIXTURE"
 QUALIFIED_OBJECT = re.compile(r"\b([A-Z][A-Z0-9_]*)\.([A-Z][A-Z0-9_]*)\.([A-Z][A-Z0-9_]*)\b")

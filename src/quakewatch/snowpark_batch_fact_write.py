@@ -8,7 +8,6 @@ from typing import Any
 
 from quakewatch.process_batch import BatchProjection
 
-
 RECEIPT_SQL = """
 SELECT ATTEMPT_ID, LOGICAL_BATCH_ID, BATCH_KIND, SITE_KEY,
        REQUESTED_STARTTIME, REQUESTED_ENDTIME, FETCHED_AT, RECORDED_AT,

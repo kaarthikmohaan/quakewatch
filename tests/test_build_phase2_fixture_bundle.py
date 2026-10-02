@@ -6,8 +6,8 @@ from pathlib import Path
 from zipfile import ZipFile
 
 from scripts.fixtures.build_phase2_fixture_bundle import build_fixture_copy
-from scripts.pipeline.build_procedure_bundle import MODULES
 from scripts.fixtures.phase2_fixture_namespace import SQL_FILES, TEST_DATABASE
+from scripts.pipeline.build_procedure_bundle import MODULES
 
 
 class FixtureBundleTest(unittest.TestCase):

@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from quakewatch.process_batch import BatchProjection
 from quakewatch.process_transaction import ProcessOutcome
@@ -12,7 +13,6 @@ from quakewatch.snowpark_dimensions_write import write_dimensions_and_bridge
 from quakewatch.snowpark_process_log import append_process_outcome
 from quakewatch.snowpark_revision_write import write_revision_fact
 from quakewatch.snowpark_staging_write import write_staging
-
 
 CanonicalResolver = Callable[[Any, BatchProjection], dict[str, str]]
 

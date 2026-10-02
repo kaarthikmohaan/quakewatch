@@ -8,8 +8,13 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from scripts.evidence.phase2.phase2_fixture_deploy import (
-    BUNDLE_SHA256, PACKAGE_CHECK_SQL, _guard_empty, _guard_package,
-    ddl_statements, execute_deploy, preview,
+    BUNDLE_SHA256,
+    PACKAGE_CHECK_SQL,
+    _guard_empty,
+    _guard_package,
+    ddl_statements,
+    execute_deploy,
+    preview,
 )
 from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 

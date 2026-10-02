@@ -11,9 +11,8 @@ import argparse
 import json
 
 from quakewatch.raw_load import connect_project
-from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 from scripts.evidence.phase2.phase2_fixture_original import ATTEMPT_ID, CURATED, RAW
-
+from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 
 DEMO_PROCEDURE = f"{CURATED}.PROCESS_LOADED_ATTEMPT_FAILURE_DEMO"
 FAILURE_TEXT = "intentional fixture transform failure after model writes"

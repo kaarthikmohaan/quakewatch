@@ -7,7 +7,6 @@ from pathlib import Path
 
 from scripts.evidence.phase4.phase4_cortex_aggregates import EXPECTED_CASES, save_aggregates
 
-
 COLUMNS = [
     "CASE_ID", "SITE_KEY", "START_UTC", "END_UTC", "RADIUS_KM",
     "DISTINCT_RADII", "EVENT_COUNT", "NEAREST_EVENT_ID",

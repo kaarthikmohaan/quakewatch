@@ -12,7 +12,6 @@ from quakewatch.revisions import (
     visible_current_revisions,
 )
 
-
 UPDATED = datetime(2026, 9, 29, 0, 0, tzinfo=UTC)
 
 

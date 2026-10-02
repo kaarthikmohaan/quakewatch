@@ -4,7 +4,7 @@
 
 ## Checklist
 
-- [ ] Secret-free tests pass locally (`PYTHONPATH=src:. .venv/bin/python -m unittest discover -s tests`)
+- [ ] `make check` passes locally (lint, type check, and secret-free tests)
 - [ ] Tests added or updated for the change
 - [ ] Relevant documentation updated in this change
 - [ ] Targets and estimates are not presented as measured results

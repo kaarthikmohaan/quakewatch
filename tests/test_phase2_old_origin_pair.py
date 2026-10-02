@@ -7,8 +7,13 @@ from unittest.mock import MagicMock, patch
 
 from scripts.evidence.phase2.phase2_old_origin_pair import execute_pair, main
 from scripts.evidence.phase2.phase2_old_origin_update import (
-    ATTEMPT_ID, EXPECTED_AFTER, ORIGINAL_COUNTS,
-    _guard_after, _guard_before, _original_process_id, execute_update,
+    ATTEMPT_ID,
+    EXPECTED_AFTER,
+    ORIGINAL_COUNTS,
+    _guard_after,
+    _guard_before,
+    _original_process_id,
+    execute_update,
 )
 from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 

@@ -12,7 +12,6 @@ from pathlib import Path
 
 from quakewatch.raw_load import connect_project
 
-
 ROOT = Path(__file__).resolve().parents[3]
 FIXTURE_DIR = ROOT / "tests" / "fixtures"
 VIEW_FILE = ROOT / "sql" / "phase2_revision_current.sql"

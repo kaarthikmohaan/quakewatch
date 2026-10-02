@@ -5,11 +5,18 @@ import io
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 from scripts.evidence.phase2.phase2_fixture_update import (
-    ATTEMPT_ID, EXPECTED_AFTER, ORIGINAL_COUNTS, ORIGINAL_PROCESS_ID,
-    _guard_after, _guard_before, _guard_raw, execute_update, preview,
+    ATTEMPT_ID,
+    EXPECTED_AFTER,
+    ORIGINAL_COUNTS,
+    ORIGINAL_PROCESS_ID,
+    _guard_after,
+    _guard_before,
+    _guard_raw,
+    execute_update,
+    preview,
 )
+from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 
 
 class FixtureUpdateTest(unittest.TestCase):

@@ -6,8 +6,12 @@ import unittest
 from unittest.mock import patch
 
 from scripts.evidence.phase2.phase2_pilot import (
-    ATTEMPT_ID, DDL_FILES, _guard_empty_curated, _guard_receipt,
-    ddl_statements, preview,
+    ATTEMPT_ID,
+    DDL_FILES,
+    _guard_empty_curated,
+    _guard_receipt,
+    ddl_statements,
+    preview,
 )
 
 

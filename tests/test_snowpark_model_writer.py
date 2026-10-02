@@ -8,7 +8,6 @@ from quakewatch.process_batch import BatchProjection
 from quakewatch.process_transaction import ProcessOutcome
 from quakewatch.snowpark_model_writer import SnowparkModelWriter
 
-
 TIME = datetime(2026, 9, 30, tzinfo=UTC)
 PROJECTION = BatchProjection("attempt-1", 2, 2, 1, ())
 SUCCESS = ProcessOutcome("process-1", "attempt-1", TIME, TIME, "complete", 2, 2, 1, 1)

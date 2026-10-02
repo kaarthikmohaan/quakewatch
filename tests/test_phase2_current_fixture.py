@@ -6,9 +6,11 @@ import unittest
 from unittest.mock import patch
 
 from scripts.evidence.phase2.phase2_current_fixture import (
-    _assert_state, feature_row, preview, view_select_sql,
+    _assert_state,
+    feature_row,
+    preview,
+    view_select_sql,
 )
-
 
 TABLE = "QUAKEWATCH.CURATED.QW_CURRENT_FIXTURE_" + "A" * 32
 

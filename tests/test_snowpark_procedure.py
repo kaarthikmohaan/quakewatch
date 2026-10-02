@@ -10,7 +10,6 @@ from quakewatch.snowpark_alias_read import resolve_durable_aliases
 from quakewatch.snowpark_model_writer import SnowparkModelWriter
 from quakewatch.snowpark_procedure import run
 
-
 TIME = datetime(2026, 9, 30, tzinfo=UTC)
 
 

@@ -8,7 +8,6 @@ import json
 from quakewatch.raw_load import connect_project
 from scripts.evidence.phase2.phase2_pilot import ATTEMPT_ID, _count, _guard_receipt
 
-
 FIRST_PROCESS_ID = "42fc37d34e1545498ad004d8eeb35b72"
 BASE_COUNTS = {
     "STG_EVENT_REVISION": 15,

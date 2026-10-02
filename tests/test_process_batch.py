@@ -9,7 +9,6 @@ from pathlib import Path
 
 from quakewatch.process_batch import RawObservation, project_raw_attempt
 
-
 FIXTURES = Path(__file__).parent / "fixtures"
 
 

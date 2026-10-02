@@ -8,10 +8,9 @@ from pathlib import Path
 
 from snowflake.connector.util_text import split_statements
 
-from scripts.pipeline.build_procedure_bundle import REPO_ROOT
 from scripts.evidence.phase2.phase2_fixture_name_check import admin_params, name_occupied
 from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
-
+from scripts.pipeline.build_procedure_bundle import REPO_ROOT
 
 SETUP_FILE = REPO_ROOT / "sql" / "phase2_fixture_setup.sql"
 EXPECTED = (

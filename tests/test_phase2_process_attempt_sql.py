@@ -3,7 +3,6 @@
 import unittest
 from pathlib import Path
 
-
 SQL = (Path(__file__).resolve().parents[1] / "sql/phase2_process_attempt.sql").read_text()
 
 

@@ -6,7 +6,12 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from scripts.evidence.phase2.phase2_old_origin_raw_load import (
-    REPLAY_COUNTS, SEQUENCE, _guard_before, execute_load, local_plans, main,
+    REPLAY_COUNTS,
+    SEQUENCE,
+    _guard_before,
+    execute_load,
+    local_plans,
+    main,
 )
 from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 

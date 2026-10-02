@@ -8,7 +8,6 @@ from pathlib import Path
 
 from quakewatch.staging import STAGING_PARSER_VERSION, project_feature
 
-
 FIXTURES = Path(__file__).parent / "fixtures"
 
 

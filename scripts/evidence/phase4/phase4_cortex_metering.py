@@ -6,9 +6,8 @@ import argparse
 import json
 from pathlib import Path
 
-from scripts.evidence.phase4.phase4_cortex_evaluate import BRIEFS_PATH
 from scripts.checks.phase4_usage import checked_admin_profile
-
+from scripts.evidence.phase4.phase4_cortex_evaluate import BRIEFS_PATH
 
 EARLIER_SUCCESSFUL_QUERY_IDS = (
     "01c76fcf-0002-afd6-000e-fef200033b12",

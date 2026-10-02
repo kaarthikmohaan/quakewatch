@@ -6,12 +6,11 @@ import argparse
 import hashlib
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from scripts.evidence.phase4.phase4_cortex_aggregates import OUTPUT_PATH as AGGREGATES_PATH
 from scripts.checks.phase4_usage import checked_admin_profile
-
+from scripts.evidence.phase4.phase4_cortex_aggregates import OUTPUT_PATH as AGGREGATES_PATH
 
 MODEL = "claude-haiku-4-5"
 MAX_NEW_CALLS = 9
@@ -161,7 +160,7 @@ def execute(retry_case_id: str | None = None) -> dict:
                 marker = {
                     "case_id": case["CASE_ID"], "model": MODEL,
                     "input_sha256": case["INPUT_SHA256"],
-                    "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+                    "generated_at_utc": datetime.now(UTC).isoformat(),
                     "status": "attempt_started",
                     "fallback": "Use saved SQL aggregate until result is reviewed.",
                 }
@@ -188,7 +187,7 @@ def execute(retry_case_id: str | None = None) -> dict:
                         "model": MODEL,
                         "input_sha256": case["INPUT_SHA256"],
                         "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest(),
-                        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+                        "generated_at_utc": datetime.now(UTC).isoformat(),
                         "query_id": query_id,
                         "usage": details.get("usage"),
                         "brief": brief,
@@ -200,7 +199,7 @@ def execute(retry_case_id: str | None = None) -> dict:
                     result = {
                         "case_id": case["CASE_ID"], "model": MODEL,
                         "input_sha256": case["INPUT_SHA256"],
-                        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+                        "generated_at_utc": datetime.now(UTC).isoformat(),
                         "status": "error", "snowflake_error_code": error.errno,
                         "fallback": "Use saved SQL aggregate.",
                     }

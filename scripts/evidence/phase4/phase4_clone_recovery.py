@@ -9,7 +9,6 @@ import re
 from quakewatch.raw_load import connect_project
 from scripts.evidence.phase4.phase4_recovery_preflight import CLONE_NAME, SOURCE, validate
 
-
 CLONE = f"QUAKEWATCH_PHASE2_FIXTURE.CURATED.{CLONE_NAME}"
 QUERY_ID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\Z")
 

@@ -1,10 +1,10 @@
 """Local safeguards before and after a Snowflake RAW copy."""
 
+import argparse
+import getpass
 import json
 import logging
 import re
-import argparse
-import getpass
 import tomllib
 from contextlib import closing
 from pathlib import Path

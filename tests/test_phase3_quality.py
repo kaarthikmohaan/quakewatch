@@ -5,7 +5,13 @@ import io
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.checks.phase3_quality import VIEW_NAMES, execute_quality, main, reviewed_sql, view_action
+from scripts.checks.phase3_quality import (
+    VIEW_NAMES,
+    execute_quality,
+    main,
+    reviewed_sql,
+    view_action,
+)
 
 
 class Phase3QualityTest(unittest.TestCase):

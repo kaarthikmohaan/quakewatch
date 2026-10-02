@@ -8,7 +8,6 @@ from typing import Any
 
 from quakewatch.process_transaction import ProcessOutcome
 
-
 EXISTING_SQL = """
 SELECT PROCESS_ATTEMPT_ID
 FROM QUAKEWATCH.CURATED.BATCH_PROCESS_ATTEMPT

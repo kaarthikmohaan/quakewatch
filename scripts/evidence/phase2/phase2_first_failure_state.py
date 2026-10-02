@@ -7,7 +7,7 @@ import json
 
 from quakewatch.raw_load import connect_project
 from scripts.evidence.phase2.phase2_first_failure_demo import ATTEMPT_ID, _raw_hash
-from scripts.evidence.phase2.phase2_fixture_original import CURATED, RAW
+from scripts.evidence.phase2.phase2_fixture_original import CURATED
 from scripts.evidence.phase2.phase2_recovery_demo import _duplicates, _snapshot
 
 

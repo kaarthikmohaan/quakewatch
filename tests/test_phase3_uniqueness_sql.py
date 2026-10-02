@@ -4,7 +4,6 @@ import re
 import unittest
 from pathlib import Path
 
-
 SQL = (Path(__file__).resolve().parents[1] / "sql/phase3_uniqueness.sql").read_text()
 
 

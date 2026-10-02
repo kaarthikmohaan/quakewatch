@@ -8,7 +8,6 @@ from datetime import UTC, datetime
 from quakewatch.process_transaction import ProcessOutcome
 from quakewatch.snowpark_process_log import append_process_outcome
 
-
 TIME = datetime(2026, 9, 30, tzinfo=UTC)
 SUCCESS = ProcessOutcome("process-1", "attempt-1", TIME, TIME, "complete", 3, 3, 1, 2)
 

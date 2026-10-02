@@ -1,17 +1,22 @@
 """Load one complete sweep and atomically advance its committed watermark in Snowflake."""
 
 import argparse
-from collections import Counter
-from contextlib import closing
 import json
 import logging
+from collections import Counter
+from contextlib import closing
 from pathlib import Path
 
 from quakewatch.extract_batch import iso_utc, parse_utc
 from quakewatch.history_load_plan import check_snowflake
-from quakewatch.raw_load import connect_project, execute_raw_load, plan_raw_load, LoadReconciliationError
-from quakewatch.update_plan import plan_update_sweep
 from quakewatch.logs import configure_logging
+from quakewatch.raw_load import (
+    LoadReconciliationError,
+    connect_project,
+    execute_raw_load,
+    plan_raw_load,
+)
+from quakewatch.update_plan import plan_update_sweep
 
 logger = logging.getLogger(__name__)
 

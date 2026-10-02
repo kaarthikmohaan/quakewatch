@@ -7,11 +7,15 @@ import json
 from datetime import UTC, datetime
 
 from quakewatch.raw_load import _result_dicts, connect_project, reconcile_loaded_rows
-from scripts.fixtures.build_phase2_fixture_attempts import build_attempts
 from scripts.evidence.phase2.phase2_fixture_original import CURATED, RAW
 from scripts.evidence.phase2.phase2_fixture_raw_load import _append_receipt, local_plans
-from scripts.evidence.phase2.phase2_recovery_demo import DEMO_PROCEDURE, _audit, _duplicates, _snapshot
-
+from scripts.evidence.phase2.phase2_recovery_demo import (
+    DEMO_PROCEDURE,
+    _audit,
+    _duplicates,
+    _snapshot,
+)
+from scripts.fixtures.build_phase2_fixture_attempts import build_attempts
 
 ATTEMPT_ID = "fixture-first-failure-v1"
 FIXTURE = "normal_event.json"

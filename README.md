@@ -9,6 +9,35 @@
 
 > QuakeWatch is retrospective data analysis. It is not an earthquake warning, risk score, shaking estimate, or damage assessment. Distance and magnitude alone do not estimate impact.
 
+## What problem it solves
+
+A facilities-planning or preparedness analyst who wants to compare earthquake
+history around candidate sites usually scans USGS maps or downloads records by
+hand. That looks simple but quietly goes wrong:
+
+- **Records change after the fact.** USGS revises magnitudes, locations, and
+  status for days or years, and deletes some events. A one-off download is a
+  snapshot that is silently out of date, with no record of what changed.
+- **Large requests are truncated or time out.** The API caps each response at
+  20,000 events and offers no consistent snapshot of the catalog, so a big
+  download can be incomplete without saying so.
+- **Results can't be reproduced or audited.** Re-running "the same" download
+  later gives different numbers, and nobody can tell which records were
+  included.
+
+QuakeWatch turns that into a repeatable, auditable warehouse. Every batch
+records exactly what was requested and received, every revision and deletion is
+kept, gaps are reported instead of hidden, and the same SQL gives the same
+answer. It answers questions like:
+
+- How do event counts and magnitudes compare across sites and years?
+- Which records were revised or deleted, and when did the warehouse see it?
+- How long does a record take to go from fetch to queryable?
+- Which requested time windows are missing?
+
+The analyst use case is a hypothesis: no target user has tested it yet (see
+[known limitations](#known-limitations)).
+
 ## Key results
 
 Measured on live Snowflake runs between 29 September and 2 October 2026. Full evidence, query IDs, and caveats are in [observed results](docs/results.md).
@@ -142,8 +171,12 @@ To run the warehouse path you need your own Snowflake account:
 
 1. Copy the profiles in [`snowflake-config.example.toml`](snowflake-config.example.toml)
    into `~/.snowflake/config.toml` and fill in your account and key details.
-2. Create the Snowflake objects in the order listed in [`sql/README.md`](sql/README.md).
-3. Follow the pipeline order in [`scripts/README.md`](scripts/README.md).
+2. Run `sql/phase0_bootstrap.sql` once with an admin role, then
+   `make bootstrap EXECUTE=1` to create the tables and procedure.
+3. Run the pipeline with `make capture-history`, `make load-history`,
+   `make process`, and `make quality`, each previewing first and running with
+   `EXECUTE=1`. `make help` lists every target; [`scripts/README.md`](scripts/README.md)
+   explains the order.
 
 Live runs use warehouse credits. Command output goes to stdout; operational
 logs go to stderr, and `QUAKEWATCH_LOG_LEVEL=DEBUG` shows more detail. See the
@@ -213,6 +246,7 @@ src/quakewatch/   Extractor, loaders, and Snowpark procedure code
 sql/              Reviewed Snowflake DDL and checks, with setup order (sql/README.md)
 scripts/          Pipeline steps, checks, test-fixture builders, and evidence drills (scripts/README.md)
 tests/            Secret-free unit and fixture tests run in CI
+Makefile          One command per step; `make help` lists them
 docs/             Design, data dictionary, demo walkthrough, and results
 docs/adr/         Architecture decision records
 docs/evidence/    Dated results log with query IDs

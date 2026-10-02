@@ -7,7 +7,6 @@ import snowflake.connector
 
 from scripts.checks.phase4_usage import checked_admin_profile
 
-
 SOURCE = "QUAKEWATCH_PHASE2_FIXTURE.CURATED.FACT_EVENT_REVISION"
 CLONE_NAME = "QW_LIVE_DEMO_EE3A351BE3"
 CLONE = f"QUAKEWATCH_PHASE2_FIXTURE.CURATED.{CLONE_NAME}"

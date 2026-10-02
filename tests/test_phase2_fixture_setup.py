@@ -7,7 +7,12 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from scripts.evidence.phase2.phase2_fixture_setup import EXPECTED, execute_setup, main, setup_statements
+from scripts.evidence.phase2.phase2_fixture_setup import (
+    EXPECTED,
+    execute_setup,
+    main,
+    setup_statements,
+)
 
 
 class FixtureSetupTest(unittest.TestCase):

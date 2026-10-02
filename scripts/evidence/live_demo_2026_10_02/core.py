@@ -6,7 +6,6 @@ from pathlib import Path
 
 from quakewatch.raw_load import connect_project, execute_raw_load, plan_raw_load
 
-
 MANIFEST = Path("data/raw/20261002T045249Z-ee3a351be3/manifest.json")
 STATE_SQL = """
 SELECT HEALTH_STATUS, LOADED_ROWS, RAW_ROWS, STAGING_ROWS,

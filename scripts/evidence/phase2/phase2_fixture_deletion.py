@@ -6,13 +6,21 @@ import argparse
 import json
 
 from quakewatch.raw_load import connect_project
-from scripts.fixtures.build_phase2_fixture_attempts import FIXTURES, SEQUENCE
-from scripts.evidence.phase2.phase2_fixture_original import CURATED, EVENT_ID, RAW, _counts, _guard_unique_keys
+from scripts.evidence.phase2.phase2_fixture_original import (
+    CURATED,
+    EVENT_ID,
+    RAW,
+    _counts,
+    _guard_unique_keys,
+)
 from scripts.evidence.phase2.phase2_fixture_raw_load import _hash_feature
 from scripts.evidence.phase2.phase2_fixture_update import (
-    ATTEMPT_ID as UPDATE_ATTEMPT, EXPECTED_AFTER as UPDATE_COUNTS,
+    ATTEMPT_ID as UPDATE_ATTEMPT,
 )
-
+from scripts.evidence.phase2.phase2_fixture_update import (
+    EXPECTED_AFTER as UPDATE_COUNTS,
+)
+from scripts.fixtures.build_phase2_fixture_attempts import FIXTURES, SEQUENCE
 
 ATTEMPT_ID = SEQUENCE[2][0]
 UPDATE_PROCESS_ID = "36ea2d1efb2144b1a4aad3e107f30842"

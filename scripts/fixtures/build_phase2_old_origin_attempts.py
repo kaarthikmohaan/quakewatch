@@ -6,7 +6,6 @@ from datetime import UTC, datetime
 
 from scripts.fixtures.build_phase2_fixture_attempts import OUTPUT_ROOT, build_attempts
 
-
 SEQUENCE = (
     ("fixture-old-origin-original-v1", "synthetic_old_origin_original.json"),
     ("fixture-old-origin-update-v1", "synthetic_old_origin_update.json"),

@@ -7,7 +7,6 @@ from datetime import UTC, datetime, timedelta
 from quakewatch.process_batch import BatchProjection
 from quakewatch.snowpark_batch_fact_write import write_successful_batch_fact
 
-
 NOW = datetime(2026, 9, 30, tzinfo=UTC)
 
 

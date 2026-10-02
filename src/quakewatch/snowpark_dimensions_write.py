@@ -12,7 +12,6 @@ from quakewatch.site_distance import distances_to_public_sites
 from quakewatch.snowpark_revision_write import selected_revision_observations
 from quakewatch.snowpark_staging_write import MAX_ROWS_PER_MERGE
 
-
 DATE_SQL = """
 MERGE INTO QUAKEWATCH.CURATED.DIM_DATE t
 USING (SELECT TO_DATE(f.value:date_key::VARCHAR) AS DATE_KEY,

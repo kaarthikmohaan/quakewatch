@@ -1,16 +1,21 @@
 """Offline tests for the initial five-year origin-time plan."""
 
-import unittest
 import io
 import json
+import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from quakewatch.history_plan import (captured_history_windows, history_windows, main,
-                                     resume_capture, selected_history_window)
+from quakewatch.history_plan import (
+    captured_history_windows,
+    history_windows,
+    main,
+    resume_capture,
+    selected_history_window,
+)
 from quakewatch.settings import EVENT_HORIZON_YEARS, SITES
 
 

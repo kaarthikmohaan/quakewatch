@@ -5,7 +5,6 @@ from datetime import UTC, datetime
 
 from quakewatch.snowpark_alias_rekey import rekey_existing_aliases
 
-
 TIME = datetime(2026, 9, 30, tzinfo=UTC)
 
 

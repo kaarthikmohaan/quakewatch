@@ -96,7 +96,8 @@ under [still open](#still-open).
 - **User validation:** no target-analyst session has been held.
 - **Pending deployment:** the parser version 2 procedure and the
   `UPDATE_WATERMARK` table are in the repository but not yet deployed to
-  Snowflake.
+  Snowflake. `make release-parser-v2 EXECUTE=1` checks the stored rows,
+  relabels the 485 rejects in one transaction, and deploys both.
 
 ## Evidence log contents
 

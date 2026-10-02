@@ -5,17 +5,18 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from pathlib import Path
 
 from quakewatch.raw_load import (
-    RECEIPT_SQL, _result_dicts, connect_project, reconcile_loaded_rows,
+    RECEIPT_SQL,
+    _result_dicts,
+    connect_project,
+    reconcile_loaded_rows,
     validate_local_batch,
 )
-from scripts.fixtures.build_phase2_fixture_bundle import DEFAULT_OUTPUT
 from scripts.fixtures.build_phase2_fixture_attempts import SEQUENCE
-from scripts.pipeline.build_procedure_bundle import REPO_ROOT
+from scripts.fixtures.build_phase2_fixture_bundle import DEFAULT_OUTPUT
 from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
-
+from scripts.pipeline.build_procedure_bundle import REPO_ROOT
 
 ROOT = DEFAULT_OUTPUT / "attempts"
 STAGE = f"@{TEST_DATABASE}.RAW.USGS_JSON_STAGE"

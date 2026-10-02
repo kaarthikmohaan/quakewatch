@@ -11,7 +11,6 @@ from quakewatch.process_batch import RawObservation, project_raw_attempt
 from quakewatch.snowpark_staging_write import write_staging
 from quakewatch.staging import STAGING_PARSER_VERSION
 
-
 FEATURE = json.loads((Path(__file__).parent / "fixtures/normal_event.json").read_text())
 
 

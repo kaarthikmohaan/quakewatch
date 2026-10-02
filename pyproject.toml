@@ -15,3 +15,31 @@ quakewatch-extract = "quakewatch.extract_batch:main"
 [build-system]
 requires = ["uv_build>=0.12.1,<0.13.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.0",
+    "ruff>=0.16.10",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["data"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+# E501: long lines are left to review rather than mass reformatting.
+# B905: adding zip(strict=True) changes runtime behaviour and needs its own review.
+ignore = ["E501", "B905"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["quakewatch", "scripts"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src/quakewatch"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+# The Snowflake connector and Snowpark ship without complete type stubs.
+ignore_missing_imports = true

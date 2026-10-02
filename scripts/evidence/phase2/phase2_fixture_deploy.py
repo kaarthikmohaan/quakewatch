@@ -11,11 +11,15 @@ from snowflake.connector.util_text import split_statements
 
 from quakewatch.raw_load import connect_project
 from scripts.fixtures.build_phase2_fixture_bundle import DEFAULT_OUTPUT
-from scripts.fixtures.phase2_fixture_namespace import SQL_FILES, TEST_DATABASE, inputs, validate_and_rewrite
-
+from scripts.fixtures.phase2_fixture_namespace import (
+    SQL_FILES,
+    TEST_DATABASE,
+    inputs,
+    validate_and_rewrite,
+)
 
 BUNDLE = DEFAULT_OUTPUT / "quakewatch_procedure.zip"
-BUNDLE_SHA256 = "b475b27d4df3669b9321460ace66d3fc526086164f55856ad9b2032f22d9dfe9"
+BUNDLE_SHA256 = "08a1f63bad29390ac6ed967e295417d96f9f7450e9f5bfc3dafca5365f6e4260"
 STAGE = f"@{TEST_DATABASE}.RAW.USGS_JSON_STAGE/procedure"
 PACKAGE_CHECK_SQL = f"""
 SELECT COUNT(*) FROM {TEST_DATABASE}.INFORMATION_SCHEMA.PACKAGES

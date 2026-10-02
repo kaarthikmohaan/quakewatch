@@ -9,7 +9,6 @@ from pathlib import Path
 
 from scripts.checks.phase4_usage import checked_admin_profile
 
-
 ROOT = Path(__file__).resolve().parents[3]
 SQL_PATH = ROOT / "sql" / "phase4_cortex_aggregates.sql"
 OUTPUT_PATH = ROOT / "data" / "cortex" / "phase4_aggregates.json"

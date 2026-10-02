@@ -6,8 +6,15 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from scripts.evidence.phase2.phase2_fixture_deletion import (
-    ATTEMPT_ID, EXPECTED_AFTER, UPDATE_COUNTS, UPDATE_PROCESS_ID,
-    _guard_after, _guard_before, _guard_raw, execute_deletion, preview,
+    ATTEMPT_ID,
+    EXPECTED_AFTER,
+    UPDATE_COUNTS,
+    UPDATE_PROCESS_ID,
+    _guard_after,
+    _guard_before,
+    _guard_raw,
+    execute_deletion,
+    preview,
 )
 from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 

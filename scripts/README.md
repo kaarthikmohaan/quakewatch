@@ -12,10 +12,15 @@ Run everything from the repository root:
 PYTHONPATH=src:. .venv/bin/python scripts/<folder>/<script>.py
 ```
 
+The repository [`Makefile`](../Makefile) wraps the common steps: run
+`make help` to list them. Targets that reach USGS or Snowflake only preview
+unless you add `EXECUTE=1`.
+
 ## Pipeline order
 
 | Step | Command or script | What it does |
 |---|---|---|
+| 0. Bootstrap | [`pipeline/bootstrap.py`](pipeline/bootstrap.py) (`make bootstrap`) | Creates the project tables and procedure after the admin setup SQL |
 | 1. Plan history | `python -m quakewatch.history_plan` | Prints the bounded five-year origin-time windows |
 | 2. Extract | `quakewatch-extract` or `python -m quakewatch.history_plan --resume --execute` | Fetches USGS windows into `events.jsonl` and `manifest.json` |
 | 3. Load RAW | `python -m quakewatch.history_raw_load --execute` | Stages files, runs `COPY INTO`, and reconciles counts |

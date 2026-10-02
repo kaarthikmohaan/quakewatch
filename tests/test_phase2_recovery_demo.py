@@ -5,7 +5,7 @@ import io
 import unittest
 from unittest.mock import MagicMock, patch
 
-from scripts.evidence.phase2.phase2_recovery_demo import CREATE_SQL, ATTEMPT_ID, execute, main
+from scripts.evidence.phase2.phase2_recovery_demo import ATTEMPT_ID, CREATE_SQL, execute, main
 
 
 class RecoveryDemoTest(unittest.TestCase):

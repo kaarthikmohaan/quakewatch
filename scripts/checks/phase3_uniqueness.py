@@ -9,7 +9,6 @@ from pathlib import Path
 
 from quakewatch.raw_load import connect_project
 
-
 SQL_PATH = Path(__file__).resolve().parents[2] / "sql" / "phase3_uniqueness.sql"
 EXPECTED_SHA256 = "fedad6f0cff3da90f86e974bd3bc939552da4a540ccd4786a8e632a12821eb45"
 CHECKS = ("revision_duplicate_groups", "bridge_duplicate_groups")

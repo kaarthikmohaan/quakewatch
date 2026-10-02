@@ -9,7 +9,6 @@ from pathlib import Path
 from quakewatch.process_batch import RawObservation, project_raw_attempt
 from quakewatch.snowpark_revision_write import write_revision_fact
 
-
 FEATURE = json.loads((Path(__file__).parent / "fixtures/normal_event.json").read_text())
 
 

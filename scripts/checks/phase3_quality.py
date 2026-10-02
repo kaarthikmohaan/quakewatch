@@ -9,7 +9,6 @@ from pathlib import Path
 
 from quakewatch.raw_load import connect_project
 
-
 ROOT = Path(__file__).resolve().parents[2] / "sql"
 FILES = (
     ("phase3_health_views.sql", "ba25e6344e812ee6fb052855f0121e20809f5d6fc4d4a335d58c6b18d9486320", 3),

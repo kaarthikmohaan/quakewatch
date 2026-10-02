@@ -11,7 +11,6 @@ from snowflake.connector.util_text import split_statements
 
 from quakewatch.raw_load import connect_project
 
-
 ROOT = Path(__file__).resolve().parents[3]
 BUNDLE = ROOT / "data" / "procedure" / "quakewatch_procedure.zip"
 ATTEMPT_ID = "20260929T075452Z-26375840ea"

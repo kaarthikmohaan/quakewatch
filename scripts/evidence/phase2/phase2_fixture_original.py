@@ -6,10 +6,9 @@ import argparse
 import json
 
 from quakewatch.raw_load import connect_project
+from scripts.evidence.phase2.phase2_fixture_raw_load import _hash_feature
 from scripts.fixtures.build_phase2_fixture_attempts import FIXTURES, SEQUENCE
 from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
-from scripts.evidence.phase2.phase2_fixture_raw_load import _hash_feature
-
 
 ATTEMPT_ID = SEQUENCE[0][0]
 EVENT_ID = "uw714110682"

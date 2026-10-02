@@ -8,7 +8,6 @@ from typing import Any
 
 from quakewatch.process_batch import BatchProjection, ProjectedObservation
 
-
 MAX_ROWS_PER_MERGE = 500
 
 EXISTING_SQL = """

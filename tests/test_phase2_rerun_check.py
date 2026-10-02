@@ -6,8 +6,13 @@ import unittest
 from unittest.mock import patch
 
 from scripts.evidence.phase2.phase2_rerun_check import (
-    ATTEMPT_ID, BASE_COUNTS, FIRST_PROCESS_ID, _guard_after, _guard_before,
-    _guard_unique_keys, preview,
+    ATTEMPT_ID,
+    BASE_COUNTS,
+    FIRST_PROCESS_ID,
+    _guard_after,
+    _guard_before,
+    _guard_unique_keys,
+    preview,
 )
 
 

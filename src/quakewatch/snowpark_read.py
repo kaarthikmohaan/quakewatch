@@ -7,7 +7,6 @@ from typing import Any
 
 from quakewatch.process_batch import BatchProjection, RawObservation, project_raw_attempt
 
-
 RECEIPT_SQL = """
 SELECT ATTEMPT_ID, EXTRACT_STATUS, LOAD_STATUS, COVERAGE_GAPS,
        SOURCE_ROWS_RETURNED, RAW_ROWS_WRITTEN, LOADED_ROWS

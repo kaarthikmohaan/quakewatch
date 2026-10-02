@@ -7,7 +7,6 @@ from pathlib import Path
 
 from quakewatch.snowpark_read import read_and_project_attempt
 
-
 FEATURE = json.loads((Path(__file__).parent / "fixtures/normal_event.json").read_text())
 
 

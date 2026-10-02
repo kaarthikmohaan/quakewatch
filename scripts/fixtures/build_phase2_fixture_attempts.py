@@ -10,7 +10,6 @@ from pathlib import Path
 from quakewatch.raw_load import validate_local_batch
 from scripts.pipeline.build_procedure_bundle import REPO_ROOT
 
-
 OUTPUT_ROOT = REPO_ROOT / "data" / "procedure" / "phase2_fixture" / "attempts"
 FIXTURES = REPO_ROOT / "tests" / "fixtures"
 SEQUENCE = (

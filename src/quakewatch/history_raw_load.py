@@ -6,9 +6,9 @@ from pathlib import Path
 
 from quakewatch.extract_batch import parse_utc
 from quakewatch.history_load_plan import check_snowflake, load_candidates
+from quakewatch.logs import configure_logging
 from quakewatch.raw_load import connect_project, execute_raw_load
 from quakewatch.settings import MAX_HISTORY_BATCH_WINDOWS
-from quakewatch.logs import configure_logging
 
 
 def load_ready(candidates: list[tuple[int, dict]], connection, max_windows: int) -> list[int]:

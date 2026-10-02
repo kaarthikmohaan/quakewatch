@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 
 from quakewatch.raw_load import connect_project
-from scripts.fixtures.build_phase2_old_origin_attempts import SEQUENCE
 from scripts.evidence.phase2.phase2_fixture_original import CURATED
 from scripts.evidence.phase2.phase2_old_origin_original import _guard_raw
 from scripts.evidence.phase2.phase2_old_origin_update import _expected_hash, _guard_after
+from scripts.fixtures.build_phase2_old_origin_attempts import SEQUENCE
 
 
 def verify(cursor) -> dict:

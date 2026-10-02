@@ -5,10 +5,11 @@ import calendar
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from quakewatch.extract_batch import iso_utc, parse_utc, run_batch
-from quakewatch.settings import EVENT_HORIZON_YEARS, MAX_HISTORY_BATCH_WINDOWS, SITES
 from quakewatch.logs import configure_logging
+from quakewatch.settings import EVENT_HORIZON_YEARS, MAX_HISTORY_BATCH_WINDOWS, SITES
 
 
 def months_before(value: datetime, months: int) -> datetime:
@@ -94,7 +95,7 @@ def resume_capture(cutoff: datetime, output: Path, max_windows: int, execute: bo
         if source_days is None:
             manifest_path = run_batch(site, start, end, output)
         else:
-            options = {"source_days": source_days}
+            options: dict[str, Any] = {"source_days": source_days}
             if resume_children:
                 options["resume_children"] = True
             if source_hours is not None:
@@ -191,7 +192,7 @@ def main() -> None:
     if args.source_days is None:
         manifest_path = run_batch(site_key, start, end, args.output)
     else:
-        options = {"source_days": args.source_days}
+        options: dict[str, Any] = {"source_days": args.source_days}
         if args.resume_children:
             options["resume_children"] = True
         if args.source_hours is not None:

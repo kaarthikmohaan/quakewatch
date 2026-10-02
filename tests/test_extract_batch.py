@@ -4,20 +4,26 @@ import json
 import tempfile
 import time
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
 import httpx
 
-from quakewatch.extract_batch import (ExtractionError, SourceDeadlineExceeded, fetch_window,
-                                      get_features, hourly_request_windows, initial_request_windows,
-                                      request_with_retry, run_batch,
-                                      source_deadline, source_params)
-from quakewatch.settings import SITES
-from quakewatch.settings import MAX_TARGET_RESULTS_PER_WINDOW
+from quakewatch.extract_batch import (
+    ExtractionError,
+    SourceDeadlineExceeded,
+    fetch_window,
+    get_features,
+    hourly_request_windows,
+    initial_request_windows,
+    request_with_retry,
+    run_batch,
+    source_deadline,
+    source_params,
+)
 from quakewatch.raw_load import LoadReconciliationError, validate_local_batch
-
+from quakewatch.settings import MAX_TARGET_RESULTS_PER_WINDOW, SITES
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -48,7 +54,7 @@ class GetFeaturesTests(unittest.TestCase):
 
 class FetchWindowTests(unittest.TestCase):
     def test_hourly_children_resume_without_refetching_reconciled_slice(self) -> None:
-        start = datetime(2022, 9, 8, tzinfo=timezone.utc)
+        start = datetime(2022, 9, 8, tzinfo=UTC)
         end = start + timedelta(days=1)
         self.assertEqual(len(hourly_request_windows(start, end, 6)), 4)
         calls = []
@@ -82,7 +88,7 @@ class FetchWindowTests(unittest.TestCase):
             self.assertEqual(validate_local_batch(second_path)[1], 4)
 
     def test_hourly_mode_reuses_older_daily_checkpoint(self) -> None:
-        start = datetime(2022, 9, 8, tzinfo=timezone.utc)
+        start = datetime(2022, 9, 8, tzinfo=UTC)
         end = start + timedelta(days=3)
         calls = []
 
@@ -112,7 +118,7 @@ class FetchWindowTests(unittest.TestCase):
             self.assertEqual(validate_local_batch(path)[1], 6)
 
     def test_resume_reuses_reconciled_child_and_keeps_attempt_audit(self) -> None:
-        start = datetime(2022, 9, 29, tzinfo=timezone.utc)
+        start = datetime(2022, 9, 29, tzinfo=UTC)
         end = start + timedelta(days=2)
         calls = []
 
@@ -163,7 +169,7 @@ class FetchWindowTests(unittest.TestCase):
                 validate_local_batch(second_path)
 
     def test_corrupt_child_checkpoint_is_refetched(self) -> None:
-        start = datetime(2022, 9, 29, tzinfo=timezone.utc)
+        start = datetime(2022, 9, 29, tzinfo=UTC)
         end = start + timedelta(days=1)
         calls = []
 
@@ -215,8 +221,8 @@ class FetchWindowTests(unittest.TestCase):
         self.assertEqual(calls, 4)
 
     def test_planned_week_slices_keep_month_and_audit_each_child(self) -> None:
-        start = datetime(2022, 9, 29, tzinfo=timezone.utc)
-        end = datetime(2022, 10, 29, tzinfo=timezone.utc)
+        start = datetime(2022, 9, 29, tzinfo=UTC)
+        end = datetime(2022, 10, 29, tzinfo=UTC)
         slices = initial_request_windows(start, end, 7)
         self.assertEqual(len(slices), 5)
         self.assertEqual(slices[0][0], start)
@@ -245,8 +251,8 @@ class FetchWindowTests(unittest.TestCase):
         self.assertEqual([(a, b) for a, b, _ in calls], slices)
 
     def test_failed_week_child_keeps_prior_audit_and_no_file(self) -> None:
-        start = datetime(2022, 9, 29, tzinfo=timezone.utc)
-        end = datetime(2022, 10, 29, tzinfo=timezone.utc)
+        start = datetime(2022, 9, 29, tzinfo=UTC)
+        end = datetime(2022, 10, 29, tzinfo=UTC)
         good = ([], [{"window_id": "w0001.1", "status": "reconciled"}])
         gap = {"window_id": "w0001.2", "status": "unresolved", "reason": "timeout"}
         with tempfile.TemporaryDirectory() as directory:
@@ -262,8 +268,8 @@ class FetchWindowTests(unittest.TestCase):
             self.assertFalse(list(Path(directory).glob("*/events.jsonl")))
 
     def test_deadline_identifies_active_week_and_keeps_completed_week(self) -> None:
-        start = datetime(2022, 9, 29, tzinfo=timezone.utc)
-        end = datetime(2022, 10, 29, tzinfo=timezone.utc)
+        start = datetime(2022, 9, 29, tzinfo=UTC)
+        end = datetime(2022, 10, 29, tzinfo=UTC)
         good = ([], [{"window_id": "w0001.1", "status": "reconciled",
                       "count_before": 0, "returned_rows": 0, "count_after": 0}])
         with tempfile.TemporaryDirectory() as directory:
@@ -291,8 +297,8 @@ class FetchWindowTests(unittest.TestCase):
         client.close()
 
     def test_deadline_failure_saves_full_window_gap(self) -> None:
-        start = datetime(2023, 9, 29, tzinfo=timezone.utc)
-        end = datetime(2023, 10, 29, tzinfo=timezone.utc)
+        start = datetime(2023, 9, 29, tzinfo=UTC)
+        end = datetime(2023, 10, 29, tzinfo=UTC)
         with tempfile.TemporaryDirectory() as directory:
             with patch("quakewatch.extract_batch.fetch_window",
                        side_effect=SourceDeadlineExceeded("source window exceeded 180 seconds")):
@@ -308,8 +314,8 @@ class FetchWindowTests(unittest.TestCase):
                              manifest["requested_starttime"])
 
     def test_keyboard_interrupt_saves_gap(self) -> None:
-        start = datetime(2023, 9, 29, tzinfo=timezone.utc)
-        end = datetime(2023, 10, 29, tzinfo=timezone.utc)
+        start = datetime(2023, 9, 29, tzinfo=UTC)
+        end = datetime(2023, 10, 29, tzinfo=UTC)
         with tempfile.TemporaryDirectory() as directory:
             with patch("quakewatch.extract_batch.fetch_window", side_effect=KeyboardInterrupt):
                 with self.assertRaises(KeyboardInterrupt):
@@ -320,8 +326,8 @@ class FetchWindowTests(unittest.TestCase):
             self.assertEqual(len(manifest["coverage_gaps"]), 1)
 
     def test_parent_count_timeout_splits_into_reconciled_children(self) -> None:
-        start = datetime(2022, 8, 29, tzinfo=timezone.utc)
-        end = datetime(2022, 9, 29, tzinfo=timezone.utc)
+        start = datetime(2022, 8, 29, tzinfo=UTC)
+        end = datetime(2022, 9, 29, tzinfo=UTC)
         parent = source_params(SITES["seattle"], start, end)
         parent_bounds = (parent["starttime"], parent["endtime"])
         requests = []
@@ -345,8 +351,8 @@ class FetchWindowTests(unittest.TestCase):
                              for path, bounds in requests))
 
     def test_repeated_child_timeout_remains_explicit_gap(self) -> None:
-        start = datetime(2022, 8, 29, tzinfo=timezone.utc)
-        end = datetime(2022, 9, 29, tzinfo=timezone.utc)
+        start = datetime(2022, 8, 29, tzinfo=UTC)
+        end = datetime(2022, 9, 29, tzinfo=UTC)
         transport = httpx.MockTransport(lambda request: (_ for _ in ()).throw(
             httpx.ReadTimeout("still timed out")))
         with patch("quakewatch.extract_batch.time.sleep"):
@@ -425,7 +431,7 @@ class FetchWindowTests(unittest.TestCase):
         self.assertNotIn(parent_window, query_windows)
 
     def test_target_count_splits_before_service_limit(self) -> None:
-        start = datetime(2026, 9, 28, tzinfo=timezone.utc)
+        start = datetime(2026, 9, 28, tzinfo=UTC)
         end = start + timedelta(seconds=2)
         parent = source_params(SITES["seattle"], start, end)
         parent_bounds = (parent["starttime"], parent["endtime"])
@@ -460,7 +466,7 @@ class FetchWindowTests(unittest.TestCase):
                 return httpx.Response(200, json={"count": value})
             return httpx.Response(200, json=body)
 
-        start = datetime.fromtimestamp(feature["properties"]["time"] / 1000, tz=timezone.utc)
+        start = datetime.fromtimestamp(feature["properties"]["time"] / 1000, tz=UTC)
         end = start + timedelta(microseconds=case["window_duration_microseconds"])
         transport = httpx.MockTransport(respond)
 

@@ -10,7 +10,6 @@ from quakewatch.process_batch import BatchProjection, ProjectedObservation
 from quakewatch.revisions import RevisionCandidate, deduplicate_revision_candidates
 from quakewatch.snowpark_staging_write import MAX_ROWS_PER_MERGE
 
-
 MERGE_SQL = """
 MERGE INTO QUAKEWATCH.CURATED.FACT_EVENT_REVISION t
 USING (

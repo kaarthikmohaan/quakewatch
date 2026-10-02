@@ -7,6 +7,10 @@ notes. Anything that resumes the warehouse uses credits, so check the
 
 ## Setup order
 
+`make bootstrap EXECUTE=1` applies files 2 to 8 in this order using
+[`scripts/pipeline/bootstrap.py`](../scripts/pipeline/bootstrap.py); file 1
+needs an admin role and file 9 is created by `make quality` when absent.
+
 | Order | File | Role | Creates |
 |---|---|---|---|
 | 1 | [`phase0_bootstrap.sql`](phase0_bootstrap.sql) | Admin, once | Project role, database, `RAW` and `CURATED` schemas, XS warehouse, internal stage |

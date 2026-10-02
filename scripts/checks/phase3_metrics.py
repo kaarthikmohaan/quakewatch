@@ -9,7 +9,6 @@ from pathlib import Path
 
 from quakewatch.raw_load import connect_project
 
-
 SQL_PATH = Path(__file__).resolve().parents[2] / "sql" / "phase3_metrics.sql"
 EXPECTED_SHA256 = "1a0390820a23bbe6043e3dba8fb27db2f86aa6e8205f83dac44f9e2e4891da3d"
 TARGET_P95_SECONDS = 86_400

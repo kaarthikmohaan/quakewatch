@@ -7,7 +7,6 @@ import json
 
 from quakewatch.raw_load import connect_project
 
-
 PENDING_SQL = """
 SELECT ATTEMPT_ID, LOADED_ROWS
 FROM QUAKEWATCH.CURATED.V_BATCH_HEALTH

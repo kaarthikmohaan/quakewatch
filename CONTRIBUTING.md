@@ -26,14 +26,14 @@ Use Python 3.12 and [uv](https://docs.astral.sh/uv/):
 uv sync --locked --no-editable
 ```
 
-Run the secret-free test suite, exactly as CI does:
+Run everything CI runs (ruff lint, mypy type check, fixture build, and the
+secret-free tests):
 
 ```sh
-PYTHONPATH=src:. .venv/bin/python scripts/fixtures/build_phase2_fixture_bundle.py
-PYTHONPATH=src:. .venv/bin/python scripts/fixtures/build_phase2_fixture_attempts.py
-PYTHONPATH=src:. .venv/bin/python scripts/fixtures/build_phase2_old_origin_attempts.py
-PYTHONPATH=src:. .venv/bin/python -m unittest discover -s tests
+make check
 ```
+
+Fix lint findings with `.venv/bin/ruff check --fix src scripts tests`.
 
 After changing package code, run `uv sync --locked --no-editable` again.
 

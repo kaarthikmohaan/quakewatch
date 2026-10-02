@@ -7,7 +7,6 @@ import json
 import tomllib
 from pathlib import Path
 
-
 WAREHOUSE = "QUAKEWATCH_WH"
 START_UTC = "2026-10-01 08:00:00 +00:00"
 END_UTC = "2026-10-01 12:00:00 +00:00"

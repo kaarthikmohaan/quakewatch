@@ -6,7 +6,10 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from scripts.checks.phase3_uniqueness import (
-    CHECKS, execute_checks, main, reviewed_statements,
+    CHECKS,
+    execute_checks,
+    main,
+    reviewed_statements,
 )
 
 

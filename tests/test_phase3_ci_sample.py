@@ -3,7 +3,6 @@
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = (ROOT / ".github/workflows/ci.yml").read_text()
 SAMPLE = (ROOT / "sql/phase3_sample_analysis.sql").read_text()

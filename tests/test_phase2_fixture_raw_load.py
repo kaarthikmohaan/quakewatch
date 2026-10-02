@@ -7,10 +7,14 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 from scripts.evidence.phase2.phase2_fixture_raw_load import (
-    _append_receipt, _guard_empty, execute_load, local_plans, main,
+    _append_receipt,
+    _guard_empty,
+    execute_load,
+    local_plans,
+    main,
 )
+from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 
 
 class FixtureRawLoadTest(unittest.TestCase):

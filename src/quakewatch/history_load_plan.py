@@ -6,8 +6,8 @@ from pathlib import Path
 
 from quakewatch.extract_batch import parse_utc
 from quakewatch.history_plan import captured_history_windows
-from quakewatch.raw_load import connect_project, plan_raw_load
 from quakewatch.logs import configure_logging
+from quakewatch.raw_load import connect_project, plan_raw_load
 
 
 def load_candidates(cutoff, output: Path) -> list[tuple[int, dict]]:

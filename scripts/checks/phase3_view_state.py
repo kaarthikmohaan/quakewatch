@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
-import argparse
 
 from quakewatch.raw_load import connect_project
-
 
 NAMES = ("V_BATCH_HEALTH", "V_RECEIPT_WINDOW_AUDIT", "V_EVENT_REJECTS")
 

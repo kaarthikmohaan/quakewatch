@@ -6,7 +6,11 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from scripts.evidence.phase2.phase2_first_failure_demo import (
-    ATTEMPT_ID, _plan, _retry_counts_match, execute, main,
+    ATTEMPT_ID,
+    _plan,
+    _retry_counts_match,
+    execute,
+    main,
 )
 
 

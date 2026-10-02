@@ -6,15 +6,24 @@ import argparse
 import json
 
 from quakewatch.raw_load import connect_project
-from scripts.fixtures.build_phase2_fixture_attempts import SEQUENCE
 from scripts.evidence.phase2.phase2_fixture_deletion import (
     ATTEMPT_ID as DELETION_ATTEMPT,
+)
+from scripts.evidence.phase2.phase2_fixture_deletion import (
     EXPECTED_AFTER as DELETION_COUNTS,
+)
+from scripts.evidence.phase2.phase2_fixture_deletion import (
     _feature,
 )
-from scripts.evidence.phase2.phase2_fixture_original import CURATED, EVENT_ID, RAW, _counts, _guard_unique_keys
+from scripts.evidence.phase2.phase2_fixture_original import (
+    CURATED,
+    EVENT_ID,
+    RAW,
+    _counts,
+    _guard_unique_keys,
+)
 from scripts.evidence.phase2.phase2_fixture_raw_load import _hash_feature
-
+from scripts.fixtures.build_phase2_fixture_attempts import SEQUENCE
 
 ATTEMPT_ID = SEQUENCE[3][0]
 DELETION_PROCESS_ID = "5ad657ffe63449d3a3c2b1d37b32ad85"

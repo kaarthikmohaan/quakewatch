@@ -8,7 +8,6 @@ from typing import Any
 from quakewatch.aliases import AliasObservation, canonical_id_map
 from quakewatch.process_batch import BatchProjection
 
-
 ALIAS_OBSERVATIONS_SQL = """
 SELECT SOURCE_EVENT_ID, ASSOCIATED_IDS
 FROM QUAKEWATCH.CURATED.STG_EVENT_REVISION

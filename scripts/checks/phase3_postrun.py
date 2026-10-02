@@ -6,9 +6,8 @@ import argparse
 import json
 
 from quakewatch.raw_load import connect_project
-from scripts.checks.phase3_quality import view_action, reviewed_sql
+from scripts.checks.phase3_quality import reviewed_sql, view_action
 from scripts.checks.phase3_uniqueness import CHECKS, reviewed_statements
-
 
 VIEW_SQL = """
 SELECT TABLE_NAME, VIEW_DEFINITION

@@ -7,9 +7,8 @@ import hashlib
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
-from scripts.pipeline.build_procedure_bundle import REPO_ROOT
 from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE, inputs, validate_and_rewrite
-
+from scripts.pipeline.build_procedure_bundle import REPO_ROOT
 
 DEFAULT_OUTPUT = REPO_ROOT / "data" / "procedure" / "phase2_fixture"
 

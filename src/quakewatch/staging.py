@@ -6,7 +6,6 @@ import math
 from datetime import UTC, datetime
 from typing import Any
 
-
 # Version 2 adds the source_stub_record and placeholder_location reasons.
 STAGING_PARSER_VERSION = "2"
 

@@ -5,10 +5,11 @@ import unittest
 from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
 from quakewatch.extract_batch import parse_utc
 from quakewatch.raw_load import LoadReconciliationError
-from quakewatch.update_plan import plan_update_sweep
 from quakewatch.update_load import SnowflakeWatermarkStore, load_and_commit, validate_sweep
+from quakewatch.update_plan import plan_update_sweep
 
 
 class MemoryStore:

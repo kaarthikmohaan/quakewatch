@@ -10,7 +10,6 @@ from zipfile import ZipFile
 
 from scripts.pipeline.build_procedure_bundle import MODULES, REPO_ROOT, build_bundle
 
-
 SQL = (REPO_ROOT / "sql" / "phase2_create_procedure.sql").read_text()
 
 

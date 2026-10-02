@@ -7,7 +7,6 @@ import json
 
 from quakewatch.raw_load import connect_project
 
-
 SOURCE = "QUAKEWATCH_PHASE2_FIXTURE.CURATED.FACT_EVENT_REVISION"
 CLONE_NAME = "QW_PHASE4_REVISION_DEMO"
 

@@ -6,8 +6,13 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from scripts.evidence.phase2.phase2_fixture_stale_replay import (
-    ATTEMPT_ID, DELETION_COUNTS, EXPECTED_AFTER,
-    _guard_after, _guard_before, execute_stale_replay, preview,
+    ATTEMPT_ID,
+    DELETION_COUNTS,
+    EXPECTED_AFTER,
+    _guard_after,
+    _guard_before,
+    execute_stale_replay,
+    preview,
 )
 from scripts.fixtures.phase2_fixture_namespace import TEST_DATABASE
 

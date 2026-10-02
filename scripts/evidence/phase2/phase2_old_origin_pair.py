@@ -8,11 +8,21 @@ import json
 from quakewatch.raw_load import connect_project
 from scripts.evidence.phase2.phase2_fixture_original import CURATED
 from scripts.evidence.phase2.phase2_old_origin_original import (
-    ATTEMPT_ID as ORIGINAL_ATTEMPT, _guard_after as original_after,
+    ATTEMPT_ID as ORIGINAL_ATTEMPT,
+)
+from scripts.evidence.phase2.phase2_old_origin_original import (
+    _guard_after as original_after,
+)
+from scripts.evidence.phase2.phase2_old_origin_original import (
     _guard_before as original_before,
 )
 from scripts.evidence.phase2.phase2_old_origin_update import (
-    ATTEMPT_ID as UPDATE_ATTEMPT, _guard_after as update_after,
+    ATTEMPT_ID as UPDATE_ATTEMPT,
+)
+from scripts.evidence.phase2.phase2_old_origin_update import (
+    _guard_after as update_after,
+)
+from scripts.evidence.phase2.phase2_old_origin_update import (
     _guard_before as update_before,
 )
 

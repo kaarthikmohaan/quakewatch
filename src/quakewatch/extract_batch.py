@@ -19,19 +19,19 @@ from typing import Any
 
 import httpx
 
+from quakewatch.logs import configure_logging
 from quakewatch.settings import (
     MAX_RESULTS_PER_WINDOW,
     MAX_TARGET_RESULTS_PER_WINDOW,
     PARSER_VERSION,
     REQUEST_TIMEOUT_SECONDS,
-    SOURCE_WINDOW_DEADLINE_SECONDS,
     SITES,
+    SOURCE_WINDOW_DEADLINE_SECONDS,
     USER_AGENT,
     USGS_COUNT_URL,
     USGS_QUERY_URL,
     Site,
 )
-from quakewatch.logs import configure_logging
 
 logger = logging.getLogger(__name__)
 
