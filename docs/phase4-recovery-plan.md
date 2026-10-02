@@ -17,7 +17,7 @@ The already verified RAW retry and failed-transform evidence is recorded in
   increase storage. Confirm the account edition and current retention before
   promising a recovery window. Record actual query IDs and credits if the
   account usage views make them available.
-- Get the owner's explicit approval for warehouse cost, creating the clone,
+- Get explicit approval for warehouse cost, creating the clone,
   and deliberately mutating **only the clone**. Get separate approval before
   dropping the clone; no project source table or data is to be deleted.
 - Do not run Cortex as part of this recovery drill.
