@@ -50,15 +50,28 @@ connection and can use warehouse credits
 
 ## Architecture
 
-```text
-USGS FDSN GeoJSON
-  -> Python bounded batch extractor
-  -> JSON Lines + query-count manifest
-  -> Snowflake internal stage and COPY INTO (177 history windows loader-reported complete)
-  -> raw VARIANT records (loaded) -> Snowpark warehouse models (177 history attempts processed)
+USGS FDSN GeoJSON earthquake records
+  -> Bounded Python requests for historical windows or later source updates
+  -> events.jsonl (full records) + manifest.json (counts, times, gaps)
+  -> Python loader -> Snowflake internal stage -> COPY INTO RAW_EVENT_RECORDS
+  -> Snowpark procedure
+       -> typed staging rows and recorded rejects
+       -> event revision history -> latest non-deleted EVENT_CURRENT view
+       -> event-to-site distances, dimensions, and batch audit facts
+  -> SQL comparisons and health checks
+       -> Cortex brief, checked against the SQL facts
+
+Separate optional recovery drill: fixture-table clone -> test change
+  -> Time Travel check -> remove the demo clone
+GitHub Actions: local fixture tests without Snowflake credentials
 ```
 
-The source returns bounded query results. QuakeWatch is a batch pipeline, not a streaming pipeline. USGS does not promise a transactionally consistent catalog snapshot, so the project will report unreconciled windows as coverage gaps rather than claim complete history.
+Each batch keeps its source records and counts so a failed transformation can
+retry from RAW without fetching again. The catalog-wide update sweep is still
+incomplete, and three historical source windows remain gaps. QuakeWatch runs
+bounded batches, not a continuous stream; USGS does not provide a consistent
+snapshot of the whole catalog. Cortex and the recovery drill are optional and
+do not change the regular batch path.
 
 ## Docs
 
@@ -67,7 +80,6 @@ The source returns bounded query results. QuakeWatch is a batch pipeline, not a 
 - [Runbook](docs/runbook.md)
 - [Phase 0 environment check](docs/environment.md)
 - [Observed results](docs/results.md)
-- [Phase 4 close-out and remaining work](docs/phase4-closeout.md)
 - [Target-analyst interview guide](docs/target-user-interview.md)
 - [Two-minute evidence-based demo](docs/demo.md)
 
