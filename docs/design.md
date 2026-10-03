@@ -194,7 +194,7 @@ Controls: cap rows/tokens; allow one bounded retry; cache by aggregate hash; per
 
 **Security:** keep key-pair authentication outside Git; use least privilege; ignore `.env`; use example-only `.env.example`; never commit a private site coordinate or account secret.
 
-**Cost:** Local extraction is effectively zero. Estimate Snowflake warehouse, storage, stage, and optional Cortex use from measured query/account history. `COPY INTO` and Snowpark transformations require warehouse compute. Use XS compute, auto-suspend, short sessions, keep optional Tasks suspended while idle, and drop temporary clones. Any hours or credits in the plan are a usage scenario, not a bill forecast; account region, edition, trial balance, compute minimums, pricing, and activity vary. Cortex usage history and warehouse credit consumption are separate.
+**Cost:** Local extraction is effectively zero. Estimate Snowflake warehouse, storage, stage, and Cortex use from measured query/account history. `COPY INTO` and Snowpark transformations require warehouse compute. Use XS compute, auto-suspend, short sessions, keep optional Tasks suspended while idle, and drop temporary clones. Any hours or credits in the plan are a usage scenario, not a bill forecast; account region, edition, trial balance, compute minimums, pricing, and activity vary. Cortex usage history and warehouse credit consumption are separate.
 
 ## Repository layout
 

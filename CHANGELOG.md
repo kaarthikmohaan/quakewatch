@@ -7,8 +7,13 @@ are in the [results summary](docs/results.md).
 
 ## [Unreleased]
 
+### Added
+
+- A project document and a design document as PDFs in `docs/`, linked from the README.
+
 ### Changed
 
+- The Cortex brief is called Cortex instead of optional Cortex.
 - README next steps now link to the v0.2.0 milestone issues.
 - README shows a real Cortex summary next to the SQL facts it was built from, and a rejected example.
 
@@ -35,7 +40,7 @@ quality checks, and recovery, verified end to end on 2 October 2026.
   Snowflake and advances by compare-and-set only after full reconciliation.
 - **Recovery drills:** failed-transform retry from RAW, and clone and Time Travel
   recovery on an isolated fixture database.
-- **Optional Cortex briefs:** factual summaries of SQL aggregates, checked
+- **Cortex briefs:** factual summaries of SQL aggregates, checked
   against the SQL facts with a SQL fallback.
 - **Live integration check:** compiles every procedure and reviewed SQL statement
   against Snowflake with `EXPLAIN`, plus read-only checks; runs from a manual
