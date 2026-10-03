@@ -49,7 +49,7 @@ retries for this interview.
    confusion or caveats they notice. Do not coach them toward a positive answer.
 4. Ask: “Would this comparison be useful in your work? What is missing or
    misleading? Would you trust it enough to use for retrospective planning?”
-5. Show the optional Cortex brief only after the SQL result. Ask whether the
+5. Show the Cortex brief only after the SQL result. Ask whether the
    brief helps them find the same facts; record any wrong or overstated claim.
 
 ## Record after the session

@@ -119,7 +119,7 @@ Output of the 2 October 2026 verification run (chart drawn from these values):
 These are currently modeled records, not official USGS totals. Three source
 gaps and the incomplete update sweep mean coverage is not guaranteed complete.
 
-### Optional Cortex summary
+### Cortex summary
 
 Snowflake Cortex can turn one SQL result row into a plain-English sentence. The
 model only sees the facts in that row, and every sentence is checked against

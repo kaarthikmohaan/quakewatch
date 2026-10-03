@@ -1,6 +1,6 @@
-# Phase 4 optional Cortex evaluation
+# Phase 4 Cortex evaluation
 
-This page records the optional Cortex brief evaluation, run on 1 October 2026
+This page records the Cortex brief evaluation, run on 1 October 2026
 after the original Phase 4 close-out. A brief turns one saved SQL aggregate
 into a short factual sentence. The SQL result is always the fallback, and a
 brief is shown only if every fact in it matches the SQL row.

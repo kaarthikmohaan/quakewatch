@@ -35,7 +35,7 @@ quality checks, and recovery, verified end to end on 2 October 2026.
   Snowflake and advances by compare-and-set only after full reconciliation.
 - **Recovery drills:** failed-transform retry from RAW, and clone and Time Travel
   recovery on an isolated fixture database.
-- **Optional Cortex briefs:** factual summaries of SQL aggregates, checked
+- **Cortex briefs:** factual summaries of SQL aggregates, checked
   against the SQL facts with a SQL fallback.
 - **Live integration check:** compiles every procedure and reviewed SQL statement
   against Snowflake with `EXPLAIN`, plus read-only checks; runs from a manual
