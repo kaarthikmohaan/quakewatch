@@ -7,8 +7,13 @@ are in the [results summary](docs/results.md).
 
 ## [Unreleased]
 
+### Added
+
+- A project document and a design document as PDFs in `docs/`, linked from the README.
+
 ### Changed
 
+- The Cortex brief is called Cortex instead of optional Cortex.
 - README next steps now link to the v0.2.0 milestone issues.
 - README shows a real Cortex summary next to the SQL facts it was built from, and a rejected example.
 

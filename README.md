@@ -314,6 +314,7 @@ reference material.
 | See it run | [Live demo walkthrough](docs/evidence/live-demo-2026-10-02.md), [two-minute demo](docs/demo.md) |
 | Check the evidence | [Evidence log](docs/evidence/results-log.md), [Phase 4 close-out](docs/evidence/phase4-closeout.md), [Cortex evaluation](docs/evidence/phase4-cortex-evaluation.md), [environment check](docs/evidence/phase0-environment-check.md) |
 | See what changed | [Changelog](CHANGELOG.md) |
+| Read it as a PDF | [Project document](docs/quakewatch-project-document.pdf), [design document](docs/quakewatch-design-document.pdf) |
 | See the original plan | [Design](docs/design.md), [target-analyst interview guide](docs/target-user-interview.md) |
 | Contribute | [Contributing](CONTRIBUTING.md), [code of conduct](CODE_OF_CONDUCT.md), [security policy](SECURITY.md), [accessibility](ACCESSIBILITY.md) |
 
