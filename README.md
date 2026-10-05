@@ -1,7 +1,17 @@
-# QuakeWatch
+<p align="center">
+  <img src="docs/images/quakewatch-logo.png" alt="QuakeWatch" width="560">
+</p>
 
-[![CI](https://github.com/kaarthikmohaan/quakewatch/actions/workflows/ci.yml/badge.svg)](https://github.com/kaarthikmohaan/quakewatch/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+<hr>
+
+<p align="center">
+  <a href="https://github.com/kaarthikmohaan/quakewatch/actions/workflows/ci.yml"><img src="https://github.com/kaarthikmohaan/quakewatch/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white" alt="Python 3.12">
+  <img src="https://img.shields.io/badge/Snowflake-Snowpark-29B5E8?logo=snowflake&logoColor=white" alt="Snowflake">
+  <img src="https://img.shields.io/badge/data-USGS%20earthquakes-0E7490" alt="USGS data">
+  <img src="https://img.shields.io/badge/uv-managed-DE5FE9?logo=uv&logoColor=white" alt="uv">
+</p>
 
 **An auditable Snowflake batch warehouse that loads five years of USGS earthquake records, keeps every source revision, and can replay any batch without refetching it.**
 
